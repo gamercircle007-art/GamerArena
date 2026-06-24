@@ -1,6 +1,7 @@
-# Paythan local development stack
+# Paythan backend — local development stack
 # Run: docker compose up --build
-# Backend hot-reload is enabled via volume mount
+# Or:  bash scripts/docker-up.sh
+# Backend hot-reload is enabled via volume mount; migrations run on startup.
 
 services:
   postgres:

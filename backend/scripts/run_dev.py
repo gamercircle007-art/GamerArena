@@ -29,6 +29,14 @@ os.environ.setdefault(
 )
 os.environ.setdefault("APP_ENV", "local")
 os.environ.setdefault("DEBUG", "true")
+# Fixed OTP for local dev — change or clear to use random OTPs
+os.environ.setdefault("OTP_DEV_BYPASS_CODE", "123456")
+os.environ.setdefault(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,"
+    "http://localhost:8080,http://127.0.0.1:8080,"
+    "http://localhost:8000,http://127.0.0.1:8000",
+)
 os.environ.setdefault(
     "DATABASE_URL",
     f"sqlite+aiosqlite:///{BACKEND_ROOT / 'dev.db'}",

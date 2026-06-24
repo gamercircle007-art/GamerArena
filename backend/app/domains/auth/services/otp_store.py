@@ -1,11 +1,11 @@
 """Redis-backed OTP and signup session storage."""
 
 import json
-import secrets
 
 import redis.asyncio as aioredis
 
 from app.core.config import Settings
+from app.domains.common.otp import generate_otp_code
 from app.domains.common.exceptions import AuthenticationError, RateLimitError, ValidationError
 
 
@@ -23,7 +23,7 @@ class SignupOTPStore:
         return f"signup:otp_rate:{phone}"
 
     def _generate_otp(self) -> str:
-        return "".join(str(secrets.randbelow(10)) for _ in range(self.settings.otp_length))
+        return generate_otp_code(self.settings)
 
     async def _enforce_rate_limit(self, phone: str) -> None:
         key = self._rate_key(phone)
@@ -107,7 +107,7 @@ class LoginOTPStore:
         return f"login:otp_rate:{phone}"
 
     def _generate_otp(self) -> str:
-        return "".join(str(secrets.randbelow(10)) for _ in range(self.settings.otp_length))
+        return generate_otp_code(self.settings)
 
     async def _enforce_rate_limit(self, phone: str) -> None:
         key = self._rate_key(phone)

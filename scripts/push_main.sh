@@ -12,12 +12,13 @@ git add -A
 
 echo ""
 echo "=== Committing ==="
-git commit -m "feat: OTP login flow, bind APIs to Paythan Flutter UI
+git commit -m "chore: backend-only repo with Docker Compose setup
 
-- Add POST /auth/login/request-otp and /auth/login/verify-otp endpoints
-- Flutter login: phone only then OTP screen
-- Bind signup/login APIs to Paythan UI
-- Rename branding to Paythan throughout" || echo "Nothing new to commit."
+- Remove Flutter frontend (backend-only BE-python repo)
+- Add Docker entrypoint with auto-migrations on startup
+- Add .dockerignore, docker-up.sh, run_backend.sh helpers
+- Commit poetry.lock for reproducible Docker builds
+- Update README for backend + Docker quick start" || echo "Nothing new to commit."
 
 echo ""
 echo "=== Pushing to origin main ==="

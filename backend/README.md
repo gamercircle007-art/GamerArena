@@ -267,7 +267,7 @@ updated_at      # Auto timestamp
        # 2. Find or create user by email
        # 3. Issue JWT via TokenService.issue_tokens()
    ```
-5. **Flutter**: use `google_sign_in` package, send `id_token` to backend
+5. **Client app**: use your platform's Google Sign-In SDK, send `id_token` to backend
 6. **Recommended**: add `user_identities` table linking `provider` + `provider_user_id` → `user.id`
 
 ### Add Apple Sign In

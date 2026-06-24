@@ -2,7 +2,7 @@
 Google OAuth provider — STUB for future implementation.
 
 FLOW:
-  1. Flutter uses google_sign_in → obtains id_token
+  1. Client app uses Google Sign-In SDK → obtains id_token
   2. POST /auth/oauth/google { "id_token": "..." }
   3. This class verifies token with Google's JWKS
   4. AuthService finds or creates user, issues JWT

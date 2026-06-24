@@ -1,58 +1,63 @@
-# Paythan
+# Paythan Backend (BE-python)
 
-Enterprise-grade modular monolith for payment and financial services. Designed for clean architecture, domain-driven design, and future microservice extraction.
+FastAPI modular monolith for Paythan authentication and user services. Backend-only repository with Docker Compose for local and production-like development.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| Backend | FastAPI, Python 3.12+, SQLAlchemy 2.0, Alembic, Pydantic v2 |
-| Frontend | Flutter, Riverpod 3.x, go_router, Dio |
+| API | FastAPI, Python 3.12+, Pydantic v2 |
+| ORM | SQLAlchemy 2.0 (async), Alembic |
 | Database | PostgreSQL 16 |
 | Cache | Redis 7 |
-| Auth | Email OTP (SMTP) + WhatsApp OTP (Twilio) + JWT |
-| Infra | Docker, Terraform (AWS skeleton) |
+| Auth | WhatsApp OTP (Twilio) + password + JWT |
 
 ## Project Structure
 
 ```
-paythan/
-├── backend/          # FastAPI modular monolith
-├── frontend/         # Flutter mobile app
-├── infra/            # Terraform for AWS
-├── docker-compose.yml
+.
+├── backend/              # FastAPI application
+│   ├── app/              # domains, core, db
+│   ├── alembic/          # database migrations
+│   ├── Dockerfile        # dev + production stages
+│   └── scripts/          # run_dev.py, docker-entrypoint.sh
+├── scripts/              # docker-up.sh, run_backend.sh
+├── docker-compose.yml    # postgres + redis + backend
+├── .env.example          # docker-compose env template
 └── README.md
 ```
 
-## Quick Start
+## Quick Start (Docker)
 
 ### Prerequisites
 
 - Docker & Docker Compose
-- Python 3.12+ & Poetry (for local backend dev)
-- Flutter SDK (for mobile app)
 
-### 1. Clone and Configure
+### 1. Configure environment
 
 ```bash
-cd paythan
 cp .env.example .env
-cp backend/.env.example backend/.env
 
 # Generate a secure JWT secret
 python3 -c "import secrets; print(secrets.token_urlsafe(48))"
-# Paste result into JWT_SECRET_KEY in both .env files
+# Paste result into JWT_SECRET_KEY in .env
 ```
 
-### 2. Start with Docker
+### 2. Start the stack
+
+```bash
+bash scripts/docker-up.sh
+```
+
+Or manually:
 
 ```bash
 docker compose up --build -d
+```
 
-# Run database migrations
-docker compose exec backend alembic upgrade head
+Migrations run automatically on backend startup. Verify:
 
-# Verify health
+```bash
 curl http://localhost:8000/health
 ```
 
@@ -61,129 +66,81 @@ curl http://localhost:8000/health
 - PostgreSQL: `localhost:5432`
 - Redis: `localhost:6379`
 
-### 3. Run Flutter App
+### 3. Stop
 
 ```bash
-cd frontend
-flutter pub get
-dart run build_runner build --delete-conflicting-outputs
-
-# Android emulator uses 10.0.2.2 for host localhost
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
-
-# iOS simulator / desktop
-flutter run --dart-define=API_BASE_URL=http://localhost:8000/api/v1
+docker compose down
 ```
 
-## Authentication Flow
+## Quick Start (Local, no Docker)
 
-```
-┌─────────┐    request-otp     ┌─────────┐    Redis (TTL)    ┌──────────┐
-│ Client  │ ─────────────────► │ Backend │ ─────────────────► │ OTP Store │
-└─────────┘                    └─────────┘                    └──────────┘
-     │                              │
-     │                              ├── Email → SMTP (Gmail)
-     │                              └── WhatsApp → Twilio
-     │
-     │    verify-otp ──────────────►│
-     │    login ───────────────────►│ ──► JWT access + refresh tokens
-     ▼                              ▼
+Uses SQLite + FakeRedis for quick testing:
+
+```bash
+bash scripts/run_backend.sh
 ```
 
-1. **Signup** — `POST /api/v1/auth/signup/request-otp` then `POST /api/v1/auth/signup/verify-otp`
-2. **Login (OTP)** — `POST /api/v1/auth/login/request-otp` then `POST /api/v1/auth/login/verify-otp`
-3. **Login (password, legacy)** — `POST /api/v1/auth/login` with phone + password
+Or:
+
+```bash
+cd backend
+cp .env.example .env
+source .venv/bin/activate
+poetry install
+python scripts/run_dev.py
+```
+
+## Authentication
+
+| Flow | Endpoints |
+|------|-----------|
+| Signup | `POST /api/v1/auth/signup/request-otp` → `POST /api/v1/auth/signup/verify-otp` |
+| Login (OTP) | `POST /api/v1/auth/login/request-otp` → `POST /api/v1/auth/login/verify-otp` |
+| Login (password) | `POST /api/v1/auth/login` |
+| Session | `GET /api/v1/auth/me`, `POST /api/v1/auth/refresh-token`, `POST /api/v1/auth/logout` |
+
+**Local dev without Twilio:** OTP codes are printed in backend logs.
+
+See [backend/README.md](backend/README.md) for full API examples and environment variable reference.
 
 ## Environment Variables
 
-Root `.env` is used by `docker-compose.yml`. Backend `.env` is for local Poetry development.
+Root `.env` is used by `docker-compose.yml`. Copy from `.env.example`.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `JWT_SECRET_KEY` | Yes | 32+ character secret for JWT signing |
-| `DATABASE_URL` | Yes | `postgresql+asyncpg://user:pass@host:5432/db` |
-| `REDIS_URL` | Yes | `redis://host:6379/0` |
-| `EMAIL_HOST` | For email OTP | SMTP server (e.g., `smtp.gmail.com`) |
-| `EMAIL_USERNAME` | For email OTP | SMTP username |
-| `EMAIL_PASSWORD` | For email OTP | SMTP password / app password |
+| `DATABASE_URL` | Yes | `postgresql+asyncpg://user:pass@postgres:5432/db` |
+| `REDIS_URL` | Yes | `redis://redis:6379/0` |
 | `TWILIO_ACCOUNT_SID` | For WhatsApp OTP | Twilio account SID |
 | `TWILIO_AUTH_TOKEN` | For WhatsApp OTP | Twilio auth token |
 | `TWILIO_WHATSAPP_FROM` | For WhatsApp OTP | `whatsapp:+14155238886` (sandbox) |
-| `OTP_EXPIRE_MINUTES` | No | Default: 10 |
-| `CORS_ORIGINS` | No | Comma-separated allowed origins |
 
-## Local Development (without full Docker)
+## Development
 
 ```bash
-# Start only infrastructure
+# Infrastructure only (postgres + redis)
 docker compose up postgres redis -d
 
-# Backend
-cd backend && poetry install && poetry run alembic upgrade head
+# Backend with Poetry
+cd backend
+poetry install
+poetry run alembic upgrade head
 poetry run uvicorn app.main:app --reload
-
-# Frontend
-cd frontend && flutter run
 ```
-
-## Adding a New Domain
-
-1. Create folder under `backend/app/domains/<name>/`
-2. Add `router.py`, `service.py`, `repository.py`, `schemas.py`, `models.py`
-3. Create Alembic migration for new models
-4. Register router in `backend/app/main.py`
-5. Add Flutter feature under `frontend/lib/features/<name>/`
-
-See [backend/README.md](backend/README.md) for detailed instructions.
-
-## Microservice Migration Path
-
-The codebase is structured so each `domains/<name>/` folder can become an independent service:
-
-| Current (Monolith) | Future (Microservices) |
-|--------------------|------------------------|
-| `domains/auth/` | `auth-service` (OTP, JWT) |
-| `domains/user/` | `user-service` (profiles) |
-| Shared `core/` | Per-service config + API Gateway |
-| Single PostgreSQL | Per-service DB or schema-per-service |
-| In-process calls | HTTP/gRPC + event bus (SQS/SNS) |
-
-Comments in router files explain extraction steps for each domain.
 
 ## Testing
 
 ```bash
-# Backend
 cd backend && poetry run pytest -v
-
-# Frontend
-cd frontend && flutter test
 ```
 
-## AWS Deployment (Future)
-
-Terraform skeleton in `infra/terraform/` targets:
-
-- **ECS Fargate** — backend containers
-- **RDS PostgreSQL** — managed database
-- **ElastiCache Redis** — OTP cache + rate limiting
-- **ALB** — HTTPS load balancing
-- **Secrets Manager** — JWT, Twilio, SMTP credentials
-- **CloudWatch** — structured JSON logs
+## Production Docker Image
 
 ```bash
-cd infra/terraform
-terraform init
-terraform plan -var-file=environments/dev.tfvars
+cd backend
+docker build --target production -t paythan-backend .
 ```
-
-## Security Notes
-
-- Never commit `.env` files
-- Rotate `JWT_SECRET_KEY` regularly in production
-- Use AWS Secrets Manager for credentials in prod
-- Enable `LOG_JSON=true` and `APP_ENV=prod` for production
-- Rate limiting is scaffolded in `main.py` (uncomment slowapi block)
 
 ## License
 

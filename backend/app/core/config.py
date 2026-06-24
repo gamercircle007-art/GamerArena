@@ -87,6 +87,8 @@ class Settings(BaseSettings):
     otp_max_attempts: int = 5
     otp_rate_limit_count: int = 5
     otp_rate_limit_window_minutes: int = 10
+    # Fixed OTP for local/dev only — leave empty in production
+    otp_dev_bypass_code: str = ""
 
     # -------------------------------------------------------------------------
     # Twilio — WhatsApp OTP (primary) + SMS OTP fallback (future)
@@ -180,6 +182,11 @@ class Settings(BaseSettings):
     @property
     def is_local(self) -> bool:
         return self.app_env == "local"
+
+    @property
+    def use_otp_dev_bypass(self) -> bool:
+        """True when a fixed dev OTP is active (never in production)."""
+        return bool(self.otp_dev_bypass_code) and not self.is_production
 
     @property
     def otp_rate_limit_window_seconds(self) -> int:

@@ -26,8 +26,8 @@ build/
 htmlcov/
 *.db
 
-# Poetry
-poetry.lock
+# Poetry (lock file is committed for reproducible Docker builds)
+# poetry.lock
 
 # IDE
 .idea/
@@ -39,20 +39,6 @@ poetry.lock
 # Docker
 docker-compose.override.yml
 
-# Flutter / Dart
-frontend/.dart_tool/
-frontend/.flutter-plugins
-frontend/.flutter-plugins-dependencies
-frontend/.packages
-frontend/build/
-frontend/.pub-cache/
-frontend/.pub/
-frontend/**/doc/api/
-frontend/**/*.g.dart
-frontend/**/*.freezed.dart
-frontend/coverage/
-frontend/.metadata
-
 # Terraform
 infra/terraform/.terraform/
 infra/terraform/*.tfstate
@@ -63,3 +49,10 @@ infra/terraform/terraform.tfvars
 # Logs
 *.log
 logs/
+.dev-logs/
+
+# Flutter
+frontend/gamer_circle/.dart_tool/
+frontend/gamer_circle/build/
+frontend/gamer_circle/.flutter-plugins
+frontend/gamer_circle/.flutter-plugins-dependencies

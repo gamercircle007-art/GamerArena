@@ -9,6 +9,13 @@ import json
 import secrets
 from enum import StrEnum
 
+
+def generate_otp_code(settings: Settings) -> str:
+    """Return fixed dev OTP when configured, otherwise a secure random code."""
+    if settings.use_otp_dev_bypass:
+        return settings.otp_dev_bypass_code
+    return "".join(str(secrets.randbelow(10)) for _ in range(settings.otp_length))
+
 import redis.asyncio as aioredis
 
 from app.core.config import Settings
@@ -34,9 +41,7 @@ class OTPService:
         return f"otp:rate:{channel.value}:{identifier}"
 
     def _generate_otp(self) -> str:
-        """Generate a cryptographically secure numeric OTP."""
-        length = self.settings.otp_length
-        return "".join(str(secrets.randbelow(10)) for _ in range(length))
+        return generate_otp_code(self.settings)
 
     async def _check_rate_limit(self, channel: OTPChannel, identifier: str) -> None:
         """Enforce hourly OTP request rate limit per identifier."""
