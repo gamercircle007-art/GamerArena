@@ -44,6 +44,11 @@ class Message(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     message_type: Mapped[str] = mapped_column(String(30), default="text", nullable=False)
     media_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    asset_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("media_assets.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     thumbnail_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_ephemeral: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

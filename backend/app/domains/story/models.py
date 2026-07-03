@@ -16,6 +16,11 @@ class Story(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     media_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    asset_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("media_assets.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     media_type: Mapped[str] = mapped_column(String(20), nullable=False)
     duration_seconds: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
     caption: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -86,6 +86,48 @@ MOCK_BOOKINGS: list[dict[str, Any]] = [
     },
 ]
 
+MOCK_DMS_ASSETS: list[dict[str, Any]] = [
+    {
+        "id": "asset-1",
+        "cdn_url": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400",
+        "thumbnail_url": None,
+        "asset_type": "image",
+        "original_filename": "gaming-setup.jpg",
+        "file_size_label": "2.4 MB",
+        "context": "post_media",
+        "uploader_name": "Manish Kumar",
+        "status": "active",
+        "is_flagged": False,
+        "created_at": "2026-07-01T10:00:00Z",
+    },
+    {
+        "id": "asset-2",
+        "cdn_url": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400",
+        "thumbnail_url": None,
+        "asset_type": "image",
+        "original_filename": "parlor-logo.png",
+        "file_size_label": "512 KB",
+        "context": "parlor_logo",
+        "uploader_name": "Anita Reddy",
+        "status": "active",
+        "is_flagged": False,
+        "created_at": "2026-07-02T08:00:00Z",
+    },
+    {
+        "id": "asset-3",
+        "cdn_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        "thumbnail_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerBlazes.jpg",
+        "asset_type": "video",
+        "original_filename": "reel-highlight.mp4",
+        "file_size_label": "18.2 MB",
+        "context": "story",
+        "uploader_name": "Rahul Gaming",
+        "status": "active",
+        "is_flagged": True,
+        "created_at": "2026-07-02T14:00:00Z",
+    },
+]
+
 MOCK_LIKES: list[dict[str, Any]] = [
     {
         "id": "l1", "user_id": "u3", "target_type": "post", "target_id": "post1",
@@ -101,6 +143,7 @@ class MockStore:
         self.parlors = deepcopy(MOCK_PARLORS)
         self.bookings = deepcopy(MOCK_BOOKINGS)
         self.likes = deepcopy(MOCK_LIKES)
+        self.dms_assets = deepcopy(MOCK_DMS_ASSETS)
 
     def paginate(self, items: list, page: int, limit: int) -> dict:
         page = max(1, page)
@@ -238,6 +281,68 @@ class MockStore:
                 or any(q in g.lower() for g in p.get("game_types", []))
             ]
         return self.paginate(items, page, limit)
+
+    def list_dms_assets(
+        self,
+        page: int = 1,
+        limit: int = 20,
+        asset_type: str | None = None,
+        search: str | None = None,
+    ) -> dict:
+        items = list(self.dms_assets)
+        if asset_type:
+            items = [a for a in items if a.get("asset_type") == asset_type]
+        if search:
+            q = search.lower()
+            items = [
+                a for a in items
+                if q in (a.get("original_filename") or "").lower()
+                or q in (a.get("context") or "").lower()
+            ]
+        return self.paginate(items, page, limit)
+
+    def dms_stats(self) -> dict:
+        total = len(self.dms_assets)
+        flagged = sum(1 for a in self.dms_assets if a.get("is_flagged"))
+        by_type: dict[str, int] = {}
+        for a in self.dms_assets:
+            t = a.get("asset_type", "unknown")
+            by_type[t] = by_type.get(t, 0) + 1
+        by_context: dict[str, int] = {}
+        for a in self.dms_assets:
+            c = a.get("context", "unknown")
+            by_context[c] = by_context.get(c, 0) + 1
+        return {
+            "total_count": total,
+            "total_size_bytes": 24_500_000,
+            "total_size_label": "23.4 MB",
+            "by_type": by_type,
+            "by_context": by_context,
+            "flagged_count": flagged,
+        }
+
+    def list_dms_orphans(self, page: int = 1, limit: int = 20) -> dict:
+        return self.paginate([], page, limit)
+
+    def delete_dms_asset(self, asset_id: str) -> bool:
+        before = len(self.dms_assets)
+        self.dms_assets = [a for a in self.dms_assets if a["id"] != asset_id]
+        return len(self.dms_assets) < before
+
+    def flag_dms_asset(self, asset_id: str, is_flagged: bool, reason: str | None = None) -> dict | None:
+        asset = next((a for a in self.dms_assets if a["id"] == asset_id), None)
+        if not asset:
+            return None
+        asset["is_flagged"] = is_flagged
+        asset["status"] = "flagged" if is_flagged else "active"
+        return asset
+
+    def bulk_delete_dms(self, asset_ids: list[str]) -> dict:
+        deleted = 0
+        for aid in asset_ids:
+            if self.delete_dms_asset(str(aid)):
+                deleted += 1
+        return {"deleted": deleted, "requested": len(asset_ids)}
 
 
 store = MockStore()

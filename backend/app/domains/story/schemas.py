@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class StoryCreate(BaseModel):
     media_url: str
+    asset_id: UUID | None = None
     media_type: str = Field(pattern="^(image|video)$")
     caption: str | None = None
     privacy: str = "friends"

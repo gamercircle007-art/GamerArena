@@ -30,6 +30,7 @@ class StoryService:
         story = Story(
             user_id=user_id,
             media_url=data.media_url,
+            asset_id=data.asset_id,
             media_type=data.media_type,
             duration_seconds=data.duration_seconds,
             caption=data.caption,

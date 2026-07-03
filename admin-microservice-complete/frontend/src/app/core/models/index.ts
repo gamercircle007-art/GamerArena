@@ -297,6 +297,20 @@ export interface PaginatedResponse<T> {
   has_more: boolean;
 }
 
+export interface MediaAssetItem {
+  id: string;
+  cdn_url: string;
+  thumbnail_url?: string;
+  asset_type: string;
+  original_filename?: string;
+  file_size_label?: string;
+  context: string;
+  uploader_name?: string;
+  status: string;
+  is_flagged: boolean;
+  created_at: string;
+}
+
 export interface AuthTokens {
   access_token: string;
   refresh_token: string;

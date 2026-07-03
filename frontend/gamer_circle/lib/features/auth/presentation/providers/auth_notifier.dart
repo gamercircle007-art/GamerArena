@@ -57,9 +57,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthLoading();
     await WsService.instance.disconnect();
     final result = await _logoutUseCase(NoParams());
-    state = result.fold(
-      (failure) => AuthError(failure.message),
-      (_) => const AuthUnauthenticated(),
+    await result.fold(
+      (failure) async {
+        state = AuthError(failure.message);
+      },
+      (_) async {
+        await _onboardingPrefs.clearGuestMode();
+        state = const AuthUnauthenticated();
+      },
     );
   }
 

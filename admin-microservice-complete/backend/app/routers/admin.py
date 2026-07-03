@@ -135,3 +135,44 @@ async def geo_activity(_: AdminDep, page: int = 1, limit: int = 20) -> Paginated
 @router.post("/notifications/broadcast")
 async def broadcast(_: AdminDep, body: dict) -> dict:
     return {"sent_to": 1250}
+
+
+@router.get("/dms")
+async def list_dms_assets(
+    _: AdminDep,
+    page: int = 1,
+    limit: int = 20,
+    type: str | None = None,
+    search: str | None = None,
+) -> dict:
+    return store.list_dms_assets(page=page, limit=limit, asset_type=type, search=search)
+
+
+@router.get("/dms/stats")
+async def dms_stats(_: AdminDep) -> dict:
+    return store.dms_stats()
+
+
+@router.get("/dms/orphans")
+async def dms_orphans(_: AdminDep, page: int = 1, limit: int = 20) -> dict:
+    return store.list_dms_orphans(page=page, limit=limit)
+
+
+@router.delete("/dms/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_dms_asset(asset_id: str, _: AdminDep) -> None:
+    if not store.delete_dms_asset(asset_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+
+
+@router.patch("/dms/{asset_id}/flag")
+async def flag_dms_asset(asset_id: str, body: dict, _: AdminDep) -> dict:
+    asset = store.flag_dms_asset(asset_id, body.get("is_flagged", True), body.get("reason"))
+    if not asset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    return asset
+
+
+@router.post("/dms/bulk-delete")
+async def bulk_delete_dms(_: AdminDep, body: dict) -> dict:
+    ids = body.get("asset_ids") or []
+    return store.bulk_delete_dms(ids)

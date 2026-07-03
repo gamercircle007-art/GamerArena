@@ -1,12 +1,10 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:gamer_circle/core/constants/social_api_paths.dart';
-import 'package:gamer_circle/core/providers/dio_provider.dart';
 import 'package:gamer_circle/core/providers/messaging_providers.dart';
+import 'package:gamer_circle/core/services/dms_service.dart';
 import 'package:gamer_circle/features/stories/providers/stories_provider.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -47,33 +45,21 @@ class _StoryCreatorState extends ConsumerState<StoryCreator> {
     }
   }
 
-  Future<String> _uploadFile(String path) async {
-    final dio = ref.read(dioProvider);
-    final ext = path.split('.').last.toLowerCase();
-    final fileType = _mediaType == 'video' ? 'video/$ext' : 'image/$ext';
-    final presign = await dio.post(SocialApiPaths.presignedUrl, data: {
-      'file_type': fileType,
-      'purpose': 'story',
-    });
-    final data = presign.data as Map<String, dynamic>;
-    final uploadUrl = data['upload_url'] as String;
-    final publicUrl = data['public_url'] as String;
-    final bytes = await File(path).readAsBytes();
-    await dio.put(
-      uploadUrl,
-      data: bytes,
-      options: Options(headers: {'Content-Type': fileType}),
-    );
-    return publicUrl;
-  }
-
   Future<void> _publish() async {
     if (_mediaPath == null || _uploading) return;
     setState(() => _uploading = true);
     try {
-      final url = await _uploadFile(_mediaPath!);
+      final ext = _mediaPath!.split('.').last.toLowerCase();
+      final fileType = _mediaType == 'video' ? 'video/$ext' : 'image/jpeg';
+      final upload = await ref.read(dmsServiceProvider).uploadFile(
+            file: File(_mediaPath!),
+            assetType: _mediaType,
+            fileType: fileType,
+            context: 'story',
+          );
       await ref.read(storiesRepositoryProvider).createStory(
-            mediaUrl: url,
+            mediaUrl: upload.cdnUrl,
+            assetId: upload.assetId,
             mediaType: _mediaType,
             caption: _caption.text.trim().isEmpty ? null : _caption.text.trim(),
             privacy: _privacy,
