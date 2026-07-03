@@ -17,6 +17,7 @@ class StoriesRepository {
   Future<void> createStory({
     required String mediaUrl,
     required String mediaType,
+    String? assetId,
     String? caption,
     String privacy = 'friends',
     int durationSeconds = 5,
@@ -24,6 +25,7 @@ class StoriesRepository {
     await _dio.post(StoriesApiPaths.stories, data: {
       'media_url': mediaUrl,
       'media_type': mediaType,
+      if (assetId != null) 'asset_id': assetId,
       if (caption != null) 'caption': caption,
       'privacy': privacy,
       'duration_seconds': durationSeconds,

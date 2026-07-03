@@ -74,6 +74,12 @@ const NAV_CONFIG: NavSection[] = [
   {
     section: 'CONTENT',
     items: [
+      {
+        label: 'Media Library',
+        icon: 'bi-folder2-open',
+        route: '/dms',
+        permission: 'view_posts',
+      },
       { label: 'Posts', icon: 'bi-file-text', route: '/posts', permission: 'view_posts' },
       {
         label: 'Reels & Videos',

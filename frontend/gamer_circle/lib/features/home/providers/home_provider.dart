@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/providers/dio_provider.dart';
 import 'package:gamer_circle/core/providers/location_provider.dart';
 import 'package:gamer_circle/features/home/data/home_repository.dart';
+import 'package:gamer_circle/features/home/providers/selected_location_provider.dart';
 import 'package:gamer_circle/shared/models/gc_points.dart';
 import 'package:gamer_circle/shared/models/home_data.dart';
 
@@ -54,44 +55,43 @@ class HomeNotifier extends Notifier<HomeState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final pos = ref.read(currentPositionProvider).valueOrNull ??
-          await ref.read(currentPositionProvider.notifier).requestAndFetch();
+      final selectedLocation =
+          await ref.read(selectedLocationProvider.future);
 
-      if (pos == null) {
-        state = state.copyWith(
-          isLoading: false,
-          locationDenied: true,
-          data: const HomeData(
-            locationLabel: 'Khora Colony, Ghaziabad',
-            gcPoints: GcPoints(balance: 200, lifetimeEarned: 200),
-          ),
-        );
-        return;
-      }
+      ref.read(currentPositionProvider.notifier).setManualPosition(
+            selectedLocation.latitude,
+            selectedLocation.longitude,
+          );
 
       final data = await _repo.fetchHomeData(
-        lat: pos.latitude,
-        lng: pos.longitude,
+        lat: selectedLocation.latitude,
+        lng: selectedLocation.longitude,
         cancelToken: _cancelToken,
       );
       state = state.copyWith(
-        data: data,
+        data: data.copyWithLocationLabel(selectedLocation.label),
         isLoading: false,
         locationDenied: false,
         clearError: true,
       );
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) return;
+      final selectedLocation =
+          ref.read(selectedLocationProvider).valueOrNull ??
+              SelectedLocation.defaultLocation;
       state = state.copyWith(
         isLoading: false,
         error: e.message ?? 'Failed to load home',
-        data: HomeData.empty,
+        data: HomeData.empty.copyWithLocationLabel(selectedLocation.label),
       );
     } catch (e) {
+      final selectedLocation =
+          ref.read(selectedLocationProvider).valueOrNull ??
+              SelectedLocation.defaultLocation;
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
-        data: HomeData.empty,
+        data: HomeData.empty.copyWithLocationLabel(selectedLocation.label),
       );
     }
   }

@@ -12,3 +12,5 @@ class PresignedUrlResponse(BaseModel):
     upload_url: str
     public_url: str
     key: str
+    asset_id: str | None = None
+    cdn_url: str | None = None

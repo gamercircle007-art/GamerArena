@@ -31,6 +31,16 @@ class Reel(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     video_url: Mapped[str] = mapped_column(String(1024), nullable=False)
     thumbnail_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     cover_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    video_asset_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("media_assets.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    cover_asset_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("media_assets.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     caption: Mapped[str | None] = mapped_column(Text, nullable=True)
     hashtags: Mapped[list[str]] = mapped_column(PortableTextArray, default=list)
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)

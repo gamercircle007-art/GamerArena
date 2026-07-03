@@ -5,7 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/constants/onboarding_colors.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_providers.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_state.dart';
+import 'package:gamer_circle/features/home/presentation/widgets/location_picker_sheet.dart';
+import 'package:gamer_circle/features/home/presentation/widgets/profile_menu_button.dart';
 import 'package:gamer_circle/features/home/providers/home_provider.dart';
+import 'package:gamer_circle/features/home/providers/selected_location_provider.dart';
 import 'package:gamer_circle/shared/models/parlour_search.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -48,7 +51,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           slivers: [
             SliverToBoxAdapter(
               child: _HomeHeader(
-                locationLabel: home.data.locationLabel,
+                locationLabel: ref.watch(selectedLocationProvider).valueOrNull?.label ??
+                    home.data.locationLabel,
                 coinBalance: home.data.gcPoints?.balance ?? 200,
                 displayName: displayName,
               ),
@@ -76,7 +80,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-class _HomeHeader extends StatelessWidget {
+class _HomeHeader extends ConsumerWidget {
   const _HomeHeader({
     required this.locationLabel,
     required this.coinBalance,
@@ -88,7 +92,13 @@ class _HomeHeader extends StatelessWidget {
   final String displayName;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final label = locationLabel == 'Select location' ||
+            locationLabel == 'Around you' ||
+            locationLabel.isEmpty
+        ? 'Khora Colony, Ghaziabad'
+        : locationLabel;
+
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 52, 16, 12),
@@ -96,41 +106,48 @@ class _HomeHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.location_on,
-                color: OnboardingColors.primary,
-                size: 18,
-              ),
-              const SizedBox(width: 4),
               Expanded(
-                child: Text(
-                  locationLabel == 'Select location' || locationLabel == 'Around you'
-                      ? 'Khora Colony, Ghaziabad'
-                      : locationLabel,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: OnboardingColors.textPrimary,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => showLocationPickerSheet(context, ref),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            color: OnboardingColors.primary,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              label,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: OnboardingColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 20,
+                            color: OnboardingColors.textPrimary,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Icon(Icons.keyboard_arrow_down, size: 20),
               const SizedBox(width: 8),
               _CoinBadge(balance: coinBalance),
               const SizedBox(width: 8),
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: OnboardingColors.textPrimary,
-                child: Text(
-                  displayName.isNotEmpty ? displayName[0].toUpperCase() : 'G',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+              ProfileMenuButton(displayName: displayName),
             ],
           ),
           const SizedBox(height: 14),

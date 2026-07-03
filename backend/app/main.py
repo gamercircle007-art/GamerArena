@@ -49,6 +49,8 @@ from app.domains.post.router import router as post_router
 from app.domains.reel.router import router as reel_router
 from app.domains.search.router import router as search_router
 from app.domains.tournament.router import router as tournament_router
+from app.domains.dms.admin_router import router as admin_dms_router
+from app.domains.dms.router import router as dms_router
 from app.domains.upload.router import router as upload_router
 from app.domains.user.router import router as user_router
 from app.ws.router import router as ws_router
@@ -96,7 +98,9 @@ OPENAPI_TAGS = [
     {"name": "Geo", "description": "Nearby parlors and tournaments via PostGIS."},
     {"name": "Search", "description": "Search parlors and tournaments."},
     {"name": "Notifications", "description": "In-app user notifications."},
-    {"name": "Uploads", "description": "S3 presigned URL uploads."},
+    {"name": "Uploads", "description": "S3 presigned URL uploads (legacy — use DMS)."},
+    {"name": "DMS", "description": "Centralized document/media management."},
+    {"name": "Admin DMS", "description": "Admin media library and moderation."},
     {"name": "Payments", "description": "Razorpay tournament entry fees (Phase 3)."},
     {"name": "Tournament Chat", "description": "Tournament group chat via WebSocket."},
     {"name": "Messaging", "description": "Real-time conversations and direct messages."},
@@ -271,6 +275,8 @@ def create_app() -> FastAPI:
     app.include_router(geo_router, prefix=api_prefix)
     app.include_router(search_router, prefix=api_prefix)
     app.include_router(notification_router, prefix=api_prefix)
+    app.include_router(dms_router, prefix=api_prefix)
+    app.include_router(admin_dms_router, prefix=api_prefix)
     app.include_router(upload_router, prefix=api_prefix)
     app.include_router(payments_router, prefix=api_prefix)
     app.include_router(chat_router, prefix=api_prefix)

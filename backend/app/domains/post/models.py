@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Integer, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
-from app.db.types import PortableTextArray
+from app.db.types import PortableJSON, PortableTextArray
 
 
 class Post(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -32,5 +32,6 @@ class Post(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
         insert_default=list,
     )
+    media_asset_ids: Mapped[list | None] = mapped_column(PortableJSON, nullable=True)
     likes_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     comments_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

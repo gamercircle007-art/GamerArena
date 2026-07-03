@@ -38,4 +38,5 @@ from app.domains.reel.models import (  # noqa: F401
     UserFollow,
 )
 from app.domains.tournament.models import Booking, Tournament  # noqa: F401
+from app.domains.dms.models import MediaAsset  # noqa: F401
 from app.domains.user.models import User  # noqa: F401

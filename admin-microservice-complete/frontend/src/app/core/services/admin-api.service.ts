@@ -17,6 +17,7 @@ import {
   GeoActivity,
   Like,
   ListParams,
+  MediaAssetItem,
   Offer,
   OfferCreateRequest,
   PaginatedResponse,
@@ -436,6 +437,53 @@ export class AdminApiService {
 
   private isEmptyPaginated<T>(data: PaginatedResponse<T>): boolean {
     return !data.items?.length;
+  }
+
+  getDmsAssets(params: ListParams & { type?: string; search?: string } = {}): Observable<PaginatedResponse<MediaAssetItem>> {
+    return this.http.get<PaginatedResponse<MediaAssetItem>>(`${this.base}/dms`, {
+      params: this.toParams(params),
+    });
+  }
+
+  getDmsStats(): Observable<{
+    total_count: number;
+    total_size_bytes: number;
+    total_size_label: string;
+    by_type: Record<string, number>;
+    by_context: Record<string, number>;
+    flagged_count: number;
+  }> {
+    return this.http.get<{
+      total_count: number;
+      total_size_bytes: number;
+      total_size_label: string;
+      by_type: Record<string, number>;
+      by_context: Record<string, number>;
+      flagged_count: number;
+    }>(`${this.base}/dms/stats`);
+  }
+
+  getDmsOrphans(params: ListParams = {}): Observable<PaginatedResponse<Record<string, unknown>>> {
+    return this.http.get<PaginatedResponse<Record<string, unknown>>>(`${this.base}/dms/orphans`, {
+      params: this.toParams(params),
+    });
+  }
+
+  deleteDmsAsset(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/dms/${id}`);
+  }
+
+  flagDmsAsset(id: string, isFlagged: boolean, reason?: string): Observable<Record<string, unknown>> {
+    return this.http.patch<Record<string, unknown>>(`${this.base}/dms/${id}/flag`, {
+      is_flagged: isFlagged,
+      reason,
+    });
+  }
+
+  bulkDeleteDmsAssets(assetIds: string[]): Observable<{ deleted: number; requested: number }> {
+    return this.http.post<{ deleted: number; requested: number }>(`${this.base}/dms/bulk-delete`, {
+      asset_ids: assetIds,
+    });
   }
 
   private toParams(params: ListParams): HttpParams {

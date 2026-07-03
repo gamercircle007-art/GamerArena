@@ -67,6 +67,18 @@ class HomeData {
 
   static const empty = HomeData();
 
+  HomeData copyWithLocationLabel(String label) => HomeData(
+        locationLabel: label,
+        banners: banners,
+        offers: offers,
+        categories: categories,
+        featuredParlours: featuredParlours,
+        nearbyParlours: nearbyParlours,
+        budgetParlours: budgetParlours,
+        gcPoints: gcPoints,
+        recentSearches: recentSearches,
+      );
+
   /// Maps backend ``GET /home`` response to [HomeData].
   factory HomeData.fromApi(Map<String, dynamic> json) {
     List<ParlourSearchItem> mapCards(List<dynamic>? list) =>
