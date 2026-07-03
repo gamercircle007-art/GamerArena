@@ -1,0 +1,1 @@
+"""Payments domain — Razorpay integration scaffold (Phase 3)."""

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GameConnect Admin — Auth Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --violet: #8b5cf6;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .auth-bg {
+      min-height: 100svh;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgb(99 102 241 / 0.12), transparent),
+        radial-gradient(ellipse 50% 40% at 100% 100%, rgb(139 92 246 / 0.08), transparent),
+        linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+    .auth-grid {
+      background-image:
+        linear-gradient(rgb(99 102 241 / 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(99 102 241 / 0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent);
+    }
+    .step-enter { animation: stepIn .3s ease forwards; }
+    @keyframes stepIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .tab-active { background:#fff; color:var(--primary-dark); box-shadow:0 1px 2px rgb(15 23 42 / 0.06); }
+    .otp-input { width:2.75rem; height:2.75rem; text-align:center; font-weight:700; font-size:1.125rem; }
+  </style>
+</head>
+<body class="auth-bg relative overflow-hidden">
+  <div class="auth-grid absolute inset-0 pointer-events-none"></div>
+  <main class="relative min-h-svh flex flex-col items-center justify-center p-6">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 text-xl">🎮</div>
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">GameConnect</h1>
+        <p class="text-sm text-slate-500">Admin Control Panel</p>
+      </div>
+    </div>
+
+    <div class="w-full max-w-md bg-white rounded-2xl border border-slate-200/80 shadow-xl p-6">
+      <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg mb-6" role="tablist">
+        <button id="tab-login" class="tab-active py-2 text-sm font-medium rounded-md transition" onclick="setTab('login')">Login</button>
+        <button id="tab-signup" class="py-2 text-sm font-medium rounded-md text-slate-500 transition" onclick="setTab('signup')">Sign Up</button>
+      </div>
+      <div id="panel" class="step-enter"></div>
+      <details class="mt-4 text-center">
+        <summary class="text-xs text-slate-400 cursor-pointer hover:text-slate-500">Dev quick login</summary>
+        <p class="text-xs text-slate-400 mt-2">Phone <code class="bg-slate-100 px-1 rounded">9999999999</code> · OTP <code class="bg-slate-100 px-1 rounded">123456</code></p>
+      </details>
+    </div>
+    <p class="text-xs text-slate-400 mt-6">Secure access for authorized administrators only</p>
+  </main>
+  <script>
+    let tab = 'login', step = 'form', phone = '';
+    function setTab(t) { tab = t; step = 'form'; render(); }
+    function setStep(s) { step = s; render(); }
+    function render() {
+      document.getElementById('tab-login').className = tab==='login' ? 'tab-active py-2 text-sm font-medium rounded-md' : 'py-2 text-sm font-medium rounded-md text-slate-500';
+      document.getElementById('tab-signup').className = tab==='signup' ? 'tab-active py-2 text-sm font-medium rounded-md' : 'py-2 text-sm font-medium rounded-md text-slate-500';
+      const p = document.getElementById('panel');
+      p.className = 'step-enter';
+      if (step === 'form') {
+        p.innerHTML = `
+          <h2 class="text-lg font-semibold mb-1">${tab==='login'?'Welcome back':'Create account'}</h2>
+          <p class="text-sm text-slate-500 mb-4">${tab==='login'?'Sign in with phone':'Name + phone + role'}</p>
+          ${tab==='signup'?'<input class="w-full border rounded-lg px-3 py-2 mb-3 text-sm" placeholder="Full name" />':''}
+          <label class="text-xs font-medium text-slate-600">Phone</label>
+          <div class="flex mt-1 mb-4"><span class="px-3 py-2 border border-r-0 rounded-l-lg bg-slate-50 text-sm text-slate-500">+91</span>
+          <input class="flex-1 border rounded-r-lg px-3 py-2 text-sm" placeholder="9876543210" oninput="phone=this.value" /></div>
+          <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2.5 text-sm font-medium" onclick="setStep('otp')">Send OTP →</button>`;
+      } else {
+        p.innerHTML = `
+          <p class="text-sm text-slate-600 mb-3">Enter OTP sent to +91 ${phone||'…'}</p>
+          <div class="flex gap-2 justify-between mb-4">${[...Array(6)].map(()=>'<input maxlength="1" class="otp-input border rounded-lg" inputmode="numeric" />').join('')}</div>
+          <button class="w-full bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium">Verify & Continue</button>
+          <button class="text-xs text-slate-400 mt-3" onclick="setStep('form')">← Back</button>`;
+      }
+    }
+    render();
+  </script>
+</body>
+</html>

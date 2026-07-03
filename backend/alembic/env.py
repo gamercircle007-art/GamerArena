@@ -14,7 +14,7 @@ from app.core.config import get_settings
 from app.db.base import Base
 
 # Import all models so Alembic detects them
-from app.domains.user.models import User  # noqa: F401
+import app.db.models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

@@ -144,4 +144,4 @@ docker build --target production -t paythan-backend .
 
 ## License
 
-Proprietary — Paythan Team
+Proprietary — Paythan Team# GamerArena

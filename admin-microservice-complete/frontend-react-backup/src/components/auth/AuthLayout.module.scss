@@ -1,0 +1,68 @@
+@use '../../styles/design-system' as *;
+
+.page {
+  @include gc-auth-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $gc-space-6 $gc-space-4;
+  position: relative;
+  overflow: hidden;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(99 102 241 / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(99 102 241 / 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent);
+}
+
+.content {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $gc-space-6;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: $gc-space-3;
+  text-align: left;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: $gc-radius-xl;
+  background: linear-gradient(135deg, $gc-primary-600, $gc-violet-600);
+  color: white;
+  box-shadow: $gc-shadow-glow;
+}
+
+.brandTitle {
+  font-size: $gc-text-xl;
+  font-weight: 700;
+  color: $gc-neutral-900;
+  letter-spacing: -0.02em;
+}
+
+.brandSub {
+  font-size: $gc-text-sm;
+  color: $gc-neutral-500;
+}
+
+.footer {
+  font-size: $gc-text-xs;
+  color: $gc-neutral-400;
+  text-align: center;
+}

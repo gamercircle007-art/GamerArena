@@ -1,0 +1,303 @@
+// styles.scss — COMPLETE STYLES FILE
+// Copy this to src/styles.scss in your Angular project
+
+// ── Bootstrap customization (must come BEFORE @import) ──────────────────────
+$primary:   #7367f0;
+$secondary: #82868b;
+$success:   #28c76f;
+$warning:   #ff9f43;
+$danger:    #ea5455;
+$info:      #00cfe8;
+$dark:      #4b4b4b;
+$light:     #f8f8f8;
+
+$font-family-sans-serif: 'Montserrat', system-ui, -apple-system, sans-serif;
+$font-size-base: 0.9375rem; // 15px
+$border-radius: 0.5rem;
+$card-border-width: 0;
+$card-cap-bg: transparent;
+$box-shadow: 0 4px 24px 0 rgba(34, 41, 47, 0.1);
+$input-border-color: #d8d6de;
+$input-focus-box-shadow: 0 3px 10px 0 rgba(34, 41, 47, 0.1);
+
+// ── Import Bootstrap ──────────────────────────────────────────────────────────
+@import 'bootstrap/scss/bootstrap';
+@import 'ngx-toastr/toastr';
+@import '@swimlane/ngx-datatable/index.css';
+@import '@swimlane/ngx-datatable/themes/bootstrap.css';
+@import '@swimlane/ngx-datatable/assets/icons.css';
+
+// ── Google Fonts ──────────────────────────────────────────────────────────────
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+// ── CSS Custom Properties ─────────────────────────────────────────────────────
+:root {
+  --sidebar-bg:        #283046;
+  --sidebar-hover:     rgba(255,255,255,0.05);
+  --sidebar-active-bg: linear-gradient(118deg, #7367f0, rgba(115,103,240,.7));
+  --sidebar-width:     260px;
+  --sidebar-collapsed: 70px;
+  --topbar-height:     56px;
+  --page-bg:           #f8f8f8;
+  --card-shadow:       0 4px 24px 0 rgba(34,41,47,.1);
+  --transition:        all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// ── Global Reset ──────────────────────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: var(--page-bg);
+  color: #6e6b7b;
+  min-height: 100vh;
+}
+
+// ── Admin Layout ──────────────────────────────────────────────────────────────
+.admin-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  transition: var(--transition);
+}
+
+.content-area {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+// ── Cards ─────────────────────────────────────────────────────────────────────
+.card {
+  border: none;
+  border-radius: 0.5rem;
+  box-shadow: var(--card-shadow);
+  background: #fff;
+}
+
+.card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #ebe9f1;
+  font-weight: 600;
+  color: #5e5873;
+}
+
+// ── Gradient Stat Cards ───────────────────────────────────────────────────────
+.stats-card {
+  border-radius: 0.5rem;
+  color: #fff;
+  box-shadow: 0 4px 18px 0 rgba(0,0,0,0.2);
+  overflow: hidden;
+  position: relative;
+
+  .card-body {
+    padding: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stats-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0.5rem 0 0.25rem;
+    color: #fff;
+  }
+
+  .stats-title {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    margin: 0;
+  }
+
+  .stats-icon {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 0.5rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .trend-up   { color: rgba(255,255,255,0.85); font-size: 12px; }
+  .trend-down { color: rgba(255,200,200,0.9); font-size: 12px; }
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -20px;
+    top: 50%; transform: translateY(-50%);
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+  }
+}
+
+.gradient-primary { background: linear-gradient(118deg, #7367f0, rgba(115,103,240,.7)) !important; }
+.gradient-success  { background: linear-gradient(118deg, #28c76f, rgba(40,199,111,.7)) !important; }
+.gradient-warning  { background: linear-gradient(118deg, #ff9f43, rgba(255,159,67,.7)) !important; }
+.gradient-danger   { background: linear-gradient(118deg, #ea5455, rgba(234,84,85,.7)) !important; }
+.gradient-info     { background: linear-gradient(118deg, #00cfe8, rgba(0,207,232,.7)) !important; }
+
+// ── Topbar ────────────────────────────────────────────────────────────────────
+.admin-topbar {
+  height: var(--topbar-height);
+  background: #fff;
+  border-bottom: 1px solid #ebe9f1;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  .page-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #5e5873;
+    margin: 0;
+  }
+}
+
+// ── Ngx Datatable Customization ───────────────────────────────────────────────
+.ngx-datatable {
+  &.bootstrap {
+    .datatable-header {
+      background: #f8f8f8;
+      border-bottom: 2px solid #ebe9f1;
+
+      .datatable-header-cell {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #6e6b7b;
+        padding: 0.75rem 1rem;
+      }
+    }
+
+    .datatable-body-row {
+      border-bottom: 1px solid #f3f2f7;
+      transition: background 0.1s;
+
+      &:hover .datatable-body-cell { background: rgba(115,103,240,.04); }
+
+      .datatable-body-cell {
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
+      }
+    }
+
+    .datatable-footer {
+      background: #f8f8f8;
+      border-top: 1px solid #ebe9f1;
+      font-size: 0.85rem;
+      padding: 0 1rem;
+
+      .datatable-pager li a {
+        border-radius: 4px;
+        color: #6e6b7b;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.85rem;
+
+        &:hover { background: rgba(115,103,240,.1); color: #7367f0; }
+      }
+
+      .datatable-pager li.active a {
+        background: #7367f0;
+        color: #fff;
+      }
+    }
+  }
+}
+
+// ── Breadcrumb ────────────────────────────────────────────────────────────────
+.breadcrumb-item a { color: #7367f0; text-decoration: none; font-size: 0.85rem; }
+.breadcrumb-item.active { color: #6e6b7b; font-size: 0.85rem; }
+.breadcrumb-item + .breadcrumb-item::before { color: #b9b9c3; }
+
+// ── Status Badges ─────────────────────────────────────────────────────────────
+.badge-status {
+  padding: 0.3em 0.7em;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  &::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &.status-active    { background: rgba(40,199,111,.15); color: #28c76f; }
+  &.status-banned    { background: rgba(234,84,85,.15);  color: #ea5455; }
+  &.status-pending   { background: rgba(255,159,67,.15); color: #ff9f43; }
+  &.status-verified  { background: rgba(40,199,111,.15); color: #28c76f; }
+  &.status-live      { background: rgba(115,103,240,.15);color: #7367f0; }
+  &.status-completed { background: rgba(130,134,139,.15);color: #82868b; }
+  &.status-open      { background: rgba(0,207,232,.15);  color: #00cfe8; }
+  &.status-full      { background: rgba(255,159,67,.15); color: #ff9f43; }
+}
+
+// ── Page wrapper ──────────────────────────────────────────────────────────────
+.page-wrapper { padding: 0.25rem 0 1.5rem; }
+.page-title { font-size: 1.375rem; font-weight: 700; color: #5e5873; margin-bottom: 0.25rem; }
+
+// ── Forms ─────────────────────────────────────────────────────────────────────
+.form-control, .form-select {
+  border-color: #d8d6de;
+  color: #6e6b7b;
+  font-size: 0.875rem;
+  padding: 0.571rem 1rem;
+
+  &:focus {
+    border-color: #7367f0;
+    box-shadow: 0 3px 10px 0 rgba(34,41,47,.1);
+  }
+}
+
+.input-group-text {
+  background: #fff;
+  border-color: #d8d6de;
+  color: #b9b9c3;
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+.btn-primary {
+  background: #7367f0;
+  border-color: #7367f0;
+  box-shadow: 0 4px 18px 0 rgba(115,103,240,.4);
+
+  &:hover { background: darken(#7367f0, 8%); }
+}
+
+// ── Animations ────────────────────────────────────────────────────────────────
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .content-area { padding: 1rem; }
+  .stats-card .stats-value { font-size: 1.5rem; }
+}
+
+@media (max-width: 576px) {
+  .admin-topbar { padding: 0 1rem; }
+}

@@ -12,6 +12,7 @@ class UserModel with _$UserModel {
     required String id,
     String? email,
     @JsonKey(name: 'name') String? name,
+    String? username,
     @JsonKey(name: 'phone_number') String? phoneNumber,
     @JsonKey(name: 'avatar_url') String? avatarUrl,
   }) = _UserModel;
@@ -22,7 +23,7 @@ class UserModel with _$UserModel {
   User toEntity() => User(
         id: id,
         email: email ?? '',
-        username: name ?? phoneNumber ?? 'User',
+        username: username ?? name ?? phoneNumber ?? 'User',
         avatarUrl: avatarUrl,
       );
 }

@@ -35,6 +35,16 @@ class UserRepository:
     async def phone_exists(self, phone: str) -> bool:
         return await self.get_by_phone(phone) is not None
 
+    async def get_by_username(self, username: str) -> User | None:
+        normalized = self.normalize_username(username)
+        result = await self.session.execute(
+            select(User).where(User.username == normalized)
+        )
+        return result.scalar_one_or_none()
+
+    async def username_exists(self, username: str) -> bool:
+        return await self.get_by_username(username) is not None
+
     async def get_by_email_or_phone(self, email: str | None, phone: str | None) -> User | None:
         conditions = []
         if email:
@@ -67,12 +77,14 @@ class UserRepository:
         self,
         *,
         full_name: str,
+        username: str,
         email: str,
         phone: str,
         hashed_password: str,
     ) -> User:
         user = User(
             full_name=full_name.strip(),
+            username=self.normalize_username(username),
             email=email.lower().strip(),
             phone=self.normalize_phone(phone),
             hashed_password=hashed_password,
@@ -87,8 +99,19 @@ class UserRepository:
         return user
 
     @staticmethod
+    def normalize_username(username: str) -> str:
+        """Lowercase handle for case-insensitive uniqueness."""
+        return username.strip().lower()
+
+    @staticmethod
     def normalize_phone(phone: str) -> str:
+        """Normalize to E.164. Matches Flutter client (+91 for 10-digit IN numbers)."""
         cleaned = phone.strip()
-        if not cleaned.startswith("+"):
-            cleaned = f"+{cleaned.lstrip('0')}"
-        return cleaned
+        if cleaned.startswith("+"):
+            digits = "".join(c for c in cleaned[1:] if c.isdigit())
+            return f"+{digits}" if digits else cleaned
+
+        digits = "".join(c for c in cleaned if c.isdigit())
+        if len(digits) == 10:
+            return f"+91{digits}"
+        return f"+{digits.lstrip('0')}"

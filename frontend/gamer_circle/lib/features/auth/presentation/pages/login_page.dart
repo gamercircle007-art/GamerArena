@@ -5,8 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/constants/app_constants.dart';
+import 'package:gamer_circle/core/utils/login_identifier_utils.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/login_otp_providers.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/login_otp_state.dart';
+import 'package:gamer_circle/features/auth/presentation/providers/login_password_providers.dart';
+import 'package:gamer_circle/features/auth/presentation/providers/login_password_state.dart';
 import 'package:gamer_circle/features/auth/presentation/widgets/gradient_header_widget.dart';
 import 'package:gamer_circle/features/auth/presentation/widgets/otp_input_widget.dart';
 import 'package:gamer_circle/features/auth/presentation/widgets/social_login_row_widget.dart';
@@ -20,16 +23,24 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
+  final _identifierController = TextEditingController();
+  final _passwordController = TextEditingController();
   String _otp = '';
   int _secondsLeft = 0;
   Timer? _timer;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _identifierController.dispose();
+    _passwordController.dispose();
     _timer?.cancel();
     super.dispose();
+  }
+
+  bool get _isPhoneLogin {
+    final value = _identifierController.text.trim();
+    return value.isNotEmpty && isPhoneIdentifier(value);
   }
 
   bool _showOtpStep(LoginOtpState state) =>
@@ -48,7 +59,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   String get _maskedPhone {
-    final phone = _activePhone ?? _phoneController.text.trim();
+    final phone = _activePhone ?? _identifierController.text.trim();
     if (phone.length < 4) return phone;
     return '${'*' * (phone.length - 4)}${phone.substring(phone.length - 4)}';
   }
@@ -82,10 +93,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
     });
 
-    final loginState = ref.watch(loginOtpNotifierProvider);
-    final showOtpStep = _showOtpStep(loginState);
-    final isSending = loginState is LoginOtpSending;
-    final isVerifying = loginState is LoginOtpVerifying;
+    ref.listen<LoginPasswordState>(loginPasswordNotifierProvider, (_, next) {
+      if (next is LoginPasswordError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.message),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+
+    final loginOtpState = ref.watch(loginOtpNotifierProvider);
+    final loginPasswordState = ref.watch(loginPasswordNotifierProvider);
+    final showOtpStep = _showOtpStep(loginOtpState);
+    final isSendingOtp = loginOtpState is LoginOtpSending;
+    final isVerifyingOtp = loginOtpState is LoginOtpVerifying;
+    final isPasswordLoading = loginPasswordState is LoginPasswordLoading;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -131,7 +156,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       )
                     else
                       const Text(
-                        'Sign in with your phone number',
+                        'Sign in with phone number or username',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF888888),
@@ -139,13 +164,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     const SizedBox(height: 28),
                     if (!showOtpStep) ...[
-                      _buildPhoneField(enabled: !isSending),
-                      const SizedBox(height: 28),
-                      _GradientButton(
-                        label: 'Send OTP',
-                        isLoading: isSending,
-                        onPressed: isSending ? null : _onSendOtp,
+                      _buildIdentifierField(
+                        enabled: !isSendingOtp && !isPasswordLoading,
                       ),
+                      const SizedBox(height: 16),
+                      if (_isPhoneLogin) ...[
+                        _GradientButton(
+                          label: 'Send OTP',
+                          isLoading: isSendingOtp,
+                          onPressed: isSendingOtp ? null : _onSendOtp,
+                        ),
+                      ] else ...[
+                        _buildPasswordField(
+                          enabled: !isPasswordLoading,
+                        ),
+                        const SizedBox(height: 28),
+                        _GradientButton(
+                          label: 'Login',
+                          isLoading: isPasswordLoading,
+                          onPressed: isPasswordLoading ? null : _onPasswordLogin,
+                        ),
+                      ],
                     ] else ...[
                       OtpInputWidget(
                         onChanged: (otp) => setState(() => _otp = otp),
@@ -154,8 +193,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       const SizedBox(height: 28),
                       _GradientButton(
                         label: 'Verify & Login',
-                        isLoading: isVerifying,
-                        onPressed: (_otp.length == 6 && !isVerifying)
+                        isLoading: isVerifyingOtp,
+                        onPressed: (_otp.length == 6 && !isVerifyingOtp)
                             ? _onVerifyOtp
                             : null,
                       ),
@@ -240,17 +279,64 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
-  Widget _buildPhoneField({required bool enabled}) {
+  Widget _buildIdentifierField({required bool enabled}) {
     return TextFormField(
-      controller: _phoneController,
+      controller: _identifierController,
       enabled: enabled,
-      keyboardType: TextInputType.phone,
-      textInputAction: TextInputAction.done,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      onFieldSubmitted: (_) => _onSendOtp(),
+      keyboardType: TextInputType.text,
+      textInputAction: TextInputAction.next,
+      onChanged: (_) => setState(() {}),
+      onFieldSubmitted: (_) {
+        if (_isPhoneLogin) {
+          _onSendOtp();
+        } else {
+          _onPasswordLogin();
+        }
+      },
       decoration: InputDecoration(
-        hintText: 'Phone Number',
-        prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF7B2FF7)),
+        hintText: 'Phone Number or Username',
+        prefixIcon: Icon(
+          _isPhoneLogin ? Icons.phone_outlined : Icons.alternate_email,
+          color: const Color(0xFF7B2FF7),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF7B2FF7), width: 2),
+        ),
+        filled: true,
+        fillColor: const Color(0xFFF9F9F9),
+      ),
+      validator: validateLoginIdentifier,
+    );
+  }
+
+  Widget _buildPasswordField({required bool enabled}) {
+    return TextFormField(
+      controller: _passwordController,
+      enabled: enabled,
+      obscureText: _obscurePassword,
+      textInputAction: TextInputAction.done,
+      onFieldSubmitted: (_) => _onPasswordLogin(),
+      decoration: InputDecoration(
+        hintText: 'Password',
+        prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF7B2FF7)),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+            color: const Color(0xFF888888),
+          ),
+          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -267,11 +353,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         fillColor: const Color(0xFFF9F9F9),
       ),
       validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Please enter your phone number';
-        }
-        if (value.trim().length < 10) {
-          return 'Enter a valid phone number';
+        if (value == null || value.isEmpty) {
+          return 'Please enter your password';
         }
         return null;
       },
@@ -283,7 +366,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         TextButton(
-          onPressed: _onChangePhone,
+          onPressed: _onChangeIdentifier,
           child: const Text(
             'Change number',
             style: TextStyle(
@@ -319,7 +402,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   void _onSendOtp() {
     if (!_formKey.currentState!.validate()) return;
     ref.read(loginOtpNotifierProvider.notifier).requestOtp(
-          _phoneController.text.trim(),
+          _identifierController.text.trim(),
+        );
+  }
+
+  void _onPasswordLogin() {
+    if (!_formKey.currentState!.validate()) return;
+    ref.read(loginPasswordNotifierProvider.notifier).login(
+          username: _identifierController.text.trim(),
+          password: _passwordController.text,
         );
   }
 
@@ -329,12 +420,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   void _onResendOtp() {
-    final phone = _activePhone ?? _phoneController.text.trim();
+    final phone = _activePhone ?? _identifierController.text.trim();
     if (phone.isEmpty) return;
     ref.read(loginOtpNotifierProvider.notifier).requestOtp(phone);
   }
 
-  void _onChangePhone() {
+  void _onChangeIdentifier() {
     _timer?.cancel();
     setState(() {
       _otp = '';

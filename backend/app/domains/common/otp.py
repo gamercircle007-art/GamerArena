@@ -9,6 +9,11 @@ import json
 import secrets
 from enum import StrEnum
 
+import redis.asyncio as aioredis
+
+from app.core.config import Settings
+from app.domains.common.exceptions import AuthenticationError, RateLimitError, ValidationError
+
 
 def generate_otp_code(settings: Settings) -> str:
     """Return fixed dev OTP when configured, otherwise a secure random code."""
@@ -16,10 +21,10 @@ def generate_otp_code(settings: Settings) -> str:
         return settings.otp_dev_bypass_code
     return "".join(str(secrets.randbelow(10)) for _ in range(settings.otp_length))
 
-import redis.asyncio as aioredis
 
-from app.core.config import Settings
-from app.domains.common.exceptions import AuthenticationError, RateLimitError, ValidationError
+def is_dev_bypass_otp(settings: Settings, submitted_otp: str) -> bool:
+    """True when submitted OTP matches the configured dev bypass code."""
+    return settings.use_otp_dev_bypass and submitted_otp == settings.otp_dev_bypass_code
 
 
 class OTPChannel(StrEnum):

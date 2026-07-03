@@ -48,6 +48,11 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
     return _session_factory
 
 
+def async_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Alias for Celery tasks and WebSocket handlers."""
+    return get_session_factory()
+
+
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Yield a database session; rolls back on error, always closes."""
     factory = get_session_factory()

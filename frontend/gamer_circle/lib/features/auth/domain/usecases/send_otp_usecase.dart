@@ -5,11 +5,13 @@ import 'package:gamer_circle/features/auth/domain/repositories/auth_repository.d
 
 class SendOtpParams {
   final String name;
+  final String username;
   final String email;
   final String phone;
 
   const SendOtpParams({
     required this.name,
+    required this.username,
     required this.email,
     required this.phone,
   });
@@ -24,6 +26,7 @@ class SendOtpUseCase implements UseCase<void, SendOtpParams> {
   Future<Either<Failure, void>> call(SendOtpParams params) =>
       _repository.sendSignupOtp(
         name: params.name,
+        username: params.username,
         email: params.email,
         phone: params.phone,
       );

@@ -48,6 +48,7 @@ class AuthService:
     async def signup_request_otp(self, request: SignupRequestOTPRequest) -> MessageResponse:
         await self.signup_service.request_otp(
             name=request.name,
+            username=request.username,
             email=str(request.email),
             phone_number=request.phone_number,
         )
@@ -76,7 +77,7 @@ class AuthService:
         return TokenResponse(**tokens)
 
     async def login(self, request: LoginRequest) -> TokenResponse:
-        user = await self.login_service.authenticate(request.phone_number, request.password)
+        user = await self.login_service.authenticate(request.username, request.password)
         tokens = await self.token_service.issue_tokens(user)
         return TokenResponse(**tokens)
 

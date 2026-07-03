@@ -6,17 +6,22 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.domains.user.schemas import UserResponse
 
-_PASSWORD_PATTERN = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,128}$")
+_PASSWORD_PATTERN = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,128}$")
+_PASSWORD_DESCRIPTION = (
+    "Min 6 characters with at least one uppercase letter, one lowercase letter, and one digit"
+)
+_USERNAME_PATTERN = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]{2,29}$")
 
 
 class SignupRequestOTPRequest(BaseModel):
-    """Step 1: Provide name, email, phone — receive WhatsApp OTP."""
+    """Step 1: Provide name, username, email, phone — receive WhatsApp OTP."""
 
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
                 {
                     "name": "Jane Doe",
+                    "username": "janedoe",
                     "email": "jane@example.com",
                     "phone_number": "+919876543210",
                 }
@@ -25,6 +30,13 @@ class SignupRequestOTPRequest(BaseModel):
     )
 
     name: str = Field(..., min_length=2, max_length=100, description="User's full name")
+    username: str = Field(
+        ...,
+        min_length=3,
+        max_length=30,
+        description="Unique handle (letters, numbers, underscore; starts with a letter)",
+        examples=["janedoe"],
+    )
     email: EmailStr = Field(..., description="Unique email address")
     phone_number: str = Field(
         ...,
@@ -32,6 +44,16 @@ class SignupRequestOTPRequest(BaseModel):
         description="E.164 phone number (e.g. +919876543210)",
         examples=["+919876543210"],
     )
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        if not _USERNAME_PATTERN.match(value):
+            raise ValueError(
+                "Username must be 3-30 characters, start with a letter, "
+                "and contain only letters, numbers, and underscores"
+            )
+        return value
 
 
 class SignupVerifyOTPRequest(BaseModel):
@@ -53,9 +75,9 @@ class SignupVerifyOTPRequest(BaseModel):
     otp: str = Field(..., min_length=4, max_length=8, pattern=r"^\d+$", description="6-digit OTP")
     password: str = Field(
         ...,
-        min_length=8,
+        min_length=6,
         max_length=128,
-        description="Min 8 chars with uppercase, lowercase, and digit",
+        description=_PASSWORD_DESCRIPTION,
     )
 
     @field_validator("password")
@@ -63,7 +85,7 @@ class SignupVerifyOTPRequest(BaseModel):
     def validate_password_strength(cls, value: str) -> str:
         if not _PASSWORD_PATTERN.match(value):
             raise ValueError(
-                "Password must be 8-128 characters with at least one uppercase, "
+                "Password must be 6-128 characters with at least one uppercase, "
                 "one lowercase, and one digit"
             )
         return value
@@ -97,18 +119,28 @@ class LoginVerifyOtpRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    """Login with phone number and password (legacy)."""
+    """Login with username and password."""
 
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                {"phone_number": "+919876543210", "password": "SecurePass1"}
+                {"username": "janedoe", "password": "SecurePass1"}
             ]
         }
     )
 
-    phone_number: str = Field(..., pattern=r"^\+?[1-9]\d{6,14}$")
-    password: str = Field(..., min_length=8, max_length=128)
+    username: str = Field(..., min_length=3, max_length=30)
+    password: str = Field(..., min_length=1, max_length=128)
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        if not _USERNAME_PATTERN.match(value):
+            raise ValueError(
+                "Username must be 3-30 characters, start with a letter, "
+                "and contain only letters, numbers, and underscores"
+            )
+        return value
 
 
 class RefreshTokenRequest(BaseModel):
@@ -143,6 +175,7 @@ class TokenResponse(BaseModel):
                     "user": {
                         "id": "550e8400-e29b-41d4-a716-446655440000",
                         "name": "Jane Doe",
+                        "username": "janedoe",
                         "email": "jane@example.com",
                         "phone_number": "+919876543210",
                         "is_active": True,

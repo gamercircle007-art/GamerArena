@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install --no-interaction
+      - name: Pytest
+        working-directory: backend
+        env:
+          JWT_SECRET_KEY: test_jwt_secret_key_for_ci_only_32chars
+          APP_ENV: local
+        run: poetry run pytest tests/ -q
+
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Pub get
+        working-directory: frontend/gamer_circle
+        run: flutter pub get
+      - name: Analyze
+        working-directory: frontend/gamer_circle
+        run: flutter analyze

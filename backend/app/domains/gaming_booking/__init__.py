@@ -1,0 +1,1 @@
+"""OYO-style gaming parlor slot booking domain."""

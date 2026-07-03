@@ -97,3 +97,6 @@ async def get_optional_current_user(
         return await get_current_user(credentials, db, settings)
     except HTTPException:
         return None
+
+
+OptionalCurrentUserDep = Annotated[UserResponse | None, Depends(get_optional_current_user)]

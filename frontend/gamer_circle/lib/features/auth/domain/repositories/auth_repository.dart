@@ -10,12 +10,18 @@ abstract interface class AuthRepository {
     required String otp,
   });
 
+  Future<Either<Failure, User>> loginWithPassword({
+    required String username,
+    required String password,
+  });
+
   Future<Either<Failure, void>> logout();
 
   Future<Either<Failure, User>> checkAuth();
 
   Future<Either<Failure, void>> sendSignupOtp({
     required String name,
+    required String username,
     required String email,
     required String phone,
   });

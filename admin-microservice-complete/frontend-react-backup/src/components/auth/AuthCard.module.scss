@@ -1,0 +1,130 @@
+@use '../../styles/design-system' as *;
+
+.card {
+  @include gc-card-base;
+  width: 100%;
+  padding: $gc-space-6;
+  box-shadow: $gc-shadow-lg;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $gc-space-1;
+  padding: $gc-space-1;
+  background: $gc-neutral-100;
+  border-radius: $gc-radius-lg;
+  margin-bottom: $gc-space-6;
+}
+
+.tab {
+  padding: $gc-space-2 $gc-space-4;
+  font-size: $gc-text-sm;
+  font-weight: 500;
+  color: $gc-neutral-500;
+  border-radius: $gc-radius-md;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all $gc-duration $gc-ease;
+
+  &:hover:not(.tabActive) {
+    color: $gc-neutral-700;
+    background: rgb(255 255 255 / 0.5);
+  }
+
+  &:focus-visible { @include gc-focus-ring; }
+}
+
+.tabActive {
+  background: white;
+  color: $gc-primary-600;
+  box-shadow: $gc-shadow-sm;
+}
+
+.step {
+  @include gc-step-enter;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: $gc-space-2;
+  padding: $gc-space-3;
+  margin-bottom: $gc-space-4;
+  font-size: $gc-text-sm;
+  color: $gc-danger-600;
+  background: $gc-danger-50;
+  border: 1px solid rgb(239 68 68 / 0.2);
+  border-radius: $gc-radius-lg;
+}
+
+.success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $gc-space-3;
+  padding: $gc-space-8 $gc-space-4;
+  text-align: center;
+  @include gc-step-enter;
+}
+
+.successIcon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: $gc-radius-full;
+  background: $gc-success-50;
+  color: $gc-success-600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.roleGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $gc-space-2;
+}
+
+.roleOption {
+  display: flex;
+  align-items: center;
+  gap: $gc-space-3;
+  padding: $gc-space-3;
+  border: 1.5px solid $gc-neutral-200;
+  border-radius: $gc-radius-lg;
+  cursor: pointer;
+  transition: all $gc-duration $gc-ease;
+  text-align: left;
+  background: white;
+
+  &:hover { border-color: $gc-primary-300; }
+  &:focus-visible { @include gc-focus-ring; }
+}
+
+.roleActive {
+  border-color: $gc-primary-500;
+  background: $gc-primary-50;
+  box-shadow: 0 0 0 1px rgb(99 102 241 / 0.2);
+}
+
+.roleIcon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: $gc-radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.roleLabel {
+  font-size: $gc-text-sm;
+  font-weight: 600;
+  color: $gc-neutral-800;
+}
+
+.roleDesc {
+  font-size: $gc-text-xs;
+  color: $gc-neutral-500;
+}

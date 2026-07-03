@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:gamer_circle/core/constants/auth_api_paths.dart';
 import 'package:gamer_circle/core/errors/exceptions.dart';
+import 'package:gamer_circle/core/utils/api_error_utils.dart';
 import 'package:gamer_circle/core/utils/phone_utils.dart';
 import 'package:gamer_circle/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:gamer_circle/features/auth/data/models/auth_response_model.dart';
@@ -10,13 +11,44 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
 
   ApiAuthRemoteDataSource(this._dio);
 
-  String _messageFromResponse(DioException e, String fallback) {
-    final data = e.response?.data;
-    if (data is Map<String, dynamic>) {
-      final message = data['message'];
-      if (message is String && message.isNotEmpty) return message;
+  @override
+  Future<AuthResponseModel> loginWithPassword({
+    required String username,
+    required String password,
+  }) async {
+    try {
+      final response = await _dio.post(
+        AuthApiPaths.login,
+        data: {
+          'username': username.trim().toLowerCase(),
+          'password': password,
+        },
+      );
+      return AuthResponseModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw AuthException(message: 'Invalid username or password');
+      }
+      if (e.response?.statusCode == 422) {
+        throw AuthException(
+          message: messageFromDioException(e, 'Invalid login details'),
+        );
+      }
+      if (e.response?.statusCode == 429) {
+        throw AuthException(
+          message: messageFromDioException(
+            e,
+            'Too many failed attempts. Try again later.',
+          ),
+        );
+      }
+      throw ServerException(
+        message: messageFromDioException(e, 'Login failed'),
+        statusCode: e.response?.statusCode,
+      );
     }
-    return fallback;
   }
 
   @override
@@ -31,7 +63,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
         throw AuthException(message: 'No account found for this phone number');
       }
       throw ServerException(
-        message: _messageFromResponse(e, 'Failed to send login OTP'),
+        message: messageFromDioException(e, 'Failed to send login OTP'),
         statusCode: e.response?.statusCode,
       );
     }
@@ -58,7 +90,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
         throw AuthException(message: 'Invalid OTP. Please try again.');
       }
       throw ServerException(
-        message: _messageFromResponse(e, 'Login verification failed'),
+        message: messageFromDioException(e, 'Login verification failed'),
         statusCode: e.response?.statusCode,
       );
     }
@@ -73,7 +105,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
       );
     } on DioException catch (e) {
       throw ServerException(
-        message: _messageFromResponse(e, 'Logout failed'),
+        message: messageFromDioException(e, 'Logout failed'),
         statusCode: e.response?.statusCode,
       );
     }
@@ -94,7 +126,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
         throw AuthException(message: 'Session expired, please log in again');
       }
       throw ServerException(
-        message: _messageFromResponse(e, 'Token refresh failed'),
+        message: messageFromDioException(e, 'Token refresh failed'),
         statusCode: e.response?.statusCode,
       );
     }
@@ -103,6 +135,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
   @override
   Future<void> sendSignupOtp({
     required String name,
+    required String username,
     required String email,
     required String phone,
   }) async {
@@ -111,6 +144,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
         AuthApiPaths.signupRequestOtp,
         data: {
           'name': name,
+          'username': username.trim().toLowerCase(),
           'email': email,
           'phone_number': normalizePhoneNumber(phone),
         },
@@ -122,7 +156,7 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
         );
       }
       throw ServerException(
-        message: _messageFromResponse(e, 'Failed to send OTP'),
+        message: messageFromDioException(e, 'Failed to send OTP'),
         statusCode: e.response?.statusCode,
       );
     }
@@ -150,8 +184,13 @@ class ApiAuthRemoteDataSource implements AuthRemoteDataSource {
       if (e.response?.statusCode == 401) {
         throw AuthException(message: 'Invalid OTP. Please try again.');
       }
+      if (e.response?.statusCode == 422) {
+        throw AuthException(
+          message: messageFromDioException(e, 'Invalid signup details'),
+        );
+      }
       throw ServerException(
-        message: _messageFromResponse(e, 'OTP verification failed'),
+        message: messageFromDioException(e, 'OTP verification failed'),
         statusCode: e.response?.statusCode,
       );
     }

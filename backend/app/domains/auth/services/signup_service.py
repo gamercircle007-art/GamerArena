@@ -29,10 +29,21 @@ class SignupService:
         self.otp_store = SignupOTPStore(redis, settings)
         self.otp_provider = get_otp_provider(settings)
 
-    async def request_otp(self, *, name: str, email: str, phone_number: str) -> None:
+    async def request_otp(
+        self,
+        *,
+        name: str,
+        username: str,
+        email: str,
+        phone_number: str,
+    ) -> None:
         """Validate uniqueness, store signup session, send WhatsApp OTP."""
         phone = UserRepository.normalize_phone(phone_number)
         email_lower = email.lower().strip()
+        username_normalized = UserRepository.normalize_username(username)
+
+        if await self.user_repo.username_exists(username_normalized):
+            raise ValidationError("This username is already taken")
 
         if await self.user_repo.email_exists(email_lower):
             raise ValidationError("An account with this email already exists")
@@ -43,6 +54,7 @@ class SignupService:
         otp = await self.otp_store.create_signup_session(
             phone=phone,
             name=name.strip(),
+            username=username_normalized,
             email=email_lower,
         )
         await self.otp_provider.send_otp(phone, otp, self.settings.otp_expire_minutes)
@@ -59,6 +71,9 @@ class SignupService:
         phone = UserRepository.normalize_phone(phone_number)
         signup_data = await self.otp_store.verify_and_consume(phone, otp)
 
+        if await self.user_repo.username_exists(signup_data["username"]):
+            raise ValidationError("This username is already taken")
+
         if await self.user_repo.email_exists(signup_data["email"]):
             raise ValidationError("An account with this email already exists")
 
@@ -68,6 +83,7 @@ class SignupService:
         hashed = hash_password(password, self.settings)
         user = await self.user_repo.create_with_password(
             full_name=signup_data["name"],
+            username=signup_data["username"],
             email=signup_data["email"],
             phone=phone,
             hashed_password=hashed,

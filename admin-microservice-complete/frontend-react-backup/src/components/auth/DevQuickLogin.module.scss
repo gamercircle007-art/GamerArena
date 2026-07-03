@@ -1,0 +1,52 @@
+@use '../../styles/design-system' as *;
+
+.wrap {
+  width: 100%;
+  margin-top: $gc-space-2;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $gc-space-2;
+  font-size: $gc-text-xs;
+  color: $gc-neutral-400;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+
+  &::-webkit-details-marker { display: none; }
+
+  &:hover { color: $gc-neutral-500; }
+}
+
+.body {
+  margin-top: $gc-space-3;
+  padding: $gc-space-3;
+  background: rgb(248 250 252 / 0.8);
+  border: 1px dashed $gc-neutral-200;
+  border-radius: $gc-radius-lg;
+}
+
+.hint {
+  font-size: $gc-text-xs;
+  color: $gc-neutral-500;
+  margin-bottom: $gc-space-2;
+  text-align: center;
+
+  code {
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    background: $gc-neutral-100;
+    padding: 1px 4px;
+    border-radius: 4px;
+  }
+}
+
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $gc-space-2;
+  justify-content: center;
+}

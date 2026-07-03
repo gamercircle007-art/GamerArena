@@ -1,0 +1,191 @@
+{
+  "page": 1,
+  "limit": 20,
+  "items": [
+    {
+      "type": "post",
+      "data": {
+        "id": "a1000001-0000-4000-8000-000000000001",
+        "content": "Weekend BGMI scrims are live! Squad up at our Koramangala branch — winner takes ₹5,000 cafe credits. Slots filling fast.",
+        "media_urls": [
+          "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800"
+        ],
+        "parlor": {
+          "id": "9ce0a561-fee0-43d1-98f4-84db7a5ee4ed",
+          "name": "Immortal Gaming Cafe",
+          "logo_url": "http://localhost:8001/media/photos/0x390d1d63e6acd38d_0x75c375cb31fff1d6/0.jpg",
+          "is_verified": true
+        },
+        "tournament": null,
+        "likes_count": 128,
+        "comments_count": 24,
+        "is_liked": false,
+        "created_at": "2026-06-27T08:30:00+00:00"
+      }
+    },
+    {
+      "type": "tournament_announcement",
+      "data": {
+        "id": "b2000001-0000-4000-8000-000000000001",
+        "parlor_id": "9ce0a561-fee0-43d1-98f4-84db7a5ee4ed",
+        "parlor": {
+          "id": "9ce0a561-fee0-43d1-98f4-84db7a5ee4ed",
+          "name": "Immortal Gaming Cafe",
+          "logo_url": "http://localhost:8001/media/photos/0x390d1d63e6acd38d_0x75c375cb31fff1d6/0.jpg",
+          "is_verified": true
+        },
+        "title": "BGMI Weekend Clash — Squad Finals",
+        "game_type": "BGMI",
+        "format": "SQUAD",
+        "start_time": "2026-06-28T14:00:00+00:00",
+        "end_time": "2026-06-28T18:00:00+00:00",
+        "total_slots": 16,
+        "booked_slots": 9,
+        "entry_fee": "199.00",
+        "prizes": {"1st": "₹10,000", "2nd": "₹5,000", "3rd": "₹2,500"},
+        "rules": "Erangel map pool. No emulators. Check-in 30 min before start.",
+        "status": "open",
+        "is_booked_by_me": false,
+        "created_at": "2026-06-27T07:00:00+00:00",
+        "updated_at": "2026-06-27T07:00:00+00:00"
+      }
+    },
+    {
+      "type": "post",
+      "data": {
+        "id": "a1000001-0000-4000-8000-000000000002",
+        "content": "New RTX 4080 rigs just dropped on Floor 2. Valorant 240Hz stations ready — book your slot on the app.",
+        "media_urls": [
+          "https://images.unsplash.com/photo-1593305841991-05c298ba4575?w=800"
+        ],
+        "parlor": {
+          "id": "bc14745b-1769-4266-8124-8233f88cdf3d",
+          "name": "vortex gaming cafe",
+          "logo_url": "http://localhost:8001/media/photos/0x390d1dda81e7fc1d_0xa9995888aa25010e/0.jpg",
+          "is_verified": true
+        },
+        "tournament": {
+          "id": "b2000001-0000-4000-8000-000000000002",
+          "title": "Valorant 5v5 Open Cup"
+        },
+        "likes_count": 89,
+        "comments_count": 11,
+        "is_liked": true,
+        "created_at": "2026-06-27T06:15:00+00:00"
+      }
+    },
+    {
+      "type": "post",
+      "data": {
+        "id": "a1000001-0000-4000-8000-000000000003",
+        "content": "Congrats to Team Nexus for winning last night's CS2 LAN! VOD highlights dropping tomorrow. Who's in for the next bracket?",
+        "media_urls": [],
+        "parlor": {
+          "id": "b2186393-69f8-4be3-967e-8d65e191afa4",
+          "name": "Electrobot Gaming Cafe E61",
+          "logo_url": "http://localhost:8001/media/photos/0x390ce6dbaf0e5f5b_0xd25b24c05fa3498d/0.jpg",
+          "is_verified": true
+        },
+        "tournament": null,
+        "likes_count": 256,
+        "comments_count": 47,
+        "is_liked": false,
+        "created_at": "2026-06-26T18:45:00+00:00"
+      }
+    },
+    {
+      "type": "tournament_announcement",
+      "data": {
+        "id": "b2000001-0000-4000-8000-000000000002",
+        "parlor_id": "bc14745b-1769-4266-8124-8233f88cdf3d",
+        "parlor": {
+          "id": "bc14745b-1769-4266-8124-8233f88cdf3d",
+          "name": "vortex gaming cafe",
+          "logo_url": "http://localhost:8001/media/photos/0x390d1dda81e7fc1d_0xa9995888aa25010e/0.jpg",
+          "is_verified": true
+        },
+        "title": "Valorant 5v5 Open Cup",
+        "game_type": "VALORANT",
+        "format": "5V5",
+        "start_time": "2026-06-29T11:00:00+00:00",
+        "end_time": "2026-06-29T15:00:00+00:00",
+        "total_slots": 10,
+        "booked_slots": 6,
+        "entry_fee": "149.00",
+        "prizes": {"1st": "₹8,000", "2nd": "₹3,000"},
+        "rules": "Single elimination. Agents unrestricted.",
+        "status": "open",
+        "is_booked_by_me": false,
+        "created_at": "2026-06-26T12:00:00+00:00",
+        "updated_at": "2026-06-26T12:00:00+00:00"
+      }
+    },
+    {
+      "type": "post",
+      "data": {
+        "id": "a1000001-0000-4000-8000-000000000004",
+        "content": "FIFA 25 community night every Thursday — free entry for members. Pizza combos at 20% off for tournament players.",
+        "media_urls": [
+          "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800"
+        ],
+        "parlor": {
+          "id": "6f316421-81fa-48c0-9ccd-4fe3e41fa5c3",
+          "name": "The FPS CRIB gaming café",
+          "logo_url": "http://localhost:8001/media/photos/0x390cfd644eea82b3_0x2b0f6b104d502a20/0.jpg",
+          "is_verified": false
+        },
+        "tournament": null,
+        "likes_count": 42,
+        "comments_count": 8,
+        "is_liked": false,
+        "created_at": "2026-06-26T10:00:00+00:00"
+      }
+    },
+    {
+      "type": "tournament_announcement",
+      "data": {
+        "id": "b2000001-0000-4000-8000-000000000003",
+        "parlor_id": "0cc22025-3b45-4523-a49a-0427f3247f37",
+        "parlor": {
+          "id": "0cc22025-3b45-4523-a49a-0427f3247f37",
+          "name": "NxGT Gaming Lounge",
+          "logo_url": "http://localhost:8001/media/photos/0x390cfd90780890e5_0x4abc7c24fd2f53c1/0.jpg",
+          "is_verified": true
+        },
+        "title": "Tekken 8 Friday Fight Night",
+        "game_type": "TEKKEN",
+        "format": "1V1",
+        "start_time": "2026-06-27T17:00:00+00:00",
+        "end_time": "2026-06-27T21:00:00+00:00",
+        "total_slots": 32,
+        "booked_slots": 28,
+        "entry_fee": "99.00",
+        "prizes": {"1st": "₹3,000"},
+        "rules": "Best of 3 until semis. BO5 finals.",
+        "status": "open",
+        "is_booked_by_me": false,
+        "created_at": "2026-06-25T09:00:00+00:00",
+        "updated_at": "2026-06-25T09:00:00+00:00"
+      }
+    },
+    {
+      "type": "post",
+      "data": {
+        "id": "a1000001-0000-4000-8000-000000000005",
+        "content": "Looking for a duo for ranked Apex tonight? Meet at the lounge — we'll match you with players at your skill tier.",
+        "media_urls": [],
+        "parlor": {
+          "id": "0cc22025-3b45-4523-a49a-0427f3247f37",
+          "name": "NxGT Gaming Lounge",
+          "logo_url": "http://localhost:8001/media/photos/0x390cfd90780890e5_0x4abc7c24fd2f53c1/0.jpg",
+          "is_verified": true
+        },
+        "tournament": null,
+        "likes_count": 31,
+        "comments_count": 15,
+        "is_liked": false,
+        "created_at": "2026-06-25T16:30:00+00:00"
+      }
+    }
+  ]
+}

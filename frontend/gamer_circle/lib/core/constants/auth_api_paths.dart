@@ -2,9 +2,10 @@
 class AuthApiPaths {
   AuthApiPaths._();
 
-  // Login (OTP)
+  // Login
   static const String loginRequestOtp = '/auth/login/request-otp';
   static const String loginVerifyOtp = '/auth/login/verify-otp';
+  static const String login = '/auth/login';
 
   // Signup (OTP + password)
   static const String signupRequestOtp = '/auth/signup/request-otp';

@@ -36,6 +36,27 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, User>> loginWithPassword({
+    required String username,
+    required String password,
+  }) async {
+    try {
+      final response = await _remoteDataSource.loginWithPassword(
+        username: username,
+        password: password,
+      );
+      await _persistSession(response);
+      return Right(response.user.toEntity());
+    } on AuthException catch (e) {
+      return Left(AuthFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.statusCode));
+    } on CacheException catch (e) {
+      return Left(CacheFailure(message: e.message));
+    }
+  }
+
+  @override
   Future<Either<Failure, User>> verifyLoginOtp({
     required String phone,
     required String otp,
@@ -96,12 +117,14 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> sendSignupOtp({
     required String name,
+    required String username,
     required String email,
     required String phone,
   }) async {
     try {
       await _remoteDataSource.sendSignupOtp(
         name: name,
+        username: username,
         email: email,
         phone: phone,
       );

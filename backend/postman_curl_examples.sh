@@ -11,6 +11,7 @@ curl -X POST "$BASE/auth/signup/request-otp" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Jane Doe",
+    "username": "janedoe",
     "email": "jane@example.com",
     "phone_number": "+919876543210"
   }'
@@ -39,11 +40,11 @@ curl -X POST "$BASE/auth/login/verify-otp" \
     "otp": "123456"
   }'
 
-# 6. Login — phone + password (legacy)
+# 6. Login — username + password
 curl -X POST "$BASE/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
-    "phone_number": "+919876543210",
+    "username": "janedoe",
     "password": "SecurePass1"
   }'
 

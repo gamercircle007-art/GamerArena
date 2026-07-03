@@ -16,7 +16,9 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.core.config import get_settings
 from app.core.logging import get_logger, setup_logging
+from app.domains.admin.router import router as admin_router
 from app.domains.auth.router import router as auth_router
+from app.domains.chat.router import router as chat_router
 from app.domains.common.exceptions import (
     AuthenticationError,
     DomainError,
@@ -24,7 +26,32 @@ from app.domains.common.exceptions import (
     RateLimitError,
     ValidationError,
 )
+from app.domains.booking.router import router as booking_router
+from app.domains.friend.router import router as friend_router
+from app.domains.messaging.router import router as messaging_router
+from app.domains.online.router import router as online_router
+from app.domains.snap_map.router import router as snap_map_router
+from app.domains.story.router import router as story_router
+from app.domains.payments.router import router as payments_router
+from app.domains.comment.router import router as comment_router
+from app.domains.feed.router import router as feed_router
+from app.domains.feed.store_router import router as store_router
+from app.domains.follow.router import router as follow_router
+from app.domains.gaming_booking.gc_points_router import router as gc_points_router
+from app.domains.gaming_booking.parlor_router import router as gaming_parlor_router
+from app.domains.gaming_booking.router import router as gaming_booking_router
+from app.domains.geo.router import router as geo_router
+from app.domains.home.router import router as home_router
+from app.domains.like.router import router as like_router
+from app.domains.notification.router import router as notification_router
+from app.domains.parlor.router import router as parlor_router
+from app.domains.post.router import router as post_router
+from app.domains.reel.router import router as reel_router
+from app.domains.search.router import router as search_router
+from app.domains.tournament.router import router as tournament_router
+from app.domains.upload.router import router as upload_router
 from app.domains.user.router import router as user_router
+from app.ws.router import router as ws_router
 
 logger = get_logger(__name__)
 
@@ -42,6 +69,44 @@ OPENAPI_TAGS = [
         "description": "User profile management for authenticated users.",
     },
     {
+        "name": "Parlors",
+        "description": "Gaming parlor profiles and tournament listings.",
+    },
+    {
+        "name": "Tournaments",
+        "description": "Tournament creation, discovery, and slot booking.",
+    },
+    {
+        "name": "Bookings",
+        "description": "Tournament slot booking with Redis locking and cancellation rules.",
+    },
+    {"name": "Posts", "description": "Parlor social posts and media."},
+    {"name": "Reels", "description": "Short vertical video reels, likes, comments, and follows."},
+    {"name": "Feed", "description": "Personalized feed from followed parlors."},
+    {"name": "Comments", "description": "Threaded comments on posts."},
+    {"name": "Likes", "description": "Like posts and comments."},
+    {"name": "Follows", "description": "Follow gaming parlors."},
+    {"name": "Home", "description": "OYO-style home feed, nearby parlors, and quick picks."},
+    {
+        "name": "Gaming Bookings",
+        "description": "OYO-style gaming parlor slot booking, payment, and cancellation.",
+    },
+    {"name": "Gaming Parlors", "description": "OYO-style parlor search, detail, slots, and offers."},
+    {"name": "GC Points", "description": "Loyalty points earned from gaming parlor bookings."},
+    {"name": "Geo", "description": "Nearby parlors and tournaments via PostGIS."},
+    {"name": "Search", "description": "Search parlors and tournaments."},
+    {"name": "Notifications", "description": "In-app user notifications."},
+    {"name": "Uploads", "description": "S3 presigned URL uploads."},
+    {"name": "Payments", "description": "Razorpay tournament entry fees (Phase 3)."},
+    {"name": "Tournament Chat", "description": "Tournament group chat via WebSocket."},
+    {"name": "Messaging", "description": "Real-time conversations and direct messages."},
+    {"name": "Friends", "description": "Friend requests, friendships, and blocks."},
+    {"name": "Stories", "description": "24-hour expiring stories from friends."},
+    {"name": "Snap Map", "description": "Friend locations on map with privacy controls."},
+    {"name": "Profile", "description": "Extended user profiles and search."},
+    {"name": "Online Status", "description": "Online presence and last seen."},
+    {"name": "Admin", "description": "Admin panel API (Phase 3)."},
+    {
         "name": "Health",
         "description": "Service health and readiness checks.",
     },
@@ -53,7 +118,16 @@ async def lifespan(app: FastAPI):
     setup_logging()
     settings = get_settings()
     logger.info("application_starting", app_name=settings.app_name, env=settings.app_env)
+
+    import redis.asyncio as aioredis
+
+    from app.ws.manager import ws_manager
+
+    redis_client = aioredis.from_url(settings.redis_url, decode_responses=True)
+    await ws_manager.start_redis_listener(redis_client)
     yield
+    await ws_manager.stop()
+    await redis_client.aclose()
     logger.info("application_shutdown")
 
 
@@ -87,14 +161,17 @@ def create_app() -> FastAPI:
     if settings.allowed_hosts_list != ["*"]:
         app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts_list)
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
-        allow_credentials=settings.cors_allow_credentials,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        expose_headers=["X-Request-ID"],
-    )
+    cors_kwargs: dict = {
+        "allow_credentials": settings.cors_allow_credentials,
+        "allow_methods": ["*"],
+        "allow_headers": ["*"],
+        "expose_headers": ["X-Request-ID"],
+    }
+    if settings.is_local:
+        cors_kwargs["allow_origin_regex"] = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+    else:
+        cors_kwargs["allow_origins"] = settings.cors_origins_list
+    app.add_middleware(CORSMiddleware, **cors_kwargs)
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next):
@@ -131,12 +208,28 @@ def create_app() -> FastAPI:
     async def validation_error_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
+        errors = exc.errors()
+        message = "Invalid request"
+        if errors:
+            first = errors[0]
+            field = first.get("loc", ["field"])[-1]
+            detail = first.get("msg", message)
+            if field == "password":
+                message = (
+                    "Password must be at least 6 characters and include "
+                    "uppercase, lowercase, and a number"
+                )
+            elif isinstance(field, str) and field != "body":
+                message = f"{field}: {detail}"
+            else:
+                message = str(detail)
+
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={
                 "error": "validation_error",
-                "message": "Invalid request",
-                "details": exc.errors(),
+                "message": message,
+                "details": errors,
             },
         )
 
@@ -161,6 +254,33 @@ def create_app() -> FastAPI:
     api_prefix = settings.api_v1_prefix
     app.include_router(auth_router, prefix=api_prefix)
     app.include_router(user_router, prefix=api_prefix)
+    app.include_router(home_router, prefix=api_prefix)
+    app.include_router(gaming_parlor_router, prefix=api_prefix)
+    app.include_router(gaming_booking_router, prefix=api_prefix)
+    app.include_router(gc_points_router, prefix=api_prefix)
+    app.include_router(parlor_router, prefix=api_prefix)
+    app.include_router(tournament_router, prefix=api_prefix)
+    app.include_router(booking_router, prefix=api_prefix)
+    app.include_router(post_router, prefix=api_prefix)
+    app.include_router(reel_router, prefix=api_prefix)
+    app.include_router(feed_router, prefix=api_prefix)
+    app.include_router(store_router, prefix=api_prefix)
+    app.include_router(comment_router, prefix=api_prefix)
+    app.include_router(like_router, prefix=api_prefix)
+    app.include_router(follow_router, prefix=api_prefix)
+    app.include_router(geo_router, prefix=api_prefix)
+    app.include_router(search_router, prefix=api_prefix)
+    app.include_router(notification_router, prefix=api_prefix)
+    app.include_router(upload_router, prefix=api_prefix)
+    app.include_router(payments_router, prefix=api_prefix)
+    app.include_router(chat_router, prefix=api_prefix)
+    app.include_router(messaging_router, prefix=api_prefix)
+    app.include_router(friend_router, prefix=api_prefix)
+    app.include_router(story_router, prefix=api_prefix)
+    app.include_router(snap_map_router, prefix=api_prefix)
+    app.include_router(online_router, prefix=api_prefix)
+    app.include_router(admin_router, prefix=api_prefix)
+    app.include_router(ws_router)
 
     return app
 

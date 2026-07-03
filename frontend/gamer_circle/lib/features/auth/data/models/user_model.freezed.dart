@@ -24,6 +24,7 @@ mixin _$UserModel {
   String? get email => throw _privateConstructorUsedError;
   @JsonKey(name: 'name')
   String? get name => throw _privateConstructorUsedError;
+  String? get username => throw _privateConstructorUsedError;
   @JsonKey(name: 'phone_number')
   String? get phoneNumber => throw _privateConstructorUsedError;
   @JsonKey(name: 'avatar_url')
@@ -48,6 +49,7 @@ abstract class $UserModelCopyWith<$Res> {
       {String id,
       String? email,
       @JsonKey(name: 'name') String? name,
+      String? username,
       @JsonKey(name: 'phone_number') String? phoneNumber,
       @JsonKey(name: 'avatar_url') String? avatarUrl});
 }
@@ -70,6 +72,7 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
     Object? id = null,
     Object? email = freezed,
     Object? name = freezed,
+    Object? username = freezed,
     Object? phoneNumber = freezed,
     Object? avatarUrl = freezed,
   }) {
@@ -85,6 +88,10 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
       name: freezed == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
+              as String?,
+      username: freezed == username
+          ? _value.username
+          : username // ignore: cast_nullable_to_non_nullable
               as String?,
       phoneNumber: freezed == phoneNumber
           ? _value.phoneNumber
@@ -110,6 +117,7 @@ abstract class _$$UserModelImplCopyWith<$Res>
       {String id,
       String? email,
       @JsonKey(name: 'name') String? name,
+      String? username,
       @JsonKey(name: 'phone_number') String? phoneNumber,
       @JsonKey(name: 'avatar_url') String? avatarUrl});
 }
@@ -130,6 +138,7 @@ class __$$UserModelImplCopyWithImpl<$Res>
     Object? id = null,
     Object? email = freezed,
     Object? name = freezed,
+    Object? username = freezed,
     Object? phoneNumber = freezed,
     Object? avatarUrl = freezed,
   }) {
@@ -145,6 +154,10 @@ class __$$UserModelImplCopyWithImpl<$Res>
       name: freezed == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
+              as String?,
+      username: freezed == username
+          ? _value.username
+          : username // ignore: cast_nullable_to_non_nullable
               as String?,
       phoneNumber: freezed == phoneNumber
           ? _value.phoneNumber
@@ -165,6 +178,7 @@ class _$UserModelImpl extends _UserModel {
       {required this.id,
       this.email,
       @JsonKey(name: 'name') this.name,
+      this.username,
       @JsonKey(name: 'phone_number') this.phoneNumber,
       @JsonKey(name: 'avatar_url') this.avatarUrl})
       : super._();
@@ -180,6 +194,8 @@ class _$UserModelImpl extends _UserModel {
   @JsonKey(name: 'name')
   final String? name;
   @override
+  final String? username;
+  @override
   @JsonKey(name: 'phone_number')
   final String? phoneNumber;
   @override
@@ -188,7 +204,7 @@ class _$UserModelImpl extends _UserModel {
 
   @override
   String toString() {
-    return 'UserModel(id: $id, email: $email, name: $name, phoneNumber: $phoneNumber, avatarUrl: $avatarUrl)';
+    return 'UserModel(id: $id, email: $email, name: $name, username: $username, phoneNumber: $phoneNumber, avatarUrl: $avatarUrl)';
   }
 
   @override
@@ -199,6 +215,8 @@ class _$UserModelImpl extends _UserModel {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.email, email) || other.email == email) &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.username, username) ||
+                other.username == username) &&
             (identical(other.phoneNumber, phoneNumber) ||
                 other.phoneNumber == phoneNumber) &&
             (identical(other.avatarUrl, avatarUrl) ||
@@ -207,8 +225,8 @@ class _$UserModelImpl extends _UserModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, email, name, phoneNumber, avatarUrl);
+  int get hashCode => Object.hash(
+      runtimeType, id, email, name, username, phoneNumber, avatarUrl);
 
   /// Create a copy of UserModel
   /// with the given fields replaced by the non-null parameter values.
@@ -231,6 +249,7 @@ abstract class _UserModel extends UserModel {
       {required final String id,
       final String? email,
       @JsonKey(name: 'name') final String? name,
+      final String? username,
       @JsonKey(name: 'phone_number') final String? phoneNumber,
       @JsonKey(name: 'avatar_url') final String? avatarUrl}) = _$UserModelImpl;
   const _UserModel._() : super._();
@@ -245,6 +264,8 @@ abstract class _UserModel extends UserModel {
   @override
   @JsonKey(name: 'name')
   String? get name;
+  @override
+  String? get username;
   @override
   @JsonKey(name: 'phone_number')
   String? get phoneNumber;

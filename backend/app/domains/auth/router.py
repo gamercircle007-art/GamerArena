@@ -7,7 +7,7 @@ Auth domain API routes — enterprise signup and login.
 | POST   | /auth/signup/verify-otp  | No   | Verify OTP, set password, register |
 | POST   | /auth/login/request-otp  | No   | Send WhatsApp OTP for login        |
 | POST   | /auth/login/verify-otp   | No   | Verify OTP and receive JWT         |
-| POST   | /auth/login              | No   | Login with phone + password        |
+| POST   | /auth/login              | No   | Login with username + password     |
 | POST   | /auth/refresh-token      | No   | Rotate refresh token               |
 | GET    | /auth/me                 | Yes  | Current user profile               |
 | POST   | /auth/logout             | Yes  | Revoke refresh token               |
@@ -130,9 +130,9 @@ async def login_verify_otp(
     "/login",
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
-    summary="Login with phone and password",
+    summary="Login with username and password",
     description=(
-        "Authenticate with E.164 phone number and password. "
+        "Authenticate with username and password. "
         "Account locks for 15 minutes after 5 failed attempts."
     ),
 )

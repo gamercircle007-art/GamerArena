@@ -1,0 +1,64 @@
+{
+  "items": [
+    {
+      "id": "store-pass-2h",
+      "name": "2-Hour Gaming Pass",
+      "description": "Unlimited PC time at any partner cafe in Delhi NCR.",
+      "price": 299,
+      "currency": "INR",
+      "category": "passes",
+      "badge": "Popular",
+      "image_url": "https://images.unsplash.com/photo-1593305841991-05c298ba4575?w=400"
+    },
+    {
+      "id": "store-pass-weekend",
+      "name": "Weekend Unlimited Pass",
+      "description": "Fri–Sun all-day access + one free energy drink.",
+      "price": 799,
+      "currency": "INR",
+      "category": "passes",
+      "badge": "Best value",
+      "image_url": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"
+    },
+    {
+      "id": "store-tournament-entry",
+      "name": "Tournament Entry Bundle",
+      "description": "Pre-paid entry for 3 community tournaments this month.",
+      "price": 399,
+      "currency": "INR",
+      "category": "tournaments",
+      "badge": null,
+      "image_url": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400"
+    },
+    {
+      "id": "store-headset-rental",
+      "name": "Pro Headset Rental",
+      "description": "HyperX Cloud III for your session — sanitized after every use.",
+      "price": 49,
+      "currency": "INR",
+      "category": "gear",
+      "badge": null,
+      "image_url": "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=400"
+    },
+    {
+      "id": "store-mousepad",
+      "name": "Gamer Circle Mousepad",
+      "description": "XL desk mat with anti-slip base. Pick up at your next visit.",
+      "price": 599,
+      "currency": "INR",
+      "category": "merch",
+      "badge": "New",
+      "image_url": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400"
+    },
+    {
+      "id": "store-vip-monthly",
+      "name": "VIP Monthly Membership",
+      "description": "Priority booking, 15% off F&B, exclusive tournament invites.",
+      "price": 1499,
+      "currency": "INR",
+      "category": "membership",
+      "badge": "VIP",
+      "image_url": "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=400"
+    }
+  ]
+}

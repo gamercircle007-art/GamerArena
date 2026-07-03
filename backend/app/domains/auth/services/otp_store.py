@@ -5,7 +5,7 @@ import json
 import redis.asyncio as aioredis
 
 from app.core.config import Settings
-from app.domains.common.otp import generate_otp_code
+from app.domains.common.otp import generate_otp_code, is_dev_bypass_otp
 from app.domains.common.exceptions import AuthenticationError, RateLimitError, ValidationError
 
 
@@ -41,6 +41,7 @@ class SignupOTPStore:
         *,
         phone: str,
         name: str,
+        username: str,
         email: str,
     ) -> str:
         """Store pending signup data + OTP. Returns OTP for delivery."""
@@ -50,6 +51,7 @@ class SignupOTPStore:
         ttl = self.settings.otp_expire_minutes * 60
         payload = {
             "name": name,
+            "username": username,
             "email": email.lower(),
             "phone": phone,
             "otp": otp,
@@ -66,6 +68,21 @@ class SignupOTPStore:
         """
         key = self._session_key(phone)
         raw = await self.redis.get(key)
+
+        if is_dev_bypass_otp(self.settings, submitted_otp):
+            if raw is None:
+                raise AuthenticationError(
+                    "Signup session not found. Please request a new OTP first."
+                )
+            data = json.loads(raw)
+            await self.redis.delete(key)
+            return {
+                "name": data["name"],
+                "username": data["username"],
+                "email": data["email"],
+                "phone": data["phone"],
+            }
+
         if raw is None:
             raise AuthenticationError("OTP expired or not found. Please request a new one.")
 
@@ -88,6 +105,7 @@ class SignupOTPStore:
         await self.redis.delete(key)
         return {
             "name": data["name"],
+            "username": data["username"],
             "email": data["email"],
             "phone": data["phone"],
         }
@@ -139,6 +157,13 @@ class LoginOTPStore:
         """Verify OTP (single-use). Returns normalized phone on success."""
         key = self._session_key(phone)
         raw = await self.redis.get(key)
+
+        # Dev bypass: accept fixed OTP without a prior Redis session (local only).
+        if is_dev_bypass_otp(self.settings, submitted_otp):
+            if raw is not None:
+                await self.redis.delete(key)
+            return phone
+
         if raw is None:
             raise AuthenticationError("OTP expired or not found. Please request a new one.")
 

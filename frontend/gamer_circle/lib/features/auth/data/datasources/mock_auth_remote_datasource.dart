@@ -5,9 +5,35 @@ import 'package:gamer_circle/features/auth/data/models/user_model.dart';
 
 class MockAuthRemoteDataSource implements AuthRemoteDataSource {
   static const _testPhone = '9876543210';
+  static const _testUsername = 'testgamer';
+  static const _testPassword = 'SecurePass1';
   static const _mockOtp = '123456';
 
   static final Map<String, _PendingRegistration> _pendingRegistrations = {};
+
+  @override
+  Future<AuthResponseModel> loginWithPassword({
+    required String username,
+    required String password,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (username.toLowerCase() != _testUsername || password != _testPassword) {
+      throw AuthException(message: 'Invalid username or password');
+    }
+
+    return AuthResponseModel(
+      accessToken: 'mock_access_token_login_${username.hashCode}',
+      refreshToken: 'mock_refresh_token_login_${username.hashCode}',
+      user: const UserModel(
+        id: 'mock-user-001',
+        email: 'test@gamercircle.com',
+        name: 'TestGamer',
+        username: _testUsername,
+        phoneNumber: _testPhone,
+      ),
+    );
+  }
 
   @override
   Future<void> requestLoginOtp({required String phone}) async {
@@ -38,6 +64,7 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
         id: 'mock-user-001',
         email: 'test@gamercircle.com',
         name: 'TestGamer',
+        username: _testUsername,
         phoneNumber: _testPhone,
       ),
     );
@@ -56,12 +83,14 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
   @override
   Future<void> sendSignupOtp({
     required String name,
+    required String username,
     required String email,
     required String phone,
   }) async {
     await Future.delayed(const Duration(milliseconds: 800));
     _pendingRegistrations[phone] = _PendingRegistration(
       name: name,
+      username: username,
       email: email,
       phone: phone,
     );
@@ -93,6 +122,7 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
         id: 'mock-user-${phone.hashCode}',
         email: registration.email,
         name: registration.name,
+        username: registration.username,
         phoneNumber: registration.phone,
       ),
     );
@@ -101,10 +131,12 @@ class MockAuthRemoteDataSource implements AuthRemoteDataSource {
 
 class _PendingRegistration {
   final String name;
+  final String username;
   final String email;
   final String phone;
   const _PendingRegistration({
     required this.name,
+    required this.username,
     required this.email,
     required this.phone,
   });

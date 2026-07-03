@@ -1,12 +1,13 @@
 """User domain business logic."""
 
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.common.exceptions import NotFoundError, ValidationError
 from app.domains.user.repository import UserRepository
-from app.domains.user.schemas import UserResponse, UserUpdate
+from app.domains.user.schemas import UserLocationUpdate, UserResponse, UserUpdate
 
 
 class UserService:
@@ -40,6 +41,24 @@ class UserService:
             raise NotFoundError("User not found")
         if data.name is not None:
             user.full_name = data.name
+        await self.repo.session.flush()
+        await self.repo.session.refresh(user)
+        return UserResponse.model_validate(user)
+
+    async def update_location(
+        self,
+        user_id: UUID,
+        data: UserLocationUpdate,
+    ) -> UserResponse:
+        user = await self.repo.get_by_id(user_id)
+        if user is None:
+            raise NotFoundError("User not found")
+
+        user.latitude = data.latitude
+        user.longitude = data.longitude
+        user.city = data.city
+        user.country = data.country.upper() if data.country else None
+        user.location_updated_at = datetime.now(UTC)
         await self.repo.session.flush()
         await self.repo.session.refresh(user)
         return UserResponse.model_validate(user)

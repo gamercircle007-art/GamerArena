@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:gamer_circle/core/utils/login_identifier_utils.dart';
+import 'package:gamer_circle/core/utils/password_utils.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/signup_providers.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/signup_state.dart';
 import 'package:gamer_circle/features/auth/presentation/widgets/gradient_header_widget.dart';
@@ -17,6 +19,7 @@ class SignUpPage extends ConsumerStatefulWidget {
 class _SignUpPageState extends ConsumerState<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -27,6 +30,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
   @override
   void dispose() {
     _nameController.dispose();
+    _usernameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
@@ -86,6 +90,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                     ),
                     const SizedBox(height: 28),
                     _buildNameField(),
+                    const SizedBox(height: 16),
+                    _buildUsernameField(),
                     const SizedBox(height: 16),
                     _buildEmailField(),
                     const SizedBox(height: 16),
@@ -160,6 +166,21 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
         if (v.trim().length < 2) return 'Name must be at least 2 characters';
         return null;
       },
+    );
+  }
+
+  Widget _buildUsernameField() {
+    return TextFormField(
+      controller: _usernameController,
+      textInputAction: TextInputAction.next,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_]')),
+      ],
+      decoration: _inputDecoration(
+        hint: 'Username',
+        icon: Icons.alternate_email,
+      ),
+      validator: validateSignupUsername,
     );
   }
 
@@ -243,14 +264,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
       ),
-      validator: (v) {
-        if (v == null || v.isEmpty) return 'Please enter a password';
-        if (v.length < 8) return 'Password must be at least 8 characters';
-        if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$').hasMatch(v)) {
-          return 'Include uppercase, lowercase, and a number';
-        }
-        return null;
-      },
+      validator: PasswordUtils.validate,
     );
   }
 
@@ -288,6 +302,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     if (!_formKey.currentState!.validate()) return;
     ref.read(signUpNotifierProvider.notifier).sendOtp(
           name: _nameController.text.trim(),
+          username: _usernameController.text.trim(),
           email: _emailController.text.trim(),
           phone: _phoneController.text.trim(),
           password: _passwordController.text,

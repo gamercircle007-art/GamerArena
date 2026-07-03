@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gamer_circle/core/utils/password_utils.dart';
 import 'package:gamer_circle/features/auth/domain/usecases/send_otp_usecase.dart';
 import 'package:gamer_circle/features/auth/domain/usecases/verify_otp_usecase.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_notifier.dart';
@@ -20,13 +21,19 @@ class SignUpNotifier extends StateNotifier<SignUpState> {
 
   Future<void> sendOtp({
     required String name,
+    required String username,
     required String email,
     required String phone,
     required String password,
   }) async {
     state = const SignUpLoading();
     final result = await _sendOtpUseCase(
-      SendOtpParams(name: name, email: email, phone: phone),
+      SendOtpParams(
+        name: name,
+        username: username,
+        email: email,
+        phone: phone,
+      ),
     );
     state = result.fold(
       (failure) => SignUpError(failure.message),
@@ -42,6 +49,12 @@ class SignUpNotifier extends StateNotifier<SignUpState> {
 
     if (current == null) {
       state = const SignUpError('Session expired. Please sign up again.');
+      return;
+    }
+
+    final passwordError = PasswordUtils.validate(current.$2);
+    if (passwordError != null) {
+      state = SignUpError(passwordError);
       return;
     }
 

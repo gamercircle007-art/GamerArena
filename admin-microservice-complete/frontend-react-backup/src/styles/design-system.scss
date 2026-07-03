@@ -1,0 +1,181 @@
+// GameConnect Admin — Design System v2
+// Single source of truth for SCSS modules + index.scss tokens
+
+// ── Color palette ──────────────────────────────────────────
+$gc-primary-50:  #eef2ff;
+$gc-primary-100: #e0e7ff;
+$gc-primary-200: #c7d2fe;
+$gc-primary-300: #a5b4fc;
+$gc-primary-400: #818cf8;
+$gc-primary-500: #6366f1;
+$gc-primary-600: #4f46e5;
+$gc-primary-700: #4338ca;
+$gc-primary-800: #3730a3;
+$gc-primary-900: #312e81;
+
+$gc-violet-400: #a78bfa;
+$gc-violet-500: #8b5cf6;
+$gc-violet-600: #7c3aed;
+
+$gc-success-50:  #ecfdf5;
+$gc-success-500: #10b981;
+$gc-success-600: #059669;
+
+$gc-warning-50:  #fffbeb;
+$gc-warning-500: #f59e0b;
+$gc-warning-600: #d97706;
+
+$gc-danger-50:  #fef2f2;
+$gc-danger-500: #ef4444;
+$gc-danger-600: #dc2626;
+
+$gc-neutral-50:  #f8fafc;
+$gc-neutral-100: #f1f5f9;
+$gc-neutral-200: #e2e8f0;
+$gc-neutral-300: #cbd5e1;
+$gc-neutral-400: #94a3b8;
+$gc-neutral-500: #64748b;
+$gc-neutral-600: #475569;
+$gc-neutral-700: #334155;
+$gc-neutral-800: #1e293b;
+$gc-neutral-900: #0f172a;
+
+// ── Typography ─────────────────────────────────────────────
+$gc-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+$gc-text-xs:   0.75rem;
+$gc-text-sm:   0.875rem;
+$gc-text-base: 1rem;
+$gc-text-lg:   1.125rem;
+$gc-text-xl:   1.25rem;
+$gc-text-2xl:  1.5rem;
+$gc-text-3xl:  1.875rem;
+$gc-text-4xl:  2.25rem;
+
+// ── Spacing (4px base) ─────────────────────────────────────
+$gc-space-1:  0.25rem;
+$gc-space-2:  0.5rem;
+$gc-space-3:  0.75rem;
+$gc-space-4:  1rem;
+$gc-space-5:  1.25rem;
+$gc-space-6:  1.5rem;
+$gc-space-8:  2rem;
+$gc-space-10: 2.5rem;
+$gc-space-12: 3rem;
+$gc-space-16: 4rem;
+
+// ── Radius (larger = more modern) ────────────────────────
+$gc-radius-sm:   0.5rem;
+$gc-radius-md:   0.625rem;
+$gc-radius-lg:   0.875rem;
+$gc-radius-xl:   1rem;
+$gc-radius-2xl:  1.25rem;
+$gc-radius-3xl:  1.5rem;
+$gc-radius-full: 9999px;
+
+// ── Shadows ────────────────────────────────────────────────
+$gc-shadow-xs:  0 1px 2px 0 rgb(15 23 42 / 0.03);
+$gc-shadow-sm:  0 1px 3px 0 rgb(15 23 42 / 0.05), 0 1px 2px -1px rgb(15 23 42 / 0.05);
+$gc-shadow:     0 2px 4px -1px rgb(15 23 42 / 0.06), 0 4px 6px -1px rgb(15 23 42 / 0.05);
+$gc-shadow-md:  0 4px 8px -2px rgb(15 23 42 / 0.08), 0 8px 16px -4px rgb(15 23 42 / 0.06);
+$gc-shadow-lg:  0 12px 24px -6px rgb(15 23 42 / 0.1), 0 4px 8px -2px rgb(15 23 42 / 0.04);
+$gc-shadow-xl:  0 20px 40px -8px rgb(15 23 42 / 0.12);
+$gc-shadow-glow: 0 0 0 1px rgb(99 102 241 / 0.1), 0 8px 32px -4px rgb(99 102 241 / 0.22);
+
+// ── Transitions ────────────────────────────────────────────
+$gc-ease: cubic-bezier(0.4, 0, 0.2, 1);
+$gc-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+$gc-duration-fast: 150ms;
+$gc-duration: 200ms;
+$gc-duration-slow: 300ms;
+
+// ── Z-index scale ──────────────────────────────────────────
+$gc-z-header: 20;
+$gc-z-sidebar: 30;
+$gc-z-modal: 50;
+
+// ── Mixins ─────────────────────────────────────────────────
+@mixin gc-focus-ring {
+  outline: 2px solid $gc-primary-500;
+  outline-offset: 2px;
+}
+
+@mixin gc-card-base {
+  background: white;
+  border: 1px solid rgba($gc-neutral-200, 0.85);
+  border-radius: $gc-radius-2xl;
+  box-shadow: $gc-shadow-sm;
+}
+
+@mixin gc-card-interactive {
+  @include gc-card-base;
+  transition: box-shadow $gc-duration $gc-ease, border-color $gc-duration $gc-ease, transform $gc-duration $gc-ease;
+  &:hover {
+    box-shadow: $gc-shadow-md;
+    border-color: rgba($gc-primary-200, 0.9);
+  }
+}
+
+@mixin gc-glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba($gc-neutral-200, 0.7);
+}
+
+@mixin gc-btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $gc-space-2;
+  font-weight: 500;
+  border-radius: $gc-radius-lg;
+  transition: all $gc-duration $gc-ease;
+  &:focus-visible { @include gc-focus-ring; }
+  &:disabled { opacity: 0.5; pointer-events: none; }
+}
+
+@mixin gc-btn-primary {
+  @include gc-btn-base;
+  background: linear-gradient(135deg, $gc-primary-600, $gc-violet-600);
+  color: white;
+  box-shadow: 0 1px 3px rgb(79 70 229 / 0.3);
+  &:hover {
+    background: linear-gradient(135deg, $gc-primary-700, $gc-violet-600);
+    box-shadow: 0 4px 12px rgb(79 70 229 / 0.35);
+  }
+}
+
+@mixin gc-sidebar-active {
+  background: linear-gradient(90deg, rgba($gc-primary-500, 0.18) 0%, rgba($gc-primary-500, 0.04) 100%);
+  color: $gc-primary-300;
+  box-shadow: inset 3px 0 0 0 $gc-primary-400;
+}
+
+@mixin gc-section-title {
+  font-size: $gc-text-lg;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: $gc-neutral-900;
+}
+
+@mixin gc-auth-bg {
+  min-height: 100svh;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba($gc-primary-500, 0.12), transparent),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba($gc-violet-500, 0.08), transparent),
+    linear-gradient(180deg, $gc-neutral-50 0%, $gc-neutral-100 100%);
+}
+
+@mixin gc-step-enter {
+  animation: gc-step-in $gc-duration-slow $gc-ease forwards;
+}
+
+@keyframes gc-step-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gc-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

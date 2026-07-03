@@ -58,6 +58,16 @@ class Settings(BaseSettings):
     database_max_overflow: int = 20
     database_echo: bool = False
 
+    # External gaming-place catalog (projectX PostgreSQL) — synced on dev startup.
+    gaming_places_database_url: str = Field(
+        default="postgresql://projectx:projectx@localhost:5432/projectx",
+        description="Source DB URL for gaming_places sync (postgresql://...)",
+    )
+    gaming_places_media_base_url: str = Field(
+        default="http://localhost:8001",
+        description="Base URL for relative /media/photos paths from gaming_places",
+    )
+
     # -------------------------------------------------------------------------
     # Redis — OTP sessions, refresh token registry, login lockout
     # -------------------------------------------------------------------------
@@ -146,6 +156,21 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     cors_origins: str = "http://localhost:3000,http://localhost:8080"
     cors_allow_credentials: bool = True
+
+    # -------------------------------------------------------------------------
+    # AWS S3 / CloudFront — media uploads
+    # -------------------------------------------------------------------------
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    aws_s3_bucket: str = ""
+    aws_cloudfront_domain: str = ""
+    aws_region: str = "ap-south-1"
+
+    # -------------------------------------------------------------------------
+    # Razorpay — tournament entry fee payments
+    # -------------------------------------------------------------------------
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
 
     # -------------------------------------------------------------------------
     # Logging & security headers

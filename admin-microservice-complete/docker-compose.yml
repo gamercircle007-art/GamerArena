@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  admin-backend:
+    build:
+      context: ./backend
+    ports:
+      - "8001:8001"
+    environment:
+      PORT: 8001
+      ALLOWED_ORIGINS: http://localhost:4200,http://127.0.0.1:4200
+      DATABASE_URL: sqlite+aiosqlite:///./admin.db
+    volumes:
+      - admin-db:/app/admin.db
+
+  admin-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - admin-backend
+
+volumes:
+  admin-db:

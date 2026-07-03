@@ -21,6 +21,10 @@ final class AuthUnauthenticated extends AuthState {
   const AuthUnauthenticated();
 }
 
+final class AuthGuest extends AuthState {
+  const AuthGuest();
+}
+
 final class AuthError extends AuthState {
   final String message;
   const AuthError(this.message);
