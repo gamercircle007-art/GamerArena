@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_providers.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_state.dart';
@@ -20,7 +21,7 @@ class ProfilePage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Profile'),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1A1A2E),
+        foregroundColor: AppColors.textPrimaryLight,
         elevation: 0,
       ),
       body: user == null
@@ -37,7 +38,7 @@ class ProfilePage extends ConsumerWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF7B2FF7), Color(0xFF3B82F6)],
+                          colors: [AppColors.primary, AppColors.secondary],
                         ),
                       ),
                       child: Center(
@@ -80,7 +81,7 @@ class _ProfileField extends StatelessWidget {
           label,
           style: const TextStyle(
             fontSize: 13,
-            color: Color(0xFF888888),
+            color: AppColors.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -90,7 +91,7 @@ class _ProfileField extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF1A1A2E),
+            color: AppColors.textPrimaryLight,
           ),
         ),
       ],

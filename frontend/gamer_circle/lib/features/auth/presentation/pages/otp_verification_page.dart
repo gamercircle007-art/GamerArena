@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/constants/app_constants.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/signup_providers.dart';
@@ -89,7 +90,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A2E),
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -98,14 +99,14 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                       text: 'Enter the 6-digit code sent to ',
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF888888),
+                        color: AppColors.textSecondary,
                       ),
                       children: [
                         TextSpan(
                           text: _maskedPhone,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A1A2E),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ],
@@ -130,19 +131,19 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3E8FF),
+                      color: AppColors.primaryLight,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF7B2FF7).withOpacity(0.3)),
+                      border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.info_outline,
-                            color: Color(0xFF7B2FF7), size: 18),
+                            color: AppColors.primary, size: 18),
                         const SizedBox(width: 8),
                         Text(
                           'Dev mode — OTP is: ${AppConstants.devOtpBypass}',
                           style: const TextStyle(
-                            color: Color(0xFF7B2FF7),
+                            color: AppColors.primary,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -165,13 +166,13 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
       children: [
         const Text(
           "Didn't receive the code? ",
-          style: TextStyle(color: Color(0xFF888888), fontSize: 14),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
         _secondsLeft > 0
             ? Text(
                 'Resend in ${_secondsLeft}s',
                 style: const TextStyle(
-                  color: Color(0xFF888888),
+                  color: AppColors.textSecondary,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -186,7 +187,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
                 child: const Text(
                   'Resend OTP',
                   style: TextStyle(
-                    color: Color(0xFF3B82F6),
+                    color: AppColors.secondary,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -208,7 +209,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('OTP resent successfully'),
-        backgroundColor: Color(0xFF7B2FF7),
+        backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -226,7 +227,7 @@ class _OtpHeader extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF7B2FF7), Color(0xFF3B82F6)],
+            colors: [AppColors.primary, AppColors.secondary],
           ),
         ),
         child: SafeArea(
@@ -312,13 +313,13 @@ class _VerifyButton extends StatelessWidget {
             : const LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
-                colors: [Color(0xFF7B2FF7), Color(0xFF3B82F6)],
+                colors: [AppColors.primary, AppColors.secondary],
               ),
         boxShadow: onPressed == null
             ? null
             : [
                 BoxShadow(
-                  color: const Color(0xFF7B2FF7).withOpacity(0.4),
+                  color: AppColors.primary.withOpacity(0.4),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),

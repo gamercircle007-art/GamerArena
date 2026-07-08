@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/constants/onboarding_colors.dart';
 import 'package:gamer_circle/core/services/dms_service.dart';
@@ -118,7 +119,7 @@ class _DmsUploadWidgetState extends ConsumerState<DmsUploadWidget> {
       child: Container(
         height: widget.height,
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
+          color: AppColors.dmBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _error != null ? Colors.red : const Color(0xFFE0E0E0),

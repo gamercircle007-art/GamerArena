@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:gamer_circle/shared/models/tournament.dart';
 import 'package:intl/intl.dart';
 
@@ -32,7 +33,7 @@ class TournamentCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.sports_esports, color: Colors.deepPurple.shade400),
+                  Icon(Icons.sports_esports, color: AppColors.primary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(

@@ -234,3 +234,58 @@ class ParlorRepository:
     async def count_all(self) -> int:
         result = await self.session.execute(select(func.count()).select_from(GamingPlace))
         return int(result.scalar_one())
+
+    async def list_sorted_by_haversine(
+        self,
+        lat: float,
+        lng: float,
+        *,
+        radius_m: float | None = None,
+        limit: int = 500,
+    ) -> list[tuple[GamingPlace, GamingPlaceView, float]]:
+        """Return all venues with coordinates, sorted nearest-first via Haversine."""
+        radius_clause = "WHERE distance_meters <= :radius" if radius_m is not None else ""
+        sql = text(
+            f"""
+            SELECT id, distance_meters FROM (
+                SELECT
+                    gp.id AS id,
+                    (6371000 * acos(
+                        MIN(1.0, MAX(-1.0,
+                            cos(radians(:lat)) * cos(radians(gp.latitude))
+                            * cos(radians(gp.longitude) - radians(:lng))
+                            + sin(radians(:lat)) * sin(radians(gp.latitude))
+                        ))
+                    )) AS distance_meters
+                FROM gaming_places gp
+                WHERE gp.latitude IS NOT NULL
+                  AND gp.longitude IS NOT NULL
+            ) AS nearby_sub
+            {radius_clause}
+            ORDER BY distance_meters ASC
+            LIMIT :limit
+            """
+        )
+        params: dict = {"lat": lat, "lng": lng, "limit": limit}
+        if radius_m is not None:
+            params["radius"] = radius_m
+
+        result = await self.session.execute(sql, params)
+        rows = result.mappings().all()
+        if not rows:
+            return []
+
+        place_ids = [UUID(str(row["id"])) for row in rows]
+        places_result = await self.session.execute(
+            select(GamingPlace).where(GamingPlace.id.in_(place_ids))
+        )
+        places_by_id = {place.id: place for place in places_result.scalars()}
+
+        items: list[tuple[GamingPlace, GamingPlaceView, float]] = []
+        for row in rows:
+            place = places_by_id.get(UUID(str(row["id"])))
+            if place is None:
+                continue
+            view = await self._to_view(place)
+            items.append((place, view, float(row["distance_meters"])))
+        return items

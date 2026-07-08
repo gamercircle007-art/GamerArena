@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 
 class DmsMediaViewer extends StatelessWidget {
   const DmsMediaViewer({
@@ -122,7 +123,7 @@ class _DocumentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFF5F5F5),
+      color: AppColors.dmBackground,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,

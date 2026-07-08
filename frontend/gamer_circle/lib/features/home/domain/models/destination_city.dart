@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 
 class DestinationCity {
   final String id;
@@ -21,7 +22,7 @@ const kExploreCities = [
     id: 'near_me',
     name: 'Near me',
     icon: Icons.near_me_rounded,
-    iconColor: Color(0xFF3B82F6),
+    iconColor: AppColors.secondary,
     isNearMe: true,
   ),
   DestinationCity(id: 'bangalore', name: 'Bangalore'),

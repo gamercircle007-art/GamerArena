@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/providers/messaging_providers.dart';
 import 'package:gamer_circle/features/friends/providers/friends_provider.dart';
@@ -118,7 +119,7 @@ class _FindFriendsScreenState extends ConsumerState<FindFriendsScreen> {
                           'People you may know',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF82868B),
+                            color: AppColors.textSecondaryLight,
                           ),
                         ),
                       ),

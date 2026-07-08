@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:gamer_circle/features/home/domain/models/destination_city.dart';
 
 class ExploreDestinationRow extends StatelessWidget {
@@ -36,13 +37,13 @@ class _DestinationChip extends StatelessWidget {
   const _DestinationChip({required this.city, required this.onTap});
 
   static const _cityGradients = [
-    [Color(0xFF667EEA), Color(0xFF764BA2)],
-    [Color(0xFFf093fb), Color(0xFFf5576c)],
-    [Color(0xFF4facfe), Color(0xFF00f2fe)],
-    [Color(0xFF43e97b), Color(0xFF38f9d7)],
-    [Color(0xFFfa709a), Color(0xFFfee140)],
-    [Color(0xFF30cfd0), Color(0xFF330867)],
-    [Color(0xFFa18cd1), Color(0xFFfbc2eb)],
+    [AppColors.primary, AppColors.secondary],
+    [AppColors.primaryDark, AppColors.primary],
+    [AppColors.secondary, AppColors.primaryLight],
+    [AppColors.primaryLight, AppColors.primary],
+    [Color(0xFFFF7043), AppColors.primary],
+    [Color(0xFFFF8A50), AppColors.primaryDark],
+    [AppColors.primary, Color(0xFFFFB347)],
   ];
 
   @override
@@ -62,7 +63,7 @@ class _DestinationChip extends StatelessWidget {
               height: 64,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: city.isNearMe ? const Color(0xFF3B82F6) : null,
+                color: city.isNearMe ? AppColors.secondary : null,
                 gradient: city.isNearMe
                     ? null
                     : LinearGradient(
@@ -104,7 +105,7 @@ class _DestinationChip extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A2E),
+                color: AppColors.textPrimaryLight,
               ),
             ),
           ],

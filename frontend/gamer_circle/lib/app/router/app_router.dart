@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+̀import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/app/router/router_notifier.dart';
 import 'package:gamer_circle/features/auth/presentation/pages/login_page.dart';
@@ -114,6 +114,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/search-results',
             builder: (context, state) => const SearchResultsScreen(),
           ),
+          GoRoute(
+            path: '/search-input',
+            builder: (context, state) => const SearchInputScreen(),
+          ),
           GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
           GoRoute(path: '/feed', builder: (context, state) => const FeedScreen()),
           GoRoute(path: '/reels', builder: (context, state) => const ReelsScreen()),
@@ -126,6 +130,24 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/messages',
             builder: (context, state) => const ConversationsScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (context, state) => const NewChatScreen(),
+              ),
+              GoRoute(
+                path: 'chat/:id',
+                builder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>? ?? {};
+                  return ChatScreen(
+                    conversationId: state.pathParameters['id']!,
+                    otherUserId: extra['otherUserId'] as String? ?? '',
+                    otherUserName: extra['otherUserName'] as String? ?? 'Chat',
+                    otherUserAvatar: extra['otherUserAvatar'] as String?,
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(path: '/profile', builder: (context, state) => const MyProfileScreen()),
           GoRoute(path: '/store', builder: (context, state) => const StorePage()),
@@ -134,10 +156,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/profile/legacy', builder: (context, state) => const ProfilePage()),
       GoRoute(path: '/my-bookings', builder: (context, state) => const MyBookingsScreen()),
-      GoRoute(
-        path: '/search-input',
-        builder: (context, state) => const SearchInputScreen(),
-      ),
       GoRoute(
         path: '/parlour/:id/detail',
         builder: (context, state) => ParlourDetailScreen(
@@ -213,19 +231,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(path: '/messages/new', builder: (context, state) => const NewChatScreen()),
-      GoRoute(
-        path: '/messages/chat/:id',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>? ?? {};
-          return ChatScreen(
-            conversationId: state.pathParameters['id']!,
-            otherUserId: extra['otherUserId'] as String? ?? '',
-            otherUserName: extra['otherUserName'] as String? ?? 'Chat',
-            otherUserAvatar: extra['otherUserAvatar'] as String?,
-          );
-        },
-      ),
+
       GoRoute(path: '/friends-list', builder: (context, state) => const FriendsListScreen()),
       GoRoute(
         path: '/friend-requests',

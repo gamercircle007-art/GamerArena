@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_providers.dart';
@@ -83,7 +84,7 @@ class MyProfileScreen extends ConsumerWidget {
                   spacing: 8,
                   alignment: WrapAlignment.center,
                   children: profile.gameTags
-                      .map((t) => Chip(label: Text(t), backgroundColor: const Color(0xFFF0EFFF)))
+                      .map((t) => Chip(label: Text(t), backgroundColor: AppColors.primaryLight))
                       .toList(),
                 ),
               ],

@@ -28,7 +28,7 @@ reel_privacy_enum = postgresql.ENUM(
     "nearby",
     "age_restricted",
     name="reel_privacy",
-    create_type=True,
+    create_type=False,
 )
 
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/providers/dio_provider.dart';
@@ -87,7 +88,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: Colors.deepPurple,
+                          color: AppColors.primary,
                           shape: BoxShape.circle,
                         ),
                       ),

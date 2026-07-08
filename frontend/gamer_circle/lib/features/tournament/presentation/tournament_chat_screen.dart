@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/network/ws_service.dart';
 import 'package:gamer_circle/core/providers/dio_provider.dart';
@@ -96,7 +97,7 @@ class _TournamentChatScreenState extends ConsumerState<TournamentChatScreen> {
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.deepPurple.shade50,
+                            color: AppColors.primaryLight,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(

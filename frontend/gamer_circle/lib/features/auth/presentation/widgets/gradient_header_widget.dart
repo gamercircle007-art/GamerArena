@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 
 class GradientHeaderWidget extends StatelessWidget {
   const GradientHeaderWidget({super.key});
@@ -10,14 +11,7 @@ class GradientHeaderWidget extends StatelessWidget {
       child: Container(
         height: 260,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF7B2FF7),
-              Color(0xFF3B82F6),
-            ],
-          ),
+          gradient: AppColors.brandGradient,
         ),
         child: SafeArea(
           bottom: false,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -154,7 +155,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                   onTap: () => _showSheet(p),
                                   child: const Icon(
                                     Icons.location_pin,
-                                    color: Colors.deepPurple,
+                                    color: AppColors.primary,
                                     size: 36,
                                   ),
                                 ),

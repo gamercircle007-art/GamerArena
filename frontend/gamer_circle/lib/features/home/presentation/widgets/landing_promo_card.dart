@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 
 class LandingPromoCard extends StatelessWidget {
   final VoidCallback? onTap;
@@ -20,7 +21,7 @@ class LandingPromoCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
-                colors: [Color(0xFF1A1A2E), Color(0xFF2D1B69)],
+                colors: [AppColors.primaryDark, AppColors.primary],
               ),
             ),
             child: Stack(
@@ -35,7 +36,7 @@ class LandingPromoCard extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: [
                           Colors.transparent,
-                          const Color(0xFF7B2FF7).withOpacity(0.3),
+                          AppColors.primary.withOpacity(0.3),
                         ],
                       ),
                     ),
@@ -43,7 +44,7 @@ class LandingPromoCard extends StatelessWidget {
                       child: Icon(
                         Icons.sports_esports_rounded,
                         size: 72,
-                        color: Color(0xFF7B2FF7),
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
@@ -60,7 +61,7 @@ class LandingPromoCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF7B2FF7),
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(

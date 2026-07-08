@@ -1,3 +1,5 @@
+import 'package:gamer_circle/core/utils/json_num_utils.dart';
+
 class ParlourSearchItem {
   const ParlourSearchItem({
     required this.id,
@@ -53,18 +55,18 @@ class ParlourSearchItem {
 
   factory ParlourSearchItem.fromJson(Map<String, dynamic> json) =>
       ParlourSearchItem(
-        id: json['id'] as String,
+        id: json['id'].toString(),
         name: json['name'] as String,
         imageUrl: json['image_url'] as String? ?? json['logo_url'] as String?,
         address: json['address'] as String?,
         city: json['city'] as String?,
         state: json['state'] as String?,
-        rating: (json['rating'] as num?)?.toDouble(),
-        reviewCount: json['review_count'] as int? ?? 0,
-        distanceMeters: (json['distance_meters'] as num?)?.toDouble(),
-        startingPrice: (json['starting_price'] as num?)?.toDouble() ??
-            (json['price_per_hour'] as num?)?.toDouble(),
-        originalPrice: (json['original_price'] as num?)?.toDouble(),
+        rating: parseApiDouble(json['rating']),
+        reviewCount: parseApiInt(json['review_count']) ?? 0,
+        distanceMeters: parseApiDouble(json['distance_meters']),
+        startingPrice: parseApiDouble(json['starting_price']) ??
+            parseApiDouble(json['price_per_hour']),
+        originalPrice: parseApiDouble(json['original_price']),
         isVerified: json['is_verified'] as bool? ?? false,
         isOpen: json['is_open'] as bool? ?? true,
         gameTypes: (json['game_types'] as List<dynamic>?)
@@ -72,7 +74,7 @@ class ParlourSearchItem {
                 .toList() ??
             const [],
         offerText: json['offer_text'] as String?,
-        discountPercent: json['discount_percent'] as int?,
+        discountPercent: parseApiInt(json['discount_percent']),
       );
 }
 

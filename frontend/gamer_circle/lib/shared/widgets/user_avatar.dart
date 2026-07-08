@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:gamer_circle/shared/widgets/online_dot.dart';
 import 'package:gamer_circle/shared/widgets/stories_avatar_ring.dart';
 
@@ -40,11 +41,11 @@ class UserAvatar extends StatelessWidget {
     } else {
       avatar = CircleAvatar(
         radius: radius,
-        backgroundColor: Colors.deepPurple.shade100,
+        backgroundColor: AppColors.primaryLight,
         child: Text(
           initials,
-          style: TextStyle(
-            color: Colors.deepPurple.shade700,
+          style: const TextStyle(
+            color: AppColors.primaryDark,
             fontWeight: FontWeight.bold,
           ),
         ),

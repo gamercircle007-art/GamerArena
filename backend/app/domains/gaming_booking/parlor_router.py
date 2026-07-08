@@ -56,8 +56,15 @@ async def get_parlor_detail(
     db: DbSessionDep,
     lat: float | None = Query(default=None, ge=-90, le=90),
     lng: float | None = Query(default=None, ge=-180, le=180),
+    current_user: OptionalCurrentUserDep = None,
 ) -> ParlourDetailResponse:
-    return await ParlourBookingViewService(db).get_detail(parlour_id, lat=lat, lng=lng)
+    user_id = current_user.id if current_user else None
+    return await ParlourBookingViewService(db).get_detail(
+        parlour_id,
+        lat=lat,
+        lng=lng,
+        user_id=user_id,
+    )
 
 
 @router.get("/{parlour_id}/slots", response_model=SlotListResponse)

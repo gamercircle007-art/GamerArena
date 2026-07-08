@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/data/demo_data_loader.dart';
 import 'package:gamer_circle/core/providers/dio_provider.dart';
@@ -27,7 +28,7 @@ class StorePage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Store'),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1A1A2E),
+        foregroundColor: AppColors.textPrimaryLight,
         elevation: 0,
       ),
       body: catalog.when(
@@ -71,14 +72,14 @@ class _StoreProductCard extends StatelessWidget {
                     imageUrl: item.imageUrl!,
                     fit: BoxFit.cover,
                     errorWidget: (_, __, ___) => const ColoredBox(
-                      color: Color(0xFFF3E8FF),
-                      child: Icon(Icons.videogame_asset, color: Color(0xFF7B2FF7)),
+                      color: AppColors.primaryLight,
+                      child: Icon(Icons.videogame_asset, color: AppColors.primary),
                     ),
                   )
                 else
                   const ColoredBox(
-                    color: Color(0xFFF3E8FF),
-                    child: Icon(Icons.videogame_asset, color: Color(0xFF7B2FF7), size: 40),
+                    color: AppColors.primaryLight,
+                    child: Icon(Icons.videogame_asset, color: AppColors.primary, size: 40),
                   ),
                 if (item.badge != null)
                   Positioned(
@@ -87,7 +88,7 @@ class _StoreProductCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF7B2FF7),
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -116,7 +117,7 @@ class _StoreProductCard extends StatelessWidget {
                   Text(
                     item.formattedPrice,
                     style: const TextStyle(
-                      color: Color(0xFF7B2FF7),
+                      color: AppColors.primary,
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 
 class VerifiedBadge extends StatelessWidget {
   const VerifiedBadge({super.key, this.size = 16});
@@ -11,7 +12,7 @@ class VerifiedBadge extends StatelessWidget {
       width: size,
       height: size,
       decoration: const BoxDecoration(
-        color: Colors.deepPurple,
+        color: AppColors.primary,
         shape: BoxShape.circle,
       ),
       child: Icon(Icons.check, size: size * 0.65, color: Colors.white),

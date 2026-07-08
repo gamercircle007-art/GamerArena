@@ -297,12 +297,33 @@ class HomeResponse(BaseModel):
     nearby_count: int = 0
     featured: list[HomeParlorCard] = Field(default_factory=list)
     quick_picks: list[HomeParlorCard] = Field(default_factory=list)
+    nearby_parlors: list[HomeParlorCard] = Field(default_factory=list)
     city: str | None = None
+    cities: list["CityItem"] = Field(default_factory=list)
+    pick_filter: str = "recommended"
+    radius_meters: float | None = None
+    posts: list["HomePostItem"] = Field(default_factory=list)
+
+
+class HomePostItem(BaseModel):
+    id: UUID
+    content: str
+    media_urls: list[str] = Field(default_factory=list)
+    parlor_id: UUID
+    parlor_name: str
+    parlor_logo_url: str | None = None
+    parlor_verified: bool = False
+    likes_count: int = 0
+    comments_count: int = 0
+    created_at: datetime
 
 
 class CityItem(BaseModel):
     name: str
-    parlour_count: int
+    parlour_count: int = 0
+    image_url: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class CitiesResponse(BaseModel):

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/network/ws_service.dart';
 import 'package:intl/intl.dart';
@@ -119,10 +120,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final typingUsers = ref.watch(typingUsersProvider(widget.conversationId));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.dmBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF5E5873),
+        backgroundColor: AppColors.dmBackground,
+        foregroundColor: AppColors.dmTextPrimary,
         elevation: 0,
         titleSpacing: 0,
         title: Row(
@@ -131,7 +132,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: const Color(0xFF7367F0).withOpacity(0.1),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
                   backgroundImage: widget.otherUserAvatar != null
                       ? CachedNetworkImageProvider(widget.otherUserAvatar!)
                       : null,
@@ -141,7 +142,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               ? widget.otherUserName[0].toUpperCase()
                               : '?',
                           style: const TextStyle(
-                            color: Color(0xFF7367F0),
+                            color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         )
@@ -163,14 +164,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF5E5873),
+                    color: AppColors.textSecondaryLight,
                   ),
                 ),
                 Text(
                   isOnline ? 'Active now' : 'Offline',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isOnline ? Colors.green : const Color(0xFF82868B),
+                    color: isOnline ? AppColors.success : AppColors.textSecondaryLight,
                   ),
                 ),
               ],
@@ -234,7 +235,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             vertical: 7,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF7367F0),
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Text(
@@ -258,11 +259,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           if (_replyToId != null)
             Container(
-              color: const Color(0xFFF0EFFF),
+              color: AppColors.primaryLight,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  const Icon(Icons.reply, size: 16, color: Color(0xFF7367F0)),
+                  const Icon(Icons.reply, size: 16, color: AppColors.primary),
                   const SizedBox(width: 8),
                   const Expanded(child: Text('Replying...', style: TextStyle(fontSize: 12))),
                   IconButton(
@@ -350,7 +351,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F8F8),
+                    color: AppColors.backgroundDark,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(color: const Color(0xFFE4E4E4)),
                   ),
@@ -383,7 +384,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: hasText ? const Color(0xFF7367F0) : Colors.grey.shade300,
+                    color: hasText ? AppColors.primary : Colors.grey.shade300,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -471,8 +472,8 @@ class _MessagesList extends StatelessWidget {
                     SlidableAction(
                       onPressed: (_) => onReply(msg.id),
                       icon: Icons.reply,
-                      backgroundColor: const Color(0xFF7367F0).withOpacity(0.1),
-                      foregroundColor: const Color(0xFF7367F0),
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      foregroundColor: AppColors.primary,
                     ),
                   ],
                 ),

@@ -404,6 +404,7 @@ class ParlourBookingViewService:
         *,
         lat: float | None = None,
         lng: float | None = None,
+        user_id: UUID | None = None,
     ):
         from app.domains.gaming_booking.schemas import ParlourDetailResponse
 
@@ -423,6 +424,15 @@ class ParlourBookingViewService:
             distance = await GeoService(self.session)._distance_meters(
                 lat, lng, place.latitude, place.longitude
             )
+
+        if user_id is not None:
+            await self.repo.record_parlour_view(
+                user_id,
+                parlour_id=parlour_id,
+                parlour_name=view.name,
+                city=city,
+            )
+            await self.session.commit()
 
         return ParlourDetailResponse(
             id=view.id,

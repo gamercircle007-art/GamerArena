@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -119,7 +120,7 @@ class _SnapMapScreenState extends ConsumerState<SnapMapScreen> {
                   backgroundColor: ghost ? Colors.grey.shade700 : Colors.white,
                   child: Icon(
                     Icons.visibility_off,
-                    color: ghost ? Colors.white : const Color(0xFF5E5873),
+                    color: ghost ? Colors.white : AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -147,7 +148,7 @@ class _SnapMapScreenState extends ConsumerState<SnapMapScreen> {
             if (user.distanceKm != null) Text('${user.distanceKm} km away'),
             Text(
               'Updated ${_timeAgo(user.updatedAt)}',
-              style: const TextStyle(color: Color(0xFF82868B), fontSize: 12),
+              style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
             ),
             const SizedBox(height: 16),
             Row(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 
 class LandingSearchCard extends StatelessWidget {
   final String destination;
@@ -22,7 +23,7 @@ class LandingSearchCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
+        border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -94,7 +95,7 @@ class _SearchField extends StatelessWidget {
                 label,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF888888),
+                  color: AppColors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -108,7 +109,7 @@ class _SearchField extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: isPlaceholder
                       ? const Color(0xFFAAAAAA)
-                      : const Color(0xFF1A1A2E),
+                      : AppColors.textPrimary,
                 ),
               ),
               if (showDivider) ...[
@@ -136,11 +137,11 @@ class LandingSearchButton extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [Color(0xFF7B2FF7), Color(0xFF3B82F6)],
+          colors: [AppColors.primary, AppColors.secondary],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7B2FF7).withOpacity(0.35),
+            color: AppColors.primary.withOpacity(0.35),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:gamer_circle/core/constants/onboarding_colors.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
+import 'package:gamer_circle/features/messaging/providers/conversations_provider.dart';
+import 'package:gamer_circle/features/shell/presentation/widgets/app_drawer.dart';
 
 class MainShellScaffold extends ConsumerWidget {
   const MainShellScaffold({super.key, required this.child});
@@ -9,73 +11,88 @@ class MainShellScaffold extends ConsumerWidget {
   final Widget child;
 
   int _indexForLocation(String location) {
-    if (location.startsWith('/events')) return 4;
-    if (location.startsWith('/store')) return 3;
+    if (location.startsWith('/messages')) return 4;
+    if (location.startsWith('/gaming-bookings') ||
+        location.startsWith('/my-bookings')) {
+      return 3;
+    }
+    if (location.startsWith('/search-input') ||
+        location.startsWith('/search-results')) {
+      return 2;
+    }
     if (location.startsWith('/feed') || location.startsWith('/reels')) return 1;
     return 0;
+  }
+
+  bool _shouldHideNavBar(String location) {
+    return location.startsWith('/messages/chat') || location == '/messages/new';
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).matchedLocation;
     final index = _indexForLocation(location);
+    final hideNavBar = _shouldHideNavBar(location);
+    final unreadMessages = ref.watch(unreadCountProvider);
 
     return Scaffold(
+      drawer: hideNavBar ? null : const AppDrawer(),
       body: child,
       extendBody: true,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: SizedBox(
-            height: 64,
-            child: Row(
-              children: [
-                _NavItem(
-                  icon: Icons.home_rounded,
-                  label: 'HOME',
-                  selected: index == 0,
-                  onTap: () => context.go('/'),
-                ),
-                _NavItem(
-                  icon: Icons.workspace_premium_outlined,
-                  label: 'PRIME',
-                  selected: index == 1,
-                  onTap: () => context.go('/feed'),
-                ),
-                Expanded(
-                  child: Center(
-                    child: _PayBillButton(
-                      onTap: () => context.push('/search-input'),
-                    ),
+      bottomNavigationBar: hideNavBar
+          ? null
+          : Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: SizedBox(
+                  height: 64,
+                  child: Row(
+                    children: [
+                      _NavItem(
+                        icon: Icons.home_rounded,
+                        label: 'HOME',
+                        selected: index == 0,
+                        onTap: () => context.go('/'),
+                      ),
+                      _NavItem(
+                        icon: Icons.play_circle_outline_rounded,
+                        label: 'REELS',
+                        selected: index == 1,
+                        onTap: () => context.go('/reels'),
+                      ),
+                      _NavItem(
+                        icon: Icons.search_rounded,
+                        label: 'SEARCH',
+                        selected: index == 2,
+                        onTap: () => context.go('/search-input'),
+                      ),
+                      _NavItem(
+                        icon: Icons.calendar_month_outlined,
+                        label: 'BOOKING',
+                        selected: index == 3,
+                        onTap: () => context.go('/gaming-bookings'),
+                      ),
+                      _NavItem(
+                        icon: Icons.chat_bubble_outline_rounded,
+                        label: 'MESSAGES',
+                        selected: index == 4,
+                        badgeCount: unreadMessages,
+                        onTap: () => context.go('/messages'),
+                      ),
+                    ],
                   ),
                 ),
-                _NavItem(
-                  icon: Icons.credit_card_outlined,
-                  label: 'CARD',
-                  selected: index == 3,
-                  onTap: () => context.go('/store'),
-                ),
-                _NavItem(
-                  icon: Icons.confirmation_number_outlined,
-                  label: 'EVENTS',
-                  selected: index == 4,
-                  badge: 'NEW!',
-                  onTap: () => context.go('/events'),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -86,18 +103,18 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
-    this.badge,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final String? badge;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? OnboardingColors.primary : OnboardingColors.textMuted;
+    final color = selected ? AppColors.primary : AppColors.textSecondaryLight;
 
     return Expanded(
       child: InkWell(
@@ -108,26 +125,24 @@ class _NavItem extends StatelessWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(
-                  icon,
-                  color: color,
-                  size: 24,
-                ),
-                if (badge != null)
+                Icon(icon, color: color, size: 24),
+                if (badgeCount > 0)
                   Positioned(
-                    right: -18,
-                    top: -8,
+                    right: -10,
+                    top: -6,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                       decoration: BoxDecoration(
-                        color: OnboardingColors.payBillRed,
-                        borderRadius: BorderRadius.circular(4),
+                        color: AppColors.error,
+                        borderRadius: BorderRadius.circular(10),
                       ),
+                      constraints: const BoxConstraints(minWidth: 16),
                       child: Text(
-                        badge!,
+                        badgeCount > 99 ? '99+' : '$badgeCount',
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 7,
+                          fontSize: 9,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -146,48 +161,6 @@ class _NavItem extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PayBillButton extends StatelessWidget {
-  const _PayBillButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.translate(
-      offset: const Offset(0, -16),
-      child: Material(
-        color: OnboardingColors.payBillRed,
-        shape: const CircleBorder(),
-        elevation: 6,
-        shadowColor: OnboardingColors.payBillRed.withOpacity(0.4),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: const SizedBox(
-            width: 56,
-            height: 56,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.receipt_long, color: Colors.white, size: 22),
-                SizedBox(height: 2),
-                Text(
-                  'Pay Bill',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

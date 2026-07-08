@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -131,7 +132,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A2E),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -141,14 +142,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           text: 'Code sent to ',
                           style: const TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF888888),
+                            color: AppColors.textSecondary,
                           ),
                           children: [
                             TextSpan(
                               text: _maskedPhone,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1A1A2E),
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -159,7 +160,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         'Sign in with phone number or username',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF888888),
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     const SizedBox(height: 28),
@@ -204,17 +205,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3E8FF),
+                          color: AppColors.primaryLight,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: const Color(0xFF7B2FF7).withOpacity(0.3),
+                            color: AppColors.primary.withOpacity(0.3),
                           ),
                         ),
                         child: Row(
                           children: [
                             const Icon(
                               Icons.info_outline,
-                              color: Color(0xFF7B2FF7),
+                              color: AppColors.primary,
                               size: 18,
                             ),
                             const SizedBox(width: 8),
@@ -222,7 +223,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               child: Text(
                                 'Dev mode — OTP is: ${AppConstants.devOtpBypass}',
                                 style: const TextStyle(
-                                  color: Color(0xFF7B2FF7),
+                                  color: AppColors.primary,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -240,14 +241,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           text: const TextSpan(
                             text: 'New user? ',
                             style: TextStyle(
-                              color: Color(0xFF888888),
+                              color: AppColors.textSecondary,
                               fontSize: 14,
                             ),
                             children: [
                               TextSpan(
                                 text: 'Sign Up',
                                 style: TextStyle(
-                                  color: Color(0xFF3B82F6),
+                                  color: AppColors.secondary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -297,7 +298,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         hintText: 'Phone Number or Username',
         prefixIcon: Icon(
           _isPhoneLogin ? Icons.phone_outlined : Icons.alternate_email,
-          color: const Color(0xFF7B2FF7),
+          color: AppColors.primary,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -309,7 +310,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF7B2FF7), width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
         fillColor: const Color(0xFFF9F9F9),
@@ -327,13 +328,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       onFieldSubmitted: (_) => _onPasswordLogin(),
       decoration: InputDecoration(
         hintText: 'Password',
-        prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF7B2FF7)),
+        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
         suffixIcon: IconButton(
           icon: Icon(
             _obscurePassword
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
-            color: const Color(0xFF888888),
+            color: AppColors.textSecondary,
           ),
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
@@ -347,7 +348,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF7B2FF7), width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
         fillColor: const Color(0xFFF9F9F9),
@@ -370,7 +371,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: const Text(
             'Change number',
             style: TextStyle(
-              color: Color(0xFF3B82F6),
+              color: AppColors.secondary,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -380,7 +381,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ? Text(
                 'Resend in ${_secondsLeft}s',
                 style: const TextStyle(
-                  color: Color(0xFF888888),
+                  color: AppColors.textSecondary,
                   fontSize: 13,
                 ),
               )
@@ -389,7 +390,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 child: const Text(
                   'Resend OTP',
                   style: TextStyle(
-                    color: Color(0xFF3B82F6),
+                    color: AppColors.secondary,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
@@ -458,13 +459,13 @@ class _GradientButton extends StatelessWidget {
             : const LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
-                colors: [Color(0xFF7B2FF7), Color(0xFF3B82F6)],
+                colors: [AppColors.primary, AppColors.secondary],
               ),
         boxShadow: onPressed == null
             ? null
             : [
                 BoxShadow(
-                  color: const Color(0xFF7B2FF7).withOpacity(0.4),
+                  color: AppColors.primary.withOpacity(0.4),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),

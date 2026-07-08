@@ -11,8 +11,8 @@ class GamerCircleApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'GamerCircle',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       routerConfig: ref.watch(routerProvider),
       builder: (context, child) =>
           WsListener(child: child ?? const SizedBox.shrink()),

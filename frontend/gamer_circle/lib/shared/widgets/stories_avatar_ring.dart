@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 
 class StoriesAvatarRing extends StatelessWidget {
   const StoriesAvatarRing({
@@ -22,7 +23,7 @@ class StoriesAvatarRing extends StatelessWidget {
 
     final colors = allViewed
         ? [const Color(0xFFBDBDBD), const Color(0xFF9E9E9E)]
-        : [const Color(0xFF7367F0), const Color(0xFFFF6B9D)];
+        : [AppColors.primary, AppColors.secondary];
 
     return GestureDetector(
       onTap: onTap,

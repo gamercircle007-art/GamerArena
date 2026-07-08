@@ -68,7 +68,7 @@ class ProfileMenuButton extends ConsumerWidget {
             FilledButton(
               onPressed: () {
                 Navigator.pop(ctx);
-                context.go('/mobile-number');
+                context.go('/login');
               },
               style: FilledButton.styleFrom(
                 backgroundColor: OnboardingColors.primary,
@@ -97,7 +97,7 @@ class ProfileMenuButton extends ConsumerWidget {
       onSelected: (action) {
         switch (action) {
           case _ProfileMenuAction.login:
-            context.go('/mobile-number');
+            context.go('/login');
           case _ProfileMenuAction.profileSettings:
             if (isGuest) {
               _requireLogin(context, ref, 'Profile Settings');

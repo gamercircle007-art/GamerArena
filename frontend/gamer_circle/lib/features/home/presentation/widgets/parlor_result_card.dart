@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/shared/models/nearby_parlor.dart';
 
@@ -24,7 +25,7 @@ class ParlorResultCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE8E8E8)),
+              border: Border.all(color: AppColors.divider),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,13 +70,13 @@ class ParlorResultCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1A2E),
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ),
                           if (parlor.isVerified)
                             const Icon(Icons.verified,
-                                size: 18, color: Color(0xFF7B2FF7)),
+                                size: 18, color: AppColors.primary),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -86,7 +87,7 @@ class ParlorResultCard extends StatelessWidget {
                           _MetaChip(
                             icon: Icons.near_me_outlined,
                             label: parlor.distanceLabel,
-                            color: const Color(0xFF3B82F6),
+                            color: AppColors.secondary,
                           ),
                           if (parlor.rating != null)
                             _MetaChip(
@@ -108,7 +109,7 @@ class ParlorResultCard extends StatelessWidget {
                         Row(
                           children: [
                             const Icon(Icons.location_on_outlined,
-                                size: 15, color: Color(0xFF888888)),
+                                size: 15, color: AppColors.textSecondary),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -134,7 +135,7 @@ class ParlorResultCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF3F0FF),
+                                color: AppColors.primaryLight,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -142,7 +143,7 @@ class ParlorResultCard extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF7B2FF7),
+                                  color: AppColors.primary,
                                 ),
                               ),
                             );
