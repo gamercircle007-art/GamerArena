@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-07-08 — Initialized AGENT.md + STRUCTURE.md in repo root from provided sources; populated STRUCTURE with actual folder tree and 9 connectivity chains (home, gaming booking, auth, feed, reels, messaging, snap map, admin, DMS)
+- **Last completed:** 2026-07-08 — Added PROFILE as 6th bottom nav icon; enabled changing profile pic (tap avatar -> gallery pick -> DMS upload -> update avatar_url)
 - **In progress:** none
-- **Next up:** user-specified task (use connectivity map for relevant chains)
-- **Known open issues / blockers:** Admin Angular still mostly on mock admin-microservice backend (real /admin routes exist in main backend but not fully wired in admin UI); many features have partial admin visibility; some feature folders under lib/features are stubs (e.g. circles)
+- **Next up:** test profile pic change + tap profile in navbar
+- **Known open issues / blockers:** none
 
 ---
 
@@ -107,6 +107,8 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-07-08 — Added PROFILE icon to lower navbar (6th position); implemented profile picture change (camera overlay on avatar, gallery upload via DMS, update avatar_url)
+- 2026-07-08 — Full demo seed: 6 users (phones +91999999901X / Demo@123), 6 bookings, 6 posts (picsum), 5 reels (public mp4), convos/messages, gaming extensions for Delhi parlors
 - 2026-07-08 — Placed AGENT.md + STRUCTURE.md (real paths + connectivity examples) into repo root per instructions
 - _(session date)_ — _(what shipped)_
 

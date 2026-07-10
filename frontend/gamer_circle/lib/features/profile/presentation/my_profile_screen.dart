@@ -11,6 +11,9 @@ import 'package:gamer_circle/shared/widgets/stories_avatar_ring.dart';
 import 'package:gamer_circle/shared/widgets/user_avatar.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:gamer_circle/core/services/dms_service.dart';
 
 class MyProfileScreen extends ConsumerWidget {
   const MyProfileScreen({super.key});
@@ -45,19 +48,39 @@ class MyProfileScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             children: [
               Center(
-                child: StoriesAvatarRing(
-                  hasStory: hasStory,
-                  allViewed: false,
-                  size: 108,
-                  onTap: hasStory
-                      ? () => context.push('/story/create')
-                      : () => context.push('/story/create'),
-                  child: UserAvatar(
-                    name: profile.name ?? profile.username,
-                    imageUrl: profile.avatarUrl,
-                    radius: 48,
-                    showOnlineDot: true,
-                    isOnline: true,
+                child: GestureDetector(
+                  onTap: () => _changeAvatar(context, ref, userId),
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      StoriesAvatarRing(
+                        hasStory: hasStory,
+                        allViewed: false,
+                        size: 108,
+                        onTap: hasStory
+                            ? () => context.push('/story/create')
+                            : () => context.push('/story/create'),
+                        child: UserAvatar(
+                          name: profile.name ?? profile.username,
+                          imageUrl: profile.avatarUrl,
+                          radius: 48,
+                          showOnlineDot: true,
+                          isOnline: true,
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -135,6 +158,42 @@ class MyProfileScreen extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  Future<void> _changeAvatar(BuildContext context, WidgetRef ref, String userId) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+    );
+    if (pickedFile == null) return;
+    final file = File(pickedFile.path);
+    try {
+      final dms = ref.read(dmsServiceProvider);
+      final result = await dms.uploadFile(
+        file: file,
+        assetType: 'image',
+        fileType: 'image/jpeg',
+        context: 'profile',
+        contextId: userId,
+      );
+      await ref.read(profileRepositoryProvider).updateProfile({
+        'avatar_url': result.cdnUrl,
+      });
+      ref.invalidate(publicProfileProvider(userId));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile picture updated')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _showQrSheet(

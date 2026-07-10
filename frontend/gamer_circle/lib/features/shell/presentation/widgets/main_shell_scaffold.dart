@@ -11,6 +11,7 @@ class MainShellScaffold extends ConsumerWidget {
   final Widget child;
 
   int _indexForLocation(String location) {
+    if (location.startsWith('/profile')) return 5;
     if (location.startsWith('/messages')) return 4;
     if (location.startsWith('/gaming-bookings') ||
         location.startsWith('/my-bookings')) {
@@ -87,6 +88,12 @@ class MainShellScaffold extends ConsumerWidget {
                         selected: index == 4,
                         badgeCount: unreadMessages,
                         onTap: () => context.go('/messages'),
+                      ),
+                      _NavItem(
+                        icon: Icons.person_outline_rounded,
+                        label: 'PROFILE',
+                        selected: index == 5,
+                        onTap: () => context.go('/profile'),
                       ),
                     ],
                   ),
