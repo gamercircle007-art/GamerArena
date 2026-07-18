@@ -56,50 +56,113 @@ class MainShellScaffold extends ConsumerWidget {
               child: SafeArea(
                 child: SizedBox(
                   height: 64,
-                  child: Row(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.bottomCenter,
                     children: [
-                      _NavItem(
-                        icon: Icons.home_rounded,
-                        label: 'HOME',
-                        selected: index == 0,
-                        onTap: () => context.go('/'),
+                      // Base row of nav items (reserve center space for the +)
+                      Positioned.fill(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _NavItem(
+                                icon: Icons.home_rounded,
+                                label: 'HOME',
+                                selected: index == 0,
+                                onTap: () => context.go('/'),
+                              ),
+                            ),
+                            Expanded(
+                              child: _NavItem(
+                                icon: Icons.play_circle_outline_rounded,
+                                label: 'REELS',
+                                selected: index == 1,
+                                onTap: () => context.go('/reels'),
+                              ),
+                            ),
+                            Expanded(
+                              child: _NavItem(
+                                icon: Icons.search_rounded,
+                                label: 'SEARCH',
+                                selected: index == 2,
+                                onTap: () => context.go('/search-input'),
+                              ),
+                            ),
+                            const SizedBox(width: 56),
+                            Expanded(
+                              child: _NavItem(
+                                icon: Icons.calendar_month_outlined,
+                                label: 'BOOKING',
+                                selected: index == 3,
+                                onTap: () => context.go('/gaming-bookings'),
+                              ),
+                            ),
+                            Expanded(
+                              child: _NavItem(
+                                icon: Icons.chat_bubble_outline_rounded,
+                                label: 'MESSAGES',
+                                selected: index == 4,
+                                badgeCount: unreadMessages,
+                                onTap: () => context.go('/messages'),
+                              ),
+                            ),
+                            Expanded(
+                              child: _NavItem(
+                                icon: Icons.person_outline_rounded,
+                                label: 'PROFILE',
+                                selected: index == 5,
+                                onTap: () => context.go('/profile'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      _NavItem(
-                        icon: Icons.play_circle_outline_rounded,
-                        label: 'REELS',
-                        selected: index == 1,
-                        onTap: () => context.go('/reels'),
-                      ),
-                      _NavItem(
-                        icon: Icons.search_rounded,
-                        label: 'SEARCH',
-                        selected: index == 2,
-                        onTap: () => context.go('/search-input'),
-                      ),
-                      _NavItem(
-                        icon: Icons.calendar_month_outlined,
-                        label: 'BOOKING',
-                        selected: index == 3,
-                        onTap: () => context.go('/gaming-bookings'),
-                      ),
-                      _NavItem(
-                        icon: Icons.chat_bubble_outline_rounded,
-                        label: 'MESSAGES',
-                        selected: index == 4,
-                        badgeCount: unreadMessages,
-                        onTap: () => context.go('/messages'),
-                      ),
-                      _NavItem(
-                        icon: Icons.person_outline_rounded,
-                        label: 'PROFILE',
-                        selected: index == 5,
-                        onTap: () => context.go('/profile'),
+                      // Prominent + button in lower navbar (raised like YouTube/Instagram) for Post/Short/Video/Live
+                      Positioned(
+                        bottom: 12,
+                        child: _PlusButton(
+                          onTap: () => context.push('/create-post'),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
             ),
+    );
+  }
+}
+
+/// Special + button placed in the lower navbar (YouTube-style) for adding posts, shorts, videos, live.
+class _PlusButton extends StatelessWidget {
+  const _PlusButton({required this.onTap, super.key});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          shape: BoxShape.circle,
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 30,
+        ),
+      ),
     );
   }
 }

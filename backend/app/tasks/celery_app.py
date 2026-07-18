@@ -1,6 +1,7 @@
 """Celery application configuration."""
 
 from celery import Celery
+from celery.schedules import crontab
 
 from app.core.config import get_settings
 
@@ -14,3 +15,31 @@ celery_app = Celery(
 celery_app.conf.task_serializer = "json"
 celery_app.conf.result_serializer = "json"
 celery_app.conf.accept_content = ["json"]
+
+# Auto-discover (loads recommendation_tasks etc)
+celery_app.autodiscover_tasks(["app.tasks"])
+
+# Periodic schedule per ALGORITHM kit
+celery_app.conf.beat_schedule = {
+    "refresh-trending-1h": {
+        "task": "recommendation.refresh_trending_1h",
+        "schedule": crontab(minute="*/15"),
+    },
+    "refresh-trending-6h": {
+        "task": "recommendation.refresh_trending_6h",
+        "schedule": crontab(hour="*/1"),
+    },
+    "refresh-trending-24h": {
+        "task": "recommendation.refresh_trending_24h",
+        "schedule": crontab(hour="*/6"),
+    },
+    "refresh-engagement-stats": {
+        "task": "recommendation.refresh_engagement_stats",
+        "schedule": crontab(minute="*/15"),
+    },
+    "cleanup-old-data": {
+        "task": "recommendation.cleanup_old_data",
+        "schedule": crontab(hour=3, minute=0),
+    },
+}
+celery_app.conf.timezone = "Asia/Kolkata"

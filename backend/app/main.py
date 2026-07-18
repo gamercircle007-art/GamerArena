@@ -37,6 +37,7 @@ from app.domains.comment.router import router as comment_router
 from app.domains.feed.router import router as feed_router
 from app.domains.feed.store_router import router as store_router
 from app.domains.follow.router import router as follow_router
+from app.routers.recommendation import router as recommendation_router
 from app.domains.gaming_booking.gc_points_router import router as gc_points_router
 from app.domains.gaming_booking.parlor_router import router as gaming_parlor_router
 from app.domains.gaming_booking.router import router as gaming_booking_router
@@ -123,11 +124,24 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     logger.info("application_starting", app_name=settings.app_name, env=settings.app_env)
 
+    import asyncio
+
     import redis.asyncio as aioredis
 
     from app.ws.manager import ws_manager
 
     redis_client = aioredis.from_url(settings.redis_url, decode_responses=True)
+    # Retry Redis briefly — free-tier Key Value can lag on cold start
+    for attempt in range(1, 11):
+        try:
+            await redis_client.ping()
+            break
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("redis_not_ready", attempt=attempt, error=str(exc))
+            if attempt == 10:
+                raise
+            await asyncio.sleep(2)
+
     await ws_manager.start_redis_listener(redis_client)
     yield
     await ws_manager.stop()
@@ -171,10 +185,15 @@ def create_app() -> FastAPI:
         "allow_headers": ["*"],
         "expose_headers": ["X-Request-ID"],
     }
+    origins = settings.cors_origins_list
     if settings.is_local:
         cors_kwargs["allow_origin_regex"] = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+    elif origins == ["*"]:
+        # Browsers forbid credentials + wildcard; native Flutter does not use CORS.
+        cors_kwargs["allow_origins"] = ["*"]
+        cors_kwargs["allow_credentials"] = False
     else:
-        cors_kwargs["allow_origins"] = settings.cors_origins_list
+        cors_kwargs["allow_origins"] = origins
     app.add_middleware(CORSMiddleware, **cors_kwargs)
 
     @app.middleware("http")
@@ -286,6 +305,7 @@ def create_app() -> FastAPI:
     app.include_router(snap_map_router, prefix=api_prefix)
     app.include_router(online_router, prefix=api_prefix)
     app.include_router(admin_router, prefix=api_prefix)
+    app.include_router(recommendation_router, prefix=api_prefix)
     app.include_router(ws_router)
 
     return app

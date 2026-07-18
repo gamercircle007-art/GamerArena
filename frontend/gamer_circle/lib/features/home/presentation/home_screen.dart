@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/constants/onboarding_colors.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_providers.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_state.dart';
+import 'package:gamer_circle/features/feed/providers/ranked_feed_provider.dart';
 import 'package:gamer_circle/features/home/presentation/widgets/city_filter_rail.dart';
 import 'package:gamer_circle/features/home/presentation/widgets/home_posts_rail.dart';
 import 'package:gamer_circle/features/home/presentation/widgets/location_picker_sheet.dart';
@@ -14,6 +15,7 @@ import 'package:gamer_circle/features/home/presentation/widgets/quick_picks_sect
 import 'package:gamer_circle/features/home/providers/home_filters_provider.dart';
 import 'package:gamer_circle/features/home/providers/home_provider.dart';
 import 'package:gamer_circle/features/home/providers/selected_location_provider.dart';
+import 'package:gamer_circle/shared/widgets/trackable_feed_item.dart';
 
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -45,14 +47,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final quickPicks = home.data.quickPickParlours;
     final allParlors = home.data.allParlours;
 
-    return ColoredBox(
-      color: Colors.white,
-      child: RefreshIndicator(
-        color: OnboardingColors.primary,
-        onRefresh: () => ref.read(homeProvider.notifier).refresh(),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
+    return Scaffold(
+      body: ColoredBox(
+        color: Colors.white,
+        child: RefreshIndicator(
+          color: OnboardingColors.primary,
+          onRefresh: () => ref.read(homeProvider.notifier).refresh(),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
             if (home.error != null)
               SliverToBoxAdapter(
                 child: Padding(
@@ -140,8 +143,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     context.push('/parlour/${item.id}/detail'),
               ),
             ),
+            // ALG-FL05: Personalized ranked feed section (replaces/honors /feed)
+            Consumer(
+              builder: (context, ref, _) {
+                final ranked = ref.watch(rankedFeedProvider('home'));
+                return SliverToBoxAdapter(
+                  child: ranked.when(
+                    data: (data) {
+                      final items = (data['items'] as List? ?? []).take(3).toList();
+                      if (items.isEmpty) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Recommended for you', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 8),
+                            ...items.map((it) => TrackableFeedItem(
+                                  contentId: it['content_id']?.toString() ?? '',
+                                  contentType: it['content_type']?.toString() ?? 'post',
+                                  positionInFeed: items.indexOf(it),
+                                  feedType: 'home',
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                                    child: Text('${it['content_type']} • score ${it['score']?.toStringAsFixed(1) ?? ''}'),
+                                  ),
+                                )),
+                          ],
+                        ),
+                      );
+                    },
+                    loading: () => const SliverToBoxAdapter(child: SizedBox(height: 60, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))),
+                    error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                  ),
+                );
+              },
+            ),
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
-          ],
+            ],
+          ),
         ),
       ),
     );

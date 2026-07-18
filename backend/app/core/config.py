@@ -58,6 +58,40 @@ class Settings(BaseSettings):
     database_max_overflow: int = 20
     database_echo: bool = False
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value: str) -> str:
+        """Accept Render/Heroku-style URLs and force asyncpg + SSL for remote hosts.
+
+        Render injects `postgresql://...` (or `postgres://...`). SQLAlchemy async
+        needs `postgresql+asyncpg://`. Managed Postgres requires TLS.
+        """
+        if not isinstance(value, str) or not value:
+            return value
+
+        url = value.strip()
+        if url.startswith("postgres://"):
+            url = "postgresql://" + url[len("postgres://") :]
+
+        if url.startswith("postgresql://") and "+asyncpg" not in url:
+            url = "postgresql+asyncpg://" + url[len("postgresql://") :]
+
+        is_local = any(
+            host in url
+            for host in (
+                "@localhost",
+                "@127.0.0.1",
+                "@postgres:",  # docker-compose service name
+                "@postgres/",
+            )
+        )
+        if not is_local and "ssl=" not in url and "sslmode=" not in url:
+            sep = "&" if "?" in url else "?"
+            # asyncpg accepts ssl=require via query string
+            url = f"{url}{sep}ssl=require"
+
+        return url
+
     # External gaming-place catalog (projectX PostgreSQL) — synced on dev startup.
     gaming_places_database_url: str = Field(
         default="postgresql://projectx:projectx@localhost:5432/projectx",

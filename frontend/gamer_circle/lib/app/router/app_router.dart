@@ -40,6 +40,9 @@ import 'package:gamer_circle/features/notifications/presentation/notifications_s
 import 'package:gamer_circle/features/parlor/presentation/owner_dashboard_screen.dart';
 import 'package:gamer_circle/features/parlor/presentation/parlor_profile_screen.dart';
 import 'package:gamer_circle/features/post/presentation/create_post_screen.dart';
+import 'package:gamer_circle/features/create_content/presentation/add_details_screen.dart';
+import 'package:gamer_circle/features/create_content/presentation/camera_screen.dart';
+import 'package:gamer_circle/features/create_content/presentation/trim_preview_screen.dart';
 import 'package:gamer_circle/features/profile/presentation/my_bookings_screen.dart';
 import 'package:gamer_circle/features/profile/presentation/pages/profile_page.dart';
 import 'package:gamer_circle/features/friends/presentation/friends_list_screen.dart';
@@ -209,6 +212,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/owner-dashboard', builder: (context, state) => const OwnerDashboardScreen()),
       GoRoute(path: '/create-post', builder: (context, state) => const CreatePostScreen()),
       GoRoute(path: '/create-reel', builder: (context, state) => const CreateReelScreen()),
+      GoRoute(
+        path: '/create/add-details',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return AddDetailsScreen(
+            postType: extra['postType'] as String? ?? 'post',
+            videoUrl: extra['videoUrl'] as String?,
+            durationSeconds: extra['duration'] as int?,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/create/camera',
+        builder: (context, state) {
+          final mode = state.extra as String? ?? 'short';
+          return CameraScreen(mode: mode);
+        },
+      ),
+      GoRoute(
+        path: '/create/trim',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return TrimPreviewScreen(
+            videoPath: extra['videoPath'] as String? ?? '',
+            maxDuration: extra['maxDuration'] as int? ?? 60,
+          );
+        },
+      ),
       GoRoute(path: '/reels/search', builder: (context, state) => const ReelSearchScreen()),
       GoRoute(
         path: '/reels/:id/comments',

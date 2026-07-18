@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-07-08 — Added PROFILE as 6th bottom nav icon; enabled changing profile pic (tap avatar -> gallery pick -> DMS upload -> update avatar_url)
-- **In progress:** none
-- **Next up:** test profile pic change + tap profile in navbar
-- **Known open issues / blockers:** none
+- **Last completed:** 2026-07-11 — Fixed all post-change breaks: 0 compile errors after fixes (ranked provider override, dms FilePicker alias+pubspec pin to ^7, added integration_test sdk dep, pub get, multiple analyze passes); + in navbar + algo changes now clean
+- **In progress:** none (app builds/analyzes cleanly)
+- **Next up:** manual run test on device/emulator; verify + opens create tabs and feed tracking works
+- **Known open issues / blockers:** none (flutter analyze reports 0 errors)
 
 ---
 
@@ -107,6 +107,8 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-07-11 — Added + (create) button to lower navbar; then full check+fix pass until 0 errors: fixed ranked override name, dms_upload FilePicker via alias + pinned file_picker ^7 + integration_test sdk in pubspec, re-ran pub get + analyze x times (0 errors now).
+- 2026-07-10 — Algorithm brain kit: migrations+models+full engine (track/compute/score/rank/build/trending/smart_search), Celery beat tasks, routers for ranked/interactions/search/admin, Flutter repo+providers+Trackable+home integration. Progress tracked in PROGRESS_ALGORITHM.md
 - 2026-07-08 — Added PROFILE icon to lower navbar (6th position); implemented profile picture change (camera overlay on avatar, gallery upload via DMS, update avatar_url)
 - 2026-07-08 — Full demo seed: 6 users (phones +91999999901X / Demo@123), 6 bookings, 6 posts (picsum), 5 reels (public mp4), convos/messages, gaming extensions for Delhi parlors
 - 2026-07-08 — Placed AGENT.md + STRUCTURE.md (real paths + connectivity examples) into repo root per instructions
