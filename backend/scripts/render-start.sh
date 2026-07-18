@@ -67,5 +67,38 @@ PY
 echo "Running database migrations..."
 alembic upgrade head
 
+# Seed demo parlors/users when DB is empty (or SEED_ON_BOOT=1)
+if [ "${SEED_ON_BOOT:-1}" = "1" ]; then
+  echo "Checking / seeding demo data..."
+  python - <<'PY' || echo "Seed check failed (non-fatal)"
+import asyncio
+from sqlalchemy import func, select, text
+from sqlalchemy.ext.asyncio import create_async_engine
+from app.core.config import get_settings
+
+async def need_seed() -> bool:
+    if __import__("os").environ.get("FORCE_SEED") == "1":
+        return True
+    eng = create_async_engine(get_settings().database_url, pool_pre_ping=True)
+    try:
+        async with eng.connect() as conn:
+            # table may not exist yet on broken deploys
+            try:
+                n = await conn.scalar(text("SELECT COUNT(*) FROM gaming_places"))
+            except Exception:
+                return True
+            return int(n or 0) == 0
+    finally:
+        await eng.dispose()
+
+if asyncio.run(need_seed()):
+    print("Empty gaming_places — running seed_render_bootstrap...")
+    import runpy
+    runpy.run_path("scripts/seed_render_bootstrap.py", run_name="__main__")
+else:
+    print("gaming_places already populated — skip seed")
+PY
+fi
+
 echo "Starting uvicorn on port ${PORT} (workers=${WORKERS})..."
 exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT}" --workers "${WORKERS}"

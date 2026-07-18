@@ -83,7 +83,7 @@ class FeedService:
                 SELECT
                     gp2.id AS place_id,
                     (6371000 * acos(
-                        MIN(1.0, MAX(-1.0,
+                        LEAST(1.0, GREATEST(-1.0,
                             cos(radians(:lat)) * cos(radians(gp2.latitude))
                             * cos(radians(gp2.longitude) - radians(:lng))
                             + sin(radians(:lat)) * sin(radians(gp2.latitude))

@@ -71,6 +71,9 @@ class AppTheme {
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
           ),
+          hintStyle: TextStyle(color: AppColors.textSecondaryLight),
+          labelStyle: TextStyle(color: AppColors.textSecondaryLight),
+          floatingLabelStyle: TextStyle(color: AppColors.primary),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             borderSide: const BorderSide(color: AppColors.borderLight),
@@ -87,6 +90,11 @@ class AppTheme {
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             borderSide: const BorderSide(color: AppColors.error),
           ),
+        ),
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: AppColors.primary,
+          selectionColor: Color(0x334F46E5),
+          selectionHandleColor: AppColors.primary,
         ),
         cardTheme: CardTheme(
           color: AppColors.surfaceLight,

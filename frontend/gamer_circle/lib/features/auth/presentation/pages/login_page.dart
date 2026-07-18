@@ -286,6 +286,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       enabled: enabled,
       keyboardType: TextInputType.text,
       textInputAction: TextInputAction.next,
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+      ),
+      cursorColor: AppColors.primary,
       onChanged: (_) => setState(() {}),
       onFieldSubmitted: (_) {
         if (_isPhoneLogin) {
@@ -296,6 +302,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       },
       decoration: InputDecoration(
         hintText: 'Phone Number or Username',
+        hintStyle: const TextStyle(color: AppColors.textSecondary),
         prefixIcon: Icon(
           _isPhoneLogin ? Icons.phone_outlined : Icons.alternate_email,
           color: AppColors.primary,
@@ -313,7 +320,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
-        fillColor: const Color(0xFFF9F9F9),
+        fillColor: Colors.white,
       ),
       validator: validateLoginIdentifier,
     );
@@ -325,9 +332,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       enabled: enabled,
       obscureText: _obscurePassword,
       textInputAction: TextInputAction.done,
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+      ),
+      cursorColor: AppColors.primary,
       onFieldSubmitted: (_) => _onPasswordLogin(),
       decoration: InputDecoration(
         hintText: 'Password',
+        hintStyle: const TextStyle(color: AppColors.textSecondary),
         prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
         suffixIcon: IconButton(
           icon: Icon(
@@ -351,7 +365,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
-        fillColor: const Color(0xFFF9F9F9),
+        fillColor: Colors.white,
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {

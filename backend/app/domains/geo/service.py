@@ -203,7 +203,7 @@ class GeoService:
                 SELECT
                     gp2.id AS place_id,
                     (6371000 * acos(
-                        MIN(1.0, MAX(-1.0,
+                        LEAST(1.0, GREATEST(-1.0,
                             cos(radians(:lat)) * cos(radians(gp2.latitude))
                             * cos(radians(gp2.longitude) - radians(:lng))
                             + sin(radians(:lat)) * sin(radians(gp2.latitude))
@@ -234,19 +234,23 @@ class GeoService:
     ) -> float:
         bind = self.session.get_bind()
         if bind.dialect.name == "postgresql":
-            sql = text(
-                """
-                SELECT ST_Distance(
-                    ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-                    ST_SetSRID(ST_MakePoint(:place_lng, :place_lat), 4326)::geography
-                ) AS distance_meters
-                """
-            )
-            result = await self.session.execute(
-                sql,
-                {"lat": lat, "lng": lng, "place_lat": place_lat, "place_lng": place_lng},
-            )
-            return float(result.scalar_one())
+            try:
+                sql = text(
+                    """
+                    SELECT ST_Distance(
+                        ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
+                        ST_SetSRID(ST_MakePoint(:place_lng, :place_lat), 4326)::geography
+                    ) AS distance_meters
+                    """
+                )
+                result = await self.session.execute(
+                    sql,
+                    {"lat": lat, "lng": lng, "place_lat": place_lat, "place_lng": place_lng},
+                )
+                return float(result.scalar_one())
+            except Exception:
+                # Free-tier Postgres without PostGIS — pure Haversine fallback
+                return self._haversine_meters(lat, lng, place_lat, place_lng)
 
         return self._haversine_meters(lat, lng, place_lat, place_lng)
 
@@ -274,30 +278,38 @@ class GeoService:
             )
             return [(place, view, distance) for place, view, distance in items]
 
-        sql = text(
-            """
-            SELECT
-                gp.id,
-                ST_Distance(
-                    ST_SetSRID(ST_MakePoint(gp.longitude, gp.latitude), 4326)::geography,
-                    ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
-                ) AS distance_meters
-            FROM gaming_places gp
-            WHERE gp.latitude IS NOT NULL
-              AND gp.longitude IS NOT NULL
-              AND ST_DWithin(
-                    ST_SetSRID(ST_MakePoint(gp.longitude, gp.latitude), 4326)::geography,
-                    ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-                    :radius
-              )
-            ORDER BY distance_meters ASC
-            LIMIT :limit
-            """
-        )
-        result = await self.session.execute(
-            sql, {"lat": lat, "lng": lng, "radius": radius_m, "limit": limit}
-        )
-        mappings = result.mappings().all()
+        try:
+            sql = text(
+                """
+                SELECT
+                    gp.id,
+                    ST_Distance(
+                        ST_SetSRID(ST_MakePoint(gp.longitude, gp.latitude), 4326)::geography,
+                        ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
+                    ) AS distance_meters
+                FROM gaming_places gp
+                WHERE gp.latitude IS NOT NULL
+                  AND gp.longitude IS NOT NULL
+                  AND ST_DWithin(
+                        ST_SetSRID(ST_MakePoint(gp.longitude, gp.latitude), 4326)::geography,
+                        ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
+                        :radius
+                  )
+                ORDER BY distance_meters ASC
+                LIMIT :limit
+                """
+            )
+            result = await self.session.execute(
+                sql, {"lat": lat, "lng": lng, "radius": radius_m, "limit": limit}
+            )
+            mappings = result.mappings().all()
+        except Exception:
+            # No PostGIS: fall back to haversine search
+            items, _ = await self.parlor_repo.search_nearby(
+                lat, lng, radius_m=radius_m, limit=limit
+            )
+            return [(place, view, distance) for place, view, distance in items]
+
         if not mappings:
             return []
 

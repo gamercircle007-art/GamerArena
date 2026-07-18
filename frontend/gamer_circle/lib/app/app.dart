@@ -13,6 +13,9 @@ class GamerCircleApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
+      // Force light so system dark mode does not paint black input fills
+      // on white auth/onboarding screens (text becomes invisible).
+      themeMode: ThemeMode.light,
       routerConfig: ref.watch(routerProvider),
       builder: (context, child) =>
           WsListener(child: child ?? const SizedBox.shrink()),

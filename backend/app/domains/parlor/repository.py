@@ -123,7 +123,7 @@ class ParlorRepository:
                 SELECT
                     gp.id AS id,
                     (6371000 * acos(
-                        MIN(1.0, MAX(-1.0,
+                        LEAST(1.0, GREATEST(-1.0,
                             cos(radians(:lat)) * cos(radians(gp.latitude))
                             * cos(radians(gp.longitude) - radians(:lng))
                             + sin(radians(:lat)) * sin(radians(gp.latitude))
@@ -251,7 +251,7 @@ class ParlorRepository:
                 SELECT
                     gp.id AS id,
                     (6371000 * acos(
-                        MIN(1.0, MAX(-1.0,
+                        LEAST(1.0, GREATEST(-1.0,
                             cos(radians(:lat)) * cos(radians(gp.latitude))
                             * cos(radians(gp.longitude) - radians(:lng))
                             + sin(radians(:lat)) * sin(radians(gp.latitude))
