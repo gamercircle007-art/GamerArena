@@ -3,14 +3,52 @@ allprojects {
         google()
         mavenCentral()
     }
+    configurations.all {
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib:2.0.21"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.0.21"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.21"
+        }
+    }
 }
 
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-subprojects {
-    project.evaluationDependsOn(":app")
+
+// Plugin android/build.gradle files resolve `flutter.compileSdkVersion` inside the
+// `android {}` block. On Flutter 3.24 + AGP 8.x the real FlutterExtension is only
+// applied to :app, so library plugins fail evaluation. Inject a lightweight
+// stand-in on every non-app subproject before it evaluates.
+subprojects { sub ->
+    if (sub.name == "app") {
+        return
+    }
+    sub.beforeEvaluate {
+        // Map is enough: plugins only read compileSdkVersion / minSdkVersion.
+        sub.ext.flutter = [
+            compileSdkVersion: 36,
+            minSdkVersion    : 21,
+            targetSdkVersion : 36,
+            ndkVersion       : null,
+        ]
+    }
+    sub.afterEvaluate {
+        if (sub.hasProperty("android")) {
+            sub.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+        sub.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = "17"
+            }
+        }
+    }
 }
 
 tasks.register("clean", Delete) {
