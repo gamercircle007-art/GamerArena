@@ -273,6 +273,28 @@ def create_app() -> FastAPI:
             "auth_methods": settings.auth_methods_list,
         }
 
+    @app.post("/api/v1/dev/seed", tags=["Health"], summary="Bootstrap demo data (staging only)")
+    async def dev_seed(request: Request) -> dict[str, Any]:
+        """One-shot demo seed for empty Render DBs. Header: X-Seed-Key: OTP_DEV_BYPASS_CODE."""
+        if settings.is_production:
+            return JSONResponse(status_code=404, content={"error": "not_found"})
+        key = request.headers.get("X-Seed-Key") or request.query_params.get("key")
+        if not settings.otp_dev_bypass_code or key != settings.otp_dev_bypass_code:
+            return JSONResponse(status_code=403, content={"error": "forbidden"})
+        try:
+            import runpy
+            from pathlib import Path
+
+            script = Path(__file__).resolve().parent.parent / "scripts" / "seed_render_bootstrap.py"
+            runpy.run_path(str(script), run_name="__main__")
+            return {"status": "ok", "message": "seed complete"}
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("dev_seed_failed")
+            return JSONResponse(
+                status_code=500,
+                content={"error": "seed_failed", "message": str(exc)[:500]},
+            )
+
     # --- Domain routers ---
     api_prefix = settings.api_v1_prefix
     app.include_router(auth_router, prefix=api_prefix)
