@@ -22,7 +22,27 @@ class MyProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authNotifierProvider);
     if (auth is! AuthAuthenticated) {
-      return const Scaffold(body: Center(child: Text('Not logged in')));
+      return Scaffold(
+        appBar: AppBar(title: const Text('Profile')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.person_outline, size: 64, color: Colors.grey),
+                const SizedBox(height: 12),
+                const Text('Sign in to view your profile'),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () => context.go('/login'),
+                  child: const Text('Login'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     final userId = auth.user.id;
@@ -41,47 +61,61 @@ class MyProfileScreen extends ConsumerWidget {
       ),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Could not load profile:\n$e', textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () => ref.invalidate(publicProfileProvider(userId)),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (profile) {
           final hasStory = myStoriesAsync.valueOrNull?.isNotEmpty ?? false;
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
             children: [
               Center(
-                child: GestureDetector(
-                  onTap: () => _changeAvatar(context, ref, userId),
-                  child: Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      StoriesAvatarRing(
-                        hasStory: hasStory,
-                        allViewed: false,
-                        size: 108,
-                        onTap: hasStory
-                            ? () => context.push('/story/create')
-                            : () => context.push('/story/create'),
-                        child: UserAvatar(
-                          name: profile.name ?? profile.username,
-                          imageUrl: profile.avatarUrl,
-                          radius: 48,
-                          showOnlineDot: true,
-                          isOnline: true,
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    StoriesAvatarRing(
+                      hasStory: hasStory,
+                      allViewed: false,
+                      size: 108,
+                      onTap: () => _changeAvatar(context, ref, userId),
+                      child: UserAvatar(
+                        name: profile.name ?? profile.username,
+                        imageUrl: profile.avatarUrl,
+                        radius: 48,
+                        showOnlineDot: true,
+                        isOnline: true,
+                      ),
+                    ),
+                    Material(
+                      color: AppColors.primary,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => _changeAvatar(context, ref, userId),
+                        child: const Padding(
+                          padding: EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.camera_alt,
+                            size: 16,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(4),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
