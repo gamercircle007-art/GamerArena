@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-07-11 — Fixed all post-change breaks: 0 compile errors after fixes (ranked provider override, dms FilePicker alias+pubspec pin to ^7, added integration_test sdk dep, pub get, multiple analyze passes); + in navbar + algo changes now clean
-- **In progress:** none (app builds/analyzes cleanly)
-- **Next up:** manual run test on device/emulator; verify + opens create tabs and feed tracking works
-- **Known open issues / blockers:** none (flutter analyze reports 0 errors)
+- **Last completed:** 2026-07-18 — Render deploy config pushed (`render.yaml` + backend start/URL normalize); Android release APK built for Render API URL; code on `sit` → GitHub
+- **In progress:** user must click Render Dashboard → New → Blueprint → apply `render.yaml` (cannot be done from CLI without Render API token)
+- **Next up:** Apply Blueprint on Render; wait for `https://gamer-circle-api.onrender.com/health`; install APK; seed demo if needed
+- **Known open issues / blockers:** Render free tier cold starts ~30–60s; PostGIS may need paid Postgres if extension blocked
 
 ---
 
@@ -107,6 +107,7 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-07-18 — Render Blueprint (`render.yaml`: Postgres+Redis+API), DATABASE_URL asyncpg/SSL normalize, render-start.sh migrations+PostGIS; Flutter API_BASE_URL dart-define; Android AGP/Kotlin fix; release APK → Render URL; pushed `sit`.
 - 2026-07-11 — Added + (create) button to lower navbar; then full check+fix pass until 0 errors: fixed ranked override name, dms_upload FilePicker via alias + pinned file_picker ^7 + integration_test sdk in pubspec, re-ran pub get + analyze x times (0 errors now).
 - 2026-07-10 — Algorithm brain kit: migrations+models+full engine (track/compute/score/rank/build/trending/smart_search), Celery beat tasks, routers for ranked/interactions/search/admin, Flutter repo+providers+Trackable+home integration. Progress tracked in PROGRESS_ALGORITHM.md
 - 2026-07-08 — Added PROFILE icon to lower navbar (6th position); implemented profile picture change (camera overlay on avatar, gallery upload via DMS, update avatar_url)
