@@ -37,7 +37,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("APP_ENV", "ENVIRONMENT"),
         description="Deployment environment: local | dev | staging | prod",
     )
-    app_name: str = "paythan"
+    app_name: str = Field(default="gamer-circle", validation_alias=AliasChoices("APP_NAME", "app_name"))
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
@@ -76,20 +76,50 @@ class Settings(BaseSettings):
         if url.startswith("postgresql://") and "+asyncpg" not in url:
             url = "postgresql+asyncpg://" + url[len("postgresql://") :]
 
-        is_local = any(
-            host in url
-            for host in (
-                "@localhost",
-                "@127.0.0.1",
-                "@postgres:",  # docker-compose service name
-                "@postgres/",
+        # SSL only for *external* managed Postgres. Skip for:
+        # - local/docker hosts
+        # - Render *internal* hostnames (no dots, e.g. dpg-xxx)
+        if url.startswith("postgresql"):
+            is_local = any(
+                host in url
+                for host in (
+                    "@localhost",
+                    "@127.0.0.1",
+                    "@postgres:",  # docker-compose service name
+                    "@postgres/",
+                )
             )
-        )
-        if not is_local and "ssl=" not in url and "sslmode=" not in url:
-            sep = "&" if "?" in url else "?"
-            # asyncpg accepts ssl=require via query string
-            url = f"{url}{sep}ssl=require"
+            # Internal Render DB host looks like @dpg-xxxxx/ (no domain suffix)
+            is_render_internal = False
+            try:
+                after_at = url.split("@", 1)[1]
+                host_part = after_at.split("/", 1)[0].split(":", 1)[0]
+                is_render_internal = bool(host_part) and "." not in host_part
+            except IndexError:
+                pass
+            if (
+                not is_local
+                and not is_render_internal
+                and "ssl=" not in url
+                and "sslmode=" not in url
+            ):
+                sep = "&" if "?" in url else "?"
+                # asyncpg accepts ssl=require via query string
+                url = f"{url}{sep}ssl=require"
 
+        return url
+
+    @field_validator("redis_url", mode="before")
+    @classmethod
+    def normalize_redis_url(cls, value: str) -> str:
+        """Normalize Render Key Value URLs (rediss + optional cert skip)."""
+        if not isinstance(value, str) or not value:
+            return value
+        url = value.strip()
+        # External Render Redis uses TLS (rediss://). Some runtimes need cert skip.
+        if url.startswith("rediss://") and "ssl_cert_reqs" not in url:
+            sep = "&" if "?" in url else "?"
+            url = f"{url}{sep}ssl_cert_reqs=none"
         return url
 
     # External gaming-place catalog (projectX PostgreSQL) — synced on dev startup.
@@ -245,7 +275,24 @@ class Settings(BaseSettings):
     @property
     def use_otp_dev_bypass(self) -> bool:
         """True when a fixed dev OTP is active (never in production)."""
-        return bool(self.otp_dev_bypass_code) and not self.is_production
+        if self.is_production:
+            return False
+        return bool((self.otp_dev_bypass_code or "").strip())
+
+    @property
+    def twilio_configured(self) -> bool:
+        return bool(
+            (self.twilio_account_sid or "").strip()
+            and (self.twilio_auth_token or "").strip()
+        )
+
+    @property
+    def aws_configured(self) -> bool:
+        return bool(
+            (self.aws_access_key_id or "").strip()
+            and (self.aws_secret_access_key or "").strip()
+            and (self.aws_s3_bucket or "").strip()
+        )
 
     @property
     def otp_rate_limit_window_seconds(self) -> int:
@@ -253,6 +300,21 @@ class Settings(BaseSettings):
 
     def is_auth_method_enabled(self, method: str) -> bool:
         return method in self.auth_methods_list
+
+    def production_readiness(self) -> dict[str, bool | str]:
+        """Quick checklist for ops dashboards / health."""
+        return {
+            "app_env": self.app_env,
+            "jwt_configured": len(self.jwt_secret_key or "") >= 32,
+            "twilio_configured": self.twilio_configured,
+            "aws_configured": self.aws_configured,
+            "otp_dev_bypass_disabled": not self.use_otp_dev_bypass,
+            "debug_off": not self.debug,
+            "razorpay_configured": bool(
+                (self.razorpay_key_id or "").strip()
+                and (self.razorpay_key_secret or "").strip()
+            ),
+        }
 
 
 @lru_cache
