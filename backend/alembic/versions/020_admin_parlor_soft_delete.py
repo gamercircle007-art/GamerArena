@@ -3,11 +3,13 @@
 Revision ID: 020_admin_parlor_soft_delete
 Revises: 019_users_bio
 Create Date: 2026-07-23
+
+Uses raw SQL IF NOT EXISTS so re-runs and partial deploys are safe.
+Boolean defaults are true/false (Postgres rejects integer 1/0 for boolean).
 """
 
 from collections.abc import Sequence
 
-import sqlalchemy as sa
 from alembic import op
 
 revision: str = "020_admin_parlor_soft_delete"
@@ -16,88 +18,49 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-def _column_names(table: str) -> set[str]:
-    bind = op.get_bind()
-    inspector = sa.inspect(bind)
-    if table not in inspector.get_table_names():
-        return set()
-    return {c["name"] for c in inspector.get_columns(table)}
-
-
-def _index_names(table: str) -> set[str]:
-    bind = op.get_bind()
-    inspector = sa.inspect(bind)
-    if table not in inspector.get_table_names():
-        return set()
-    return {i["name"] for i in inspector.get_indexes(table) if i.get("name")}
-
-
 def upgrade() -> None:
-    table = "gaming_place_extensions"
-    cols = _column_names(table)
-    if not cols:
-        return
-
-    if "is_active" not in cols:
-        op.add_column(
-            table,
-            sa.Column(
-                "is_active",
-                sa.Boolean(),
-                nullable=False,
-                server_default=sa.text("1"),
-            ),
-        )
-    if "is_deleted" not in cols:
-        op.add_column(
-            table,
-            sa.Column(
-                "is_deleted",
-                sa.Boolean(),
-                nullable=False,
-                server_default=sa.text("0"),
-            ),
-        )
-    if "deleted_at" not in cols:
-        op.add_column(
-            table,
-            sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
-        )
-
-    indexes = _index_names(table)
-    if "ix_gaming_place_extensions_is_deleted" not in indexes:
-        op.create_index(
-            "ix_gaming_place_extensions_is_deleted",
-            table,
-            ["is_deleted"],
-            unique=False,
-        )
-    if "ix_gaming_place_extensions_is_active" not in indexes:
-        op.create_index(
-            "ix_gaming_place_extensions_is_active",
-            table,
-            ["is_active"],
-            unique=False,
-        )
+    # IF NOT EXISTS requires PG 9.1+; safe no-op when columns already present.
+    op.execute(
+        """
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM information_schema.tables
+            WHERE table_name = 'gaming_place_extensions'
+          ) THEN
+            ALTER TABLE gaming_place_extensions
+              ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true;
+            ALTER TABLE gaming_place_extensions
+              ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT false;
+            ALTER TABLE gaming_place_extensions
+              ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
+          END IF;
+        END $$;
+        """
+    )
+    op.execute(
+        """
+        CREATE INDEX IF NOT EXISTS ix_gaming_place_extensions_is_deleted
+          ON gaming_place_extensions (is_deleted)
+        """
+    )
+    op.execute(
+        """
+        CREATE INDEX IF NOT EXISTS ix_gaming_place_extensions_is_active
+          ON gaming_place_extensions (is_active)
+        """
+    )
 
 
 def downgrade() -> None:
-    table = "gaming_place_extensions"
-    indexes = _index_names(table)
-    if "ix_gaming_place_extensions_is_active" in indexes:
-        op.drop_index("ix_gaming_place_extensions_is_active", table_name=table)
-    if "ix_gaming_place_extensions_is_deleted" in indexes:
-        op.drop_index("ix_gaming_place_extensions_is_deleted", table_name=table)
-
-    cols = _column_names(table)
-    # SQLite < 3.35 cannot DROP COLUMN; skip quietly when unsupported.
-    bind = op.get_bind()
-    for col in ("deleted_at", "is_deleted", "is_active"):
-        if col not in cols:
-            continue
-        try:
-            op.drop_column(table, col)
-        except Exception:
-            if bind.dialect.name == "sqlite":
-                continue
-            raise
+    op.execute("DROP INDEX IF EXISTS ix_gaming_place_extensions_is_active")
+    op.execute("DROP INDEX IF EXISTS ix_gaming_place_extensions_is_deleted")
+    op.execute(
+        "ALTER TABLE gaming_place_extensions DROP COLUMN IF EXISTS deleted_at"
+    )
+    op.execute(
+        "ALTER TABLE gaming_place_extensions DROP COLUMN IF EXISTS is_deleted"
+    )
+    op.execute(
+        "ALTER TABLE gaming_place_extensions DROP COLUMN IF EXISTS is_active"
+    )

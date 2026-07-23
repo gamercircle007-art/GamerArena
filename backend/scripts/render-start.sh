@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Start script for Render (native Python or Docker override).
 # Runs migrations then serves the API on $PORT.
+# Never hang silently: every stage logs success/failure.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -8,7 +9,42 @@ cd "$(dirname "$0")/.."
 PORT="${PORT:-8000}"
 WORKERS="${WEB_CONCURRENCY:-1}"
 
-echo "Waiting for PostgreSQL..."
+echo "=== render-start: env diagnostics (no secrets) ==="
+python - <<'PY'
+import os
+from app.core.config import get_settings
+
+try:
+    s = get_settings()
+except Exception as exc:  # noqa: BLE001
+    print(f"FATAL: settings failed to load: {type(exc).__name__}: {exc}")
+    print("Check JWT_SECRET_KEY (>=32 chars), DATABASE_URL, REDIS_URL on Render.")
+    raise SystemExit(1)
+
+url = s.database_url
+# mask password in URL for logs
+masked = url
+if "@" in url and "://" in url:
+    try:
+        scheme, rest = url.split("://", 1)
+        creds, hostpart = rest.split("@", 1)
+        if ":" in creds:
+            user = creds.split(":", 1)[0]
+            masked = f"{scheme}://{user}:***@{hostpart}"
+    except Exception:
+        masked = url[:32] + "..."
+
+print(f"  APP_ENV={s.app_env}")
+print(f"  DEBUG={s.debug}")
+print(f"  DATABASE_URL={masked}")
+print(f"  REDIS_URL set={bool((s.redis_url or '').strip())}")
+print(f"  JWT ok={len(s.jwt_secret_key or '') >= 32}")
+print(f"  Twilio configured={s.twilio_configured}")
+print(f"  OTP bypass active={s.use_otp_dev_bypass}")
+print(f"  PORT={os.environ.get('PORT', '8000')}")
+PY
+
+echo "=== Waiting for PostgreSQL ==="
 python - <<'PY'
 import asyncio
 import sys
@@ -20,34 +56,40 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from app.core.config import get_settings
 
 
-async def wait_for_db(max_attempts: int = 30) -> None:
+async def wait_for_db(max_attempts: int = 40) -> None:
     url = get_settings().database_url
+    last = ""
     for attempt in range(1, max_attempts + 1):
         engine = create_async_engine(url, pool_pre_ping=True)
         try:
             async with engine.connect() as conn:
                 await conn.execute(text("SELECT 1"))
-            print("PostgreSQL is ready")
+            print(f"PostgreSQL is ready (attempt {attempt})")
             return
         except Exception as exc:  # noqa: BLE001
+            last = str(exc)
             print(f"DB not ready ({attempt}/{max_attempts}): {exc}")
             time.sleep(2)
         finally:
             await engine.dispose()
-    print("PostgreSQL did not become ready in time", file=sys.stderr)
+    print(f"PostgreSQL did not become ready: {last}", file=sys.stderr)
+    print(
+        "Fix: Render Dashboard → gamer-circle-api → Environment → "
+        "link DATABASE_URL from gamer-circle-db (Internal URL).",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 
 asyncio.run(wait_for_db())
 PY
 
-echo "Ensuring PostGIS extension (best-effort)..."
+echo "=== Ensuring PostGIS extension (best-effort) ==="
 python - <<'PY'
 import asyncio
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.core.config import get_settings
-
 
 async def ensure_postgis() -> None:
     engine = create_async_engine(get_settings().database_url, pool_pre_ping=True)
@@ -56,21 +98,54 @@ async def ensure_postgis() -> None:
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
         print("PostGIS extension OK")
     except Exception as exc:  # noqa: BLE001
-        print(f"PostGIS extension skipped/failed (geo queries may fail): {exc}")
+        print(f"PostGIS skipped/failed (geo may fail): {exc}")
     finally:
         await engine.dispose()
-
 
 asyncio.run(ensure_postgis())
 PY
 
-echo "Running database migrations..."
-alembic upgrade head
+echo "=== Running database migrations (alembic upgrade head) ==="
+# Fail start if migrations fail — wrong schema is worse than a clear crash.
+# Log full traceback for Render Logs.
+if ! alembic upgrade head; then
+  echo "FATAL: alembic upgrade head failed" >&2
+  echo "Common fixes: DB empty? wrong revision? bad migration SQL." >&2
+  # One recovery attempt: stamp if DB already has tables but no alembic_version
+  python - <<'PY' || true
+import asyncio
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
+from app.core.config import get_settings
 
-# Always ensure admin exists; full demo seed only when gaming_places empty
+async def diagnose():
+    eng = create_async_engine(get_settings().database_url, pool_pre_ping=True)
+    async with eng.connect() as conn:
+        try:
+            rows = await conn.execute(text(
+                "SELECT version_num FROM alembic_version"
+            ))
+            print("alembic_version:", [r[0] for r in rows])
+        except Exception as e:
+            print("alembic_version missing:", e)
+        try:
+            n = await conn.scalar(text(
+                "SELECT COUNT(*) FROM information_schema.tables "
+                "WHERE table_schema='public'"
+            ))
+            print("public tables:", n)
+        except Exception as e:
+            print("table count failed:", e)
+    await eng.dispose()
+asyncio.run(diagnose())
+PY
+  exit 1
+fi
+echo "Migrations OK"
+
+echo "=== Seed / ensure admin ==="
 if [ "${SEED_ON_BOOT:-1}" = "1" ]; then
-  echo "Checking / seeding demo data + admin..."
-  python - <<'PY' || echo "Seed check failed (non-fatal)"
+  python - <<'PY' || echo "Seed check failed (non-fatal — continuing to start API)"
 import asyncio
 import runpy
 from sqlalchemy import text
@@ -92,7 +167,6 @@ async def need_full_seed() -> bool:
         await eng.dispose()
 
 async def ensure_admin_only() -> None:
-    """Lightweight admin upsert without re-seeding parlors/posts."""
     from app.db import session as db_session
     import app.db.models  # noqa: F401
     from app.domains.user.models import User, UserRole
@@ -152,7 +226,9 @@ else:
     print("gaming_places populated — ensuring admin only")
     asyncio.run(ensure_admin_only())
 PY
+else
+  echo "SEED_ON_BOOT=0 — skip seed"
 fi
 
-echo "Starting uvicorn on port ${PORT} (workers=${WORKERS})..."
+echo "=== Starting uvicorn on 0.0.0.0:${PORT} workers=${WORKERS} ==="
 exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT}" --workers "${WORKERS}"
