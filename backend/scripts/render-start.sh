@@ -47,7 +47,7 @@ PY
 echo "=== Waiting for PostgreSQL ==="
 python - <<'PY'
 import asyncio
-import sys
+import os
 import time
 
 from sqlalchemy import text
@@ -55,34 +55,49 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import get_settings
 
+# Free-tier recovery: do not hard-exit if DB is slow/missing — start API so
+# status becomes Live and /health answers. /ready reports database=false.
+HARD_FAIL = os.environ.get("DB_WAIT_HARD_FAIL", "0") == "1"
+MAX = int(os.environ.get("DB_WAIT_ATTEMPTS", "20"))
 
-async def wait_for_db(max_attempts: int = 40) -> None:
+
+async def wait_for_db() -> bool:
     url = get_settings().database_url
     last = ""
-    for attempt in range(1, max_attempts + 1):
+    for attempt in range(1, MAX + 1):
         engine = create_async_engine(url, pool_pre_ping=True)
         try:
             async with engine.connect() as conn:
                 await conn.execute(text("SELECT 1"))
             print(f"PostgreSQL is ready (attempt {attempt})")
-            return
+            return True
         except Exception as exc:  # noqa: BLE001
             last = str(exc)
-            print(f"DB not ready ({attempt}/{max_attempts}): {exc}")
+            print(f"DB not ready ({attempt}/{MAX}): {exc}")
             time.sleep(2)
         finally:
             await engine.dispose()
-    print(f"PostgreSQL did not become ready: {last}", file=sys.stderr)
+    print(f"PostgreSQL not ready after {MAX} attempts: {last}")
     print(
-        "Fix: Render Dashboard → gamer-circle-api → Environment → "
-        "link DATABASE_URL from gamer-circle-db (Internal URL).",
-        file=sys.stderr,
+        "Link DATABASE_URL from gamer-circle-db (Internal URL) in Dashboard. "
+        "Starting API anyway so /health can respond."
     )
-    sys.exit(1)
+    return False
 
 
-asyncio.run(wait_for_db())
+ok = asyncio.run(wait_for_db())
+if not ok and HARD_FAIL:
+    raise SystemExit(1)
+# Export for later stages
+open("/tmp/gc_db_ready", "w").write("1" if ok else "0")
 PY
+
+DB_READY=$(cat /tmp/gc_db_ready 2>/dev/null || echo 0)
+if [ "$DB_READY" != "1" ]; then
+  echo "Skipping PostGIS / migrations / seed (DB not ready) — starting uvicorn only"
+  echo "=== Starting uvicorn on 0.0.0.0:${PORT} workers=${WORKERS} ==="
+  exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT}" --workers "${WORKERS}"
+fi
 
 echo "=== Ensuring PostGIS extension (best-effort) ==="
 python - <<'PY'
