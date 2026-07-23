@@ -144,6 +144,8 @@ class ParlorService:
             website=parlor.website,
             latitude=parlor.latitude,
             longitude=parlor.longitude,
+            is_active=parlor.is_active,
+            is_deleted=parlor.is_deleted,
             created_at=parlor.created_at,
             updated_at=parlor.updated_at,
         )

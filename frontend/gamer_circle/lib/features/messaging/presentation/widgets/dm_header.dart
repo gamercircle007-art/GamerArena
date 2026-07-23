@@ -27,10 +27,18 @@ class DmHeader extends ConsumerWidget {
         bottom: false,
         child: Row(
           children: [
-            // Hamburger (opens drawer)
+            // Hamburger → MainShellScaffold AppDrawer (parent of nested body Scaffold)
             IconButton(
               icon: const Icon(Icons.menu, color: AppColors.dmTextPrimary, size: 26),
-              onPressed: () => Scaffold.maybeOf(context)?.openDrawer(),
+              onPressed: () {
+                ScaffoldState? target = Scaffold.maybeOf(context);
+                if (target == null || !target.hasDrawer) {
+                  target = context.findRootAncestorStateOfType<ScaffoldState>();
+                }
+                if (target != null && target.hasDrawer) {
+                  target.openDrawer();
+                }
+              },
               padding: const EdgeInsets.all(4),
             ),
             const SizedBox(width: 4),

@@ -29,4 +29,9 @@ class AppConfig {
   static AppConfig get instance => _instance!;
 
   bool get isDev => flavor == Flavor.dev;
+  bool get isStaging => flavor == Flavor.staging;
+  bool get isProd => flavor == Flavor.prod;
+
+  /// Verbose Dio logs only outside production.
+  bool get enableHttpLogs => !isProd;
 }

@@ -144,6 +144,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             // ALG-FL05: Personalized ranked feed section (replaces/honors /feed)
+            // loading/error must return box children — NOT nested Slivers
+            // (nested SliverToBoxAdapter under CustomScrollView crashes HOME).
             Consumer(
               builder: (context, ref, _) {
                 final ranked = ref.watch(rankedFeedProvider('home'));
@@ -175,8 +177,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       );
                     },
-                    loading: () => const SliverToBoxAdapter(child: SizedBox(height: 60, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))),
-                    error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                    loading: () => const SizedBox(
+                      height: 60,
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                    error: (_, __) => const SizedBox.shrink(),
                   ),
                 );
               },

@@ -10,6 +10,45 @@ class MainShellScaffold extends ConsumerWidget {
 
   final Widget child;
 
+  static const _tabs = <_ShellTab>[
+    _ShellTab(
+      path: '/',
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home_rounded,
+      label: 'HOME',
+    ),
+    _ShellTab(
+      path: '/reels',
+      icon: Icons.play_circle_outline_rounded,
+      selectedIcon: Icons.play_circle_rounded,
+      label: 'REELS',
+    ),
+    _ShellTab(
+      path: '/search-input',
+      icon: Icons.search_rounded,
+      selectedIcon: Icons.search_rounded,
+      label: 'SEARCH',
+    ),
+    _ShellTab(
+      path: '/gaming-bookings',
+      icon: Icons.calendar_month_outlined,
+      selectedIcon: Icons.calendar_month,
+      label: 'BOOKING',
+    ),
+    _ShellTab(
+      path: '/messages',
+      icon: Icons.chat_bubble_outline_rounded,
+      selectedIcon: Icons.chat_bubble_rounded,
+      label: 'MESSAGES',
+    ),
+    _ShellTab(
+      path: '/profile',
+      icon: Icons.person_outline_rounded,
+      selectedIcon: Icons.person_rounded,
+      label: 'PROFILE',
+    ),
+  ];
+
   int _indexForLocation(String location) {
     if (location.startsWith('/profile')) return 5;
     if (location.startsWith('/messages')) return 4;
@@ -29,6 +68,17 @@ class MainShellScaffold extends ConsumerWidget {
     return location.startsWith('/messages/chat') || location == '/messages/new';
   }
 
+  void _goTab(BuildContext context, String path) {
+    final current = GoRouterState.of(context).matchedLocation;
+    if (path == '/') {
+      if (current == '/' || current == '/home-booking') return;
+      context.go('/');
+      return;
+    }
+    if (current == path) return;
+    context.go(path);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).matchedLocation;
@@ -42,82 +92,49 @@ class MainShellScaffold extends ConsumerWidget {
       extendBody: true,
       bottomNavigationBar: hideNavBar
           ? null
-          : Container(
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
+          : Material(
+              color: AppColors.surface,
+              elevation: 8,
+              shadowColor: Colors.black26,
               child: SafeArea(
+                top: false,
                 child: SizedBox(
                   height: 64,
                   child: Stack(
                     clipBehavior: Clip.none,
                     alignment: Alignment.bottomCenter,
                     children: [
-                      // Base row of nav items (reserve center space for the +)
                       Positioned.fill(
                         child: Row(
                           children: [
-                            Expanded(
-                              child: _NavItem(
-                                icon: Icons.home_rounded,
-                                label: 'HOME',
-                                selected: index == 0,
-                                onTap: () => context.go('/'),
+                            for (var i = 0; i < 3; i++)
+                              Expanded(
+                                child: _NavItem(
+                                  icon: index == i
+                                      ? _tabs[i].selectedIcon
+                                      : _tabs[i].icon,
+                                  label: _tabs[i].label,
+                                  selected: index == i,
+                                  onTap: () => _goTab(context, _tabs[i].path),
+                                ),
                               ),
-                            ),
-                            Expanded(
-                              child: _NavItem(
-                                icon: Icons.play_circle_outline_rounded,
-                                label: 'REELS',
-                                selected: index == 1,
-                                onTap: () => context.go('/reels'),
-                              ),
-                            ),
-                            Expanded(
-                              child: _NavItem(
-                                icon: Icons.search_rounded,
-                                label: 'SEARCH',
-                                selected: index == 2,
-                                onTap: () => context.go('/search-input'),
-                              ),
-                            ),
                             const SizedBox(width: 56),
-                            Expanded(
-                              child: _NavItem(
-                                icon: Icons.calendar_month_outlined,
-                                label: 'BOOKING',
-                                selected: index == 3,
-                                onTap: () => context.go('/gaming-bookings'),
+                            for (var i = 3; i < 6; i++)
+                              Expanded(
+                                child: _NavItem(
+                                  icon: index == i
+                                      ? _tabs[i].selectedIcon
+                                      : _tabs[i].icon,
+                                  label: _tabs[i].label,
+                                  selected: index == i,
+                                  badgeCount:
+                                      i == 4 ? unreadMessages : 0,
+                                  onTap: () => _goTab(context, _tabs[i].path),
+                                ),
                               ),
-                            ),
-                            Expanded(
-                              child: _NavItem(
-                                icon: Icons.chat_bubble_outline_rounded,
-                                label: 'MESSAGES',
-                                selected: index == 4,
-                                badgeCount: unreadMessages,
-                                onTap: () => context.go('/messages'),
-                              ),
-                            ),
-                            Expanded(
-                              child: _NavItem(
-                                icon: Icons.person_outline_rounded,
-                                label: 'PROFILE',
-                                selected: index == 5,
-                                onTap: () => context.go('/profile'),
-                              ),
-                            ),
                           ],
                         ),
                       ),
-                      // Prominent + button in lower navbar (raised like YouTube/Instagram) for Post/Short/Video/Live
                       Positioned(
                         bottom: 12,
                         child: _PlusButton(
@@ -133,34 +150,40 @@ class MainShellScaffold extends ConsumerWidget {
   }
 }
 
-/// Special + button placed in the lower navbar (YouTube-style) for adding posts, shorts, videos, live.
+class _ShellTab {
+  const _ShellTab({
+    required this.path,
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+  });
+
+  final String path;
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+}
+
+/// Raised + control for Post / Short / Video / Live.
 class _PlusButton extends StatelessWidget {
-  const _PlusButton({required this.onTap, super.key});
+  const _PlusButton({required this.onTap});
 
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          shape: BoxShape.circle,
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 30,
+    return Material(
+      color: AppColors.primary,
+      shape: const CircleBorder(),
+      elevation: 4,
+      shadowColor: Colors.black38,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: const SizedBox(
+          width: 52,
+          height: 52,
+          child: Icon(Icons.add, color: Colors.white, size: 30),
         ),
       ),
     );
@@ -186,55 +209,62 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = selected ? AppColors.primary : AppColors.textSecondaryLight;
 
-    // Do NOT wrap in Expanded here — parent Row already provides Expanded.
-    // Nested Expanded causes Element tree assert: _children.contains(child).
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
+    // Parent Row already wraps each item in Expanded.
+    // Fill the entire cell so taps are reliable on small screens.
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox.expand(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: color, size: 24),
-              if (badgeCount > 0)
-                Positioned(
-                  right: -10,
-                  top: -6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: const BoxConstraints(minWidth: 16),
-                    child: Text(
-                      badgeCount > 99 ? '99+' : '$badgeCount',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, color: color, size: 24),
+                  if (badgeCount > 0)
+                    Positioned(
+                      right: -10,
+                      top: -6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.error,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(minWidth: 16),
+                        child: Text(
+                          badgeCount > 99 ? '99+' : '$badgeCount',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  letterSpacing: 0.2,
                 ),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              color: color,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

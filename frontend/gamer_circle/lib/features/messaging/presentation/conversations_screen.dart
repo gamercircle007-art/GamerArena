@@ -25,6 +25,15 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Live search — once in initState (never in build; that stacked listeners).
+    _searchCtrl.addListener(() {
+      ref.read(dmInboxSearchProvider.notifier).state = _searchCtrl.text;
+    });
+  }
+
+  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
@@ -44,15 +53,9 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     final notes = ref.watch(dmNotesProvider);
     final ({DmTab tab, String query}) tabAndQuery = ref.watch(dmTabAndQueryProvider);
 
-    // Live search wiring
-    _searchCtrl.addListener(() {
-      ref.read(dmInboxSearchProvider.notifier).state = _searchCtrl.text;
-    });
-
+    // No nested drawer — hamburger uses MainShellScaffold's AppDrawer.
     return Scaffold(
       backgroundColor: AppColors.dmBackground,
-      // Drawer still available via hamburger in header
-      drawer: const _DmDrawerPlaceholder(),
       body: SafeArea(
         child: Column(
           children: [
@@ -311,34 +314,3 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// Minimal drawer stub (real drawer can be expanded later)
-class _DmDrawerPlaceholder extends StatelessWidget {
-  const _DmDrawerPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      backgroundColor: AppColors.dmSurface,
-      child: SafeArea(
-        child: ListView(
-          children: const [
-            SizedBox(height: 40),
-            ListTile(
-              leading: Icon(Icons.person, color: AppColors.dmTextPrimary),
-              title: Text('Profile', style: TextStyle(color: AppColors.dmTextPrimary)),
-            ),
-            ListTile(
-              leading: Icon(Icons.settings, color: AppColors.dmTextPrimary),
-              title: Text('Settings', style: TextStyle(color: AppColors.dmTextPrimary)),
-            ),
-            Divider(color: AppColors.dmDivider),
-            ListTile(
-              leading: Icon(Icons.archive_outlined, color: AppColors.dmTextSecondary),
-              title: Text('Archived', style: TextStyle(color: AppColors.dmTextSecondary)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

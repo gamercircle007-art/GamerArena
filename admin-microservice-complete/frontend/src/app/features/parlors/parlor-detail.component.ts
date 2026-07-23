@@ -96,6 +96,11 @@ import { ConfirmService } from '../../shared/services/confirm.service';
               <ng-icon name="bootstrapArrowLeft" size="14" class="me-1" />
               Back to list
             </a>
+            @if (canManage()) {
+              <a [routerLink]="['/parlors', p.id, 'edit']" class="btn btn-sm btn-outline-primary">
+                Edit
+              </a>
+            }
             @if (canVerify() && !p.is_verified) {
               <button
                 type="button"
@@ -536,6 +541,13 @@ export class ParlorDetailComponent implements OnInit {
   readonly canDelete = computed(() => {
     const role = this.auth.currentUser()?.role;
     return role ? hasPermission(role, PERMISSIONS.DELETE_PARLORS) : false;
+  });
+
+  readonly canManage = computed(() => {
+    const role = this.auth.currentUser()?.role;
+    return role
+      ? hasPermission(role, PERMISSIONS.MANAGE_PARLORS) || hasPermission(role, PERMISSIONS.VERIFY_PARLORS)
+      : false;
   });
 
   ngOnInit(): void {

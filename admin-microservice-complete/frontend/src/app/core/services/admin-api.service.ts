@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of, throwError } from 'rxjs';
 import { MockDataService } from './mock-data.service';
 import { environment } from '../../../environments/environment';
 import {
@@ -23,6 +23,8 @@ import {
   PaginatedResponse,
   ParlourEvent,
   Parlor,
+  ParlorCreateRequest,
+  ParlorUpdateRequest,
   Post,
   Rating,
   Tournament,
@@ -35,10 +37,23 @@ export class AdminApiService {
   private readonly mock = inject(MockDataService);
   private readonly base = `${environment.apiUrl}/admin`;
 
+  private readonly allowMock = environment.useMockFallback === true;
+
+  /** Mock only when useMockFallback is true (dev). Production surfaces real errors. */
+  private mockOrThrow<T>(factory: () => T) {
+    return (err: unknown) => {
+      if (!this.allowMock) {
+        return throwError(() => err);
+      }
+      return of(factory());
+    };
+  }
+
+
   getStats(): Observable<AdminStats> {
     return this.http.get<AdminStats>(`${this.base}/stats`).pipe(
-      map(data => (this.isStubStats(data) ? this.mock.getStats() : data)),
-      catchError(() => of(this.mock.getStats())),
+      map(data => (this.allowMock && this.isStubStats(data) ? this.mock.getStats() : data)),
+      catchError(this.mockOrThrow(() => this.mock.getStats())),
     );
   }
 
@@ -46,8 +61,8 @@ export class AdminApiService {
     return this.http.get<AnalyticsData>(`${this.base}/analytics`, {
       params: { period },
     }).pipe(
-      map(data => (this.isStubAnalytics(data) ? this.mock.getAnalytics(period) : data)),
-      catchError(() => of(this.mock.getAnalytics(period))),
+      map(data => (this.allowMock && this.isStubAnalytics(data) ? this.mock.getAnalytics(period) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getAnalytics(period))),
     );
   }
 
@@ -55,8 +70,8 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<User>>(`${this.base}/users`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getUsers(params) : data)),
-      catchError(() => of(this.mock.getUsers(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getUsers(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getUsers(params))),
     );
   }
 
@@ -64,13 +79,19 @@ export class AdminApiService {
     return this.http.get<User>(`${this.base}/users/${id}`).pipe(
       map(data => {
         if (!data?.id) {
+          if (!this.allowMock) {
+            throw new Error('User not found');
+          }
           const user = this.mock.getUser(id);
           if (!user) throw new Error('User not found');
           return user;
         }
         return data;
       }),
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         const user = this.mock.getUser(id);
         if (!user) throw new Error('User not found');
         return of(user);
@@ -80,7 +101,10 @@ export class AdminApiService {
 
   updateUser(id: string, data: Partial<Pick<User, 'is_active' | 'role'>>): Observable<User> {
     return this.http.patch<User>(`${this.base}/users/${id}`, data).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         const updated = this.mock.updateUser(id, data);
         if (!updated) {
           throw new Error('User not found');
@@ -92,9 +116,12 @@ export class AdminApiService {
 
   deleteUser(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/users/${id}`).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         if (!this.mock.deleteUser(id)) {
-          throw new Error('User not found');
+        throw new Error('User not found');
         }
         return of(void 0);
       }),
@@ -106,26 +133,84 @@ export class AdminApiService {
       params: this.toParams(params),
     }).pipe(
       map(data => {
-        if (params.is_verified === false && this.isEmptyPaginated(data)) {
+        if (this.allowMock && params.is_verified === false && this.isEmptyPaginated(data)) {
           return this.mock.getPendingParlors();
         }
         return data;
       }),
-      catchError(() => of(this.mock.getParlors(params))),
+      catchError(this.mockOrThrow(() => this.mock.getParlors(params))),
     );
   }
 
   getParlor(id: string): Observable<Parlor> {
-    return this.getParlors({ limit: 100 }).pipe(
-      map(res => {
-        const p = res.items.find(x => x.id === id);
-        if (!p) throw new Error('Not found');
-        return p;
-      }),
-      catchError(() => {
+    return this.http.get<Parlor>(`${this.base}/parlors/${id}`).pipe(
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         const p = this.mock.getParlor(id);
         if (!p) throw new Error('Not found');
         return of(p);
+      }),
+    );
+  }
+
+  createParlor(data: ParlorCreateRequest): Observable<Parlor> {
+    return this.http.post<Parlor>(`${this.base}/parlors`, data).pipe(
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
+        const created = this.mock.createParlor?.(data as Partial<Parlor>);
+        if (!created) throw new Error('Failed to create parlor');
+        return of(created);
+      }),
+    );
+  }
+
+  updateParlor(id: string, data: ParlorUpdateRequest): Observable<Parlor> {
+    return this.http.patch<Parlor>(`${this.base}/parlors/${id}`, data).pipe(
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
+        const updated = this.mock.updateParlor?.(id, data as Partial<Parlor>);
+        if (!updated) throw new Error('Parlor not found');
+        return of(updated);
+      }),
+    );
+  }
+
+  assignParlorOwner(id: string, ownerId: string | null, promoteToOwner = true): Observable<Parlor> {
+    return this.http
+      .patch<Parlor>(`${this.base}/parlors/${id}/assign-owner`, {
+        owner_id: ownerId,
+        promote_to_owner: promoteToOwner,
+      })
+      .pipe(
+        catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
+        const updated = this.mock.updateParlor?.(id, { owner_id: ownerId } as Partial<Parlor>);
+        if (!updated) throw new Error('Parlor not found');
+        return of(updated);
+      }),
+      );
+  }
+
+  restoreParlor(id: string): Observable<Parlor> {
+    return this.http.post<Parlor>(`${this.base}/parlors/${id}/restore`, {}).pipe(
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
+        const updated = this.mock.updateParlor?.(id, {
+        is_deleted: false,
+        is_active: true,
+        } as Partial<Parlor>);
+        if (!updated) throw new Error('Parlor not found');
+        return of(updated);
       }),
     );
   }
@@ -134,7 +219,10 @@ export class AdminApiService {
     return this.http.patch<Parlor>(`${this.base}/parlors/${id}/verify`, {
       is_verified: isVerified,
     }).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         const updated = this.mock.verifyParlor(id, isVerified);
         if (!updated) throw new Error('Parlor not found');
         return of(updated);
@@ -144,10 +232,30 @@ export class AdminApiService {
 
   deleteParlor(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/parlors/${id}`).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         if (!this.mock.deleteParlor(id)) throw new Error('Parlor not found');
         return of(void 0);
       }),
+    );
+  }
+
+  getReels(params: ListParams = {}): Observable<PaginatedResponse<Record<string, unknown>>> {
+    return this.http
+      .get<PaginatedResponse<Record<string, unknown>>>(`${this.base}/reels`, {
+        params: this.toParams(params),
+      })
+      .pipe(
+        map(data => (this.isEmptyPaginated(data) ? { items: [], total: 0, page: 1, limit: 20, has_more: false } : data)),
+        catchError(this.mockOrThrow(() => ({ items: [], total: 0, page: 1, limit: 20, has_more: false }))),
+      );
+  }
+
+  deleteReel(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/reels/${id}`).pipe(
+      catchError(this.mockOrThrow(() => void 0 as void)),
     );
   }
 
@@ -155,14 +263,17 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<Post>>(`${this.base}/posts`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getPosts(params) : data)),
-      catchError(() => of(this.mock.getPosts(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getPosts(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getPosts(params))),
     );
   }
 
   deletePost(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/posts/${id}`).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         if (!this.mock.deletePost(id)) throw new Error('Post not found');
         return of(void 0);
       }),
@@ -173,16 +284,19 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<Comment>>(`${this.base}/comments`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getComments(params) : data)),
-      catchError(() => of(this.mock.getComments(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getComments(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getComments(params))),
     );
   }
 
   deleteComment(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/comments/${id}`).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         if (!this.mock.deleteComment(id)) {
-          throw new Error('Comment not found');
+        throw new Error('Comment not found');
         }
         return of(void 0);
       }),
@@ -191,9 +305,12 @@ export class AdminApiService {
 
   restoreComment(id: string): Observable<void> {
     return this.http.patch<void>(`${this.base}/comments/${id}/restore`, {}).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         if (!this.mock.restoreComment(id)) {
-          throw new Error('Comment not found');
+        throw new Error('Comment not found');
         }
         return of(void 0);
       }),
@@ -204,16 +321,19 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<Like>>(`${this.base}/likes`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getLikes(params) : data)),
-      catchError(() => of(this.mock.getLikes(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getLikes(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getLikes(params))),
     );
   }
 
   deleteLike(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/likes/${id}`).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         if (!this.mock.deleteLike(id)) {
-          throw new Error('Like not found');
+        throw new Error('Like not found');
         }
         return of(void 0);
       }),
@@ -224,14 +344,17 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<Tournament>>(`${this.base}/tournaments`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getTournaments(params) : data)),
-      catchError(() => of(this.mock.getTournaments(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getTournaments(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getTournaments(params))),
     );
   }
 
   updateTournamentStatus(id: string, status: string): Observable<Tournament> {
     return this.http.patch<Tournament>(`${this.base}/tournaments/${id}/status`, { status }).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         const updated = this.mock.updateTournamentStatus(id, status);
         if (!updated) {
           throw new Error('Tournament not found');
@@ -243,9 +366,12 @@ export class AdminApiService {
 
   deleteTournament(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/tournaments/${id}`).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         if (!this.mock.deleteTournament(id)) {
-          throw new Error('Tournament not found');
+        throw new Error('Tournament not found');
         }
         return of(void 0);
       }),
@@ -256,8 +382,8 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<Booking>>(`${this.base}/bookings`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getBookings(params) : data)),
-      catchError(() => of(this.mock.getBookings(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getBookings(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getBookings(params))),
     );
   }
 
@@ -265,8 +391,8 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<GamingBooking>>(`${this.base}/gaming-bookings`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getGamingBookings(params) : data)),
-      catchError(() => of(this.mock.getGamingBookings(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getGamingBookings(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getGamingBookings(params))),
     );
   }
 
@@ -274,11 +400,14 @@ export class AdminApiService {
     return this.http
       .patch<GamingBooking>(`${this.base}/gaming-bookings/${id}/process-refund`, {})
       .pipe(
-        catchError(() => {
-          const updated = this.mock.processGamingRefund(id);
-          if (!updated) throw new Error('Booking not found or refund not pending');
-          return of(updated);
-        }),
+        catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
+        const updated = this.mock.processGamingRefund(id);
+        if (!updated) throw new Error('Booking not found or refund not pending');
+        return of(updated);
+      }),
       );
   }
 
@@ -286,8 +415,8 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<GamingSlot>>(`${this.base}/gaming-slots`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getGamingSlots(params) : data)),
-      catchError(() => of(this.mock.getGamingSlots(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getGamingSlots(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getGamingSlots(params))),
     );
   }
 
@@ -295,23 +424,54 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<Offer>>(`${this.base}/offers`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getOffers(params) : data)),
-      catchError(() => of(this.mock.getOffers(params))),
+      map(data => {
+        if (this.isEmptyPaginated(data)) return this.mock.getOffers(params);
+        return {
+          ...data,
+          items: data.items.map(o => this.normalizeOffer(o)),
+        };
+      }),
+      catchError(this.mockOrThrow(() => this.mock.getOffers(params))),
     );
   }
 
   createOffer(data: OfferCreateRequest): Observable<Offer> {
-    return this.http.post<Offer>(`${this.base}/offers`, data).pipe(
-      catchError(() => of(this.mock.createOffer(data))),
+    // Map Angular form shape → main backend AdminOfferCreate
+    const body = {
+      parlour_id: data.parlour_id,
+      title: data.title,
+      description: data.description ?? null,
+      discount_percent: data.discount_type === 'percentage' ? data.discount_value : 0,
+      discount_amount: data.discount_type === 'flat' ? data.discount_value : null,
+      valid_from: data.valid_from,
+      valid_until: data.valid_until,
+      is_active: data.is_active ?? true,
+    };
+    return this.http.post<Offer>(`${this.base}/offers`, body).pipe(
+      map(res => this.normalizeOffer(res)),
+      catchError(this.mockOrThrow(() => this.mock.createOffer(data))),
     );
+  }
+
+  private normalizeOffer(raw: Offer | Record<string, unknown>): Offer {
+    const r = raw as Record<string, unknown>;
+    if (r['discount_type']) return raw as Offer;
+    const pct = Number(r['discount_percent'] ?? 0);
+    const amt = r['discount_amount'] != null ? Number(r['discount_amount']) : null;
+    return {
+      ...(raw as Offer),
+      discount_type: pct > 0 ? 'percentage' : 'flat',
+      discount_value: pct > 0 ? pct : Number(amt ?? 0),
+      usage_count: Number(r['usage_count'] ?? r['current_uses'] ?? 0),
+    };
   }
 
   getGcPoints(params: ListParams = {}): Observable<PaginatedResponse<GcPointsEntry>> {
     return this.http.get<PaginatedResponse<GcPointsEntry>>(`${this.base}/gc-points`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getGcPoints(params) : data)),
-      catchError(() => of(this.mock.getGcPoints(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getGcPoints(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getGcPoints(params))),
     );
   }
 
@@ -319,14 +479,17 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<ParlourEvent>>(`${this.base}/events`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getEvents(params) : data)),
-      catchError(() => of(this.mock.getEvents(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getEvents(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getEvents(params))),
     );
   }
 
   updateEventStatus(id: string, status: string): Observable<ParlourEvent> {
     return this.http.patch<ParlourEvent>(`${this.base}/events/${id}/status`, { status }).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         const updated = this.mock.updateEventStatus(id, status);
         if (!updated) throw new Error('Event not found');
         return of(updated);
@@ -336,7 +499,10 @@ export class AdminApiService {
 
   deleteEvent(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/events/${id}`).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         if (!this.mock.deleteEvent(id)) throw new Error('Event not found');
         return of(void 0);
       }),
@@ -347,8 +513,8 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<CommunityPost>>(`${this.base}/community`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getCommunity(params) : data)),
-      catchError(() => of(this.mock.getCommunity(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getCommunity(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getCommunity(params))),
     );
   }
 
@@ -356,7 +522,10 @@ export class AdminApiService {
     return this.http.patch<CommunityPost>(`${this.base}/community/${id}/pin`, {
       is_pinned: isPinned,
     }).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         const updated = this.mock.pinCommunityPost(id, isPinned);
         if (!updated) throw new Error('Post not found');
         return of(updated);
@@ -366,7 +535,10 @@ export class AdminApiService {
 
   deleteCommunityPost(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/community/${id}`).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         if (!this.mock.deleteCommunityPost(id)) throw new Error('Post not found');
         return of(void 0);
       }),
@@ -377,14 +549,17 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<Rating>>(`${this.base}/ratings`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getRatings(params) : data)),
-      catchError(() => of(this.mock.getRatings(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getRatings(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getRatings(params))),
     );
   }
 
   deleteRating(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/ratings/${id}`).pipe(
-      catchError(() => {
+      catchError((err) => {
+        if (!this.allowMock) {
+          return throwError(() => err);
+        }
         if (!this.mock.deleteRating(id)) throw new Error('Rating not found');
         return of(void 0);
       }),
@@ -393,7 +568,7 @@ export class AdminApiService {
 
   broadcast(data: BroadcastRequest): Observable<{ sent_to: number }> {
     return this.http.post<{ sent_to: number }>(`${this.base}/notifications/broadcast`, data).pipe(
-      catchError(() => of(this.mock.broadcast(data))),
+      catchError(this.mockOrThrow(() => this.mock.broadcast(data))),
     );
   }
 
@@ -405,7 +580,7 @@ export class AdminApiService {
       map(data =>
         this.isEmptyPaginated(data) ? this.mock.getBroadcastHistory(params) : data,
       ),
-      catchError(() => of(this.mock.getBroadcastHistory(params))),
+      catchError(this.mockOrThrow(() => this.mock.getBroadcastHistory(params))),
     );
   }
 
@@ -413,8 +588,8 @@ export class AdminApiService {
     return this.http.get<PaginatedResponse<GeoActivity>>(`${this.base}/geo-activity`, {
       params: this.toParams(params),
     }).pipe(
-      map(data => (this.isEmptyPaginated(data) ? this.mock.getGeoActivity(params) : data)),
-      catchError(() => of(this.mock.getGeoActivity(params))),
+      map(data => (this.allowMock && this.isEmptyPaginated(data) ? this.mock.getGeoActivity(params) : data)),
+      catchError(this.mockOrThrow(() => this.mock.getGeoActivity(params))),
     );
   }
 

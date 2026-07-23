@@ -165,7 +165,7 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerTile(
                     icon: Icons.event_seat_outlined,
                     label: 'My Bookings',
-                    onTap: () => _navigate(context, '/my-bookings'),
+                    onTap: () => _navigate(context, '/gaming-bookings'),
                   ),
                   _DrawerTile(
                     icon: Icons.bookmark_outline,

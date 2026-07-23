@@ -36,6 +36,16 @@ export const routes: Routes = [
           import('./features/parlors/parlors-list.component').then((m) => m.ParlorsListComponent),
       },
       {
+        path: 'parlors/new',
+        loadComponent: () =>
+          import('./features/parlors/parlor-form.component').then((m) => m.ParlorFormComponent),
+      },
+      {
+        path: 'parlors/:id/edit',
+        loadComponent: () =>
+          import('./features/parlors/parlor-form.component').then((m) => m.ParlorFormComponent),
+      },
+      {
         path: 'parlors/:id',
         loadComponent: () =>
           import('./features/parlors/parlor-detail.component').then((m) => m.ParlorDetailComponent),

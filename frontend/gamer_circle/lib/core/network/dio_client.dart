@@ -19,15 +19,21 @@ class DioClient {
       ),
     );
 
-    _dio.interceptors.addAll([
-      LogInterceptor(
-        request: true,
-        requestBody: true,
-        responseBody: true,
-        error: true,
-      ),
-      if (authInterceptor != null) authInterceptor,
-    ]);
+    final interceptors = <Interceptor>[];
+    if (AppConfig.instance.enableHttpLogs) {
+      interceptors.add(
+        LogInterceptor(
+          request: true,
+          requestBody: true,
+          responseBody: true,
+          error: true,
+        ),
+      );
+    }
+    if (authInterceptor != null) {
+      interceptors.add(authInterceptor);
+    }
+    _dio.interceptors.addAll(interceptors);
   }
 
   Dio get dio => _dio;

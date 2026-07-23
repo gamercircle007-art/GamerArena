@@ -1,25 +1,35 @@
 class AppConstants {
   static const String appName = 'GamerCircle';
 
-  /// Backend API base (includes `/api/v1`).
-  ///
-  /// - Local default: `http://localhost:8000/api/v1`
-  /// - Render staging: pass at build/run time:
-  ///   `--dart-define=API_BASE_URL=https://gamer-circle-api.onrender.com/api/v1`
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:8000/api/v1',
-  );
-
-  /// Render-hosted API (used by release APK scripts / docs).
+  /// Production API (Render).
   static const String renderBaseUrl =
       'https://gamer-circle-api.onrender.com/api/v1';
 
-  /// Flutter web dev server port (must match scripts/run_frontend.sh).
+  /// Local backend override.
+  static const String localBaseUrl = 'http://localhost:8000/api/v1';
+
+  /// API base including `/api/v1`.
+  ///
+  /// Default = Render production.
+  /// Local: `--dart-define=API_BASE_URL=http://localhost:8000/api/v1`
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: renderBaseUrl,
+  );
+
+  /// `dev` | `staging` | `prod` — release APK uses prod.
+  static const String appFlavor = String.fromEnvironment(
+    'APP_FLAVOR',
+    defaultValue: 'prod',
+  );
+
   static const int webPort = 8080;
 
-  static const int apiTimeout = 30000;
+  /// Render free tier cold start — 60s connect/receive.
+  static const int apiTimeout = 60000;
 
-  /// Dev OTP shown in UI when backend OTP_DEV_BYPASS_CODE is set.
+  /// Only shown in non-release UI when backend still has OTP_DEV_BYPASS.
   static const String devOtpBypass = '123456';
+
+  static bool get isProdFlavor => appFlavor == 'prod';
 }

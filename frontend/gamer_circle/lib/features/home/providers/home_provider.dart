@@ -96,7 +96,7 @@ class HomeNotifier extends Notifier<HomeState> {
               SelectedLocation.defaultLocation;
       state = state.copyWith(
         isLoading: false,
-        error: e.message ?? 'Failed to load home',
+        error: _friendlyDioError(e),
         data: HomeData.empty.copyWithLocationLabel(selectedLocation.label),
       );
     } catch (e) {
@@ -115,4 +115,28 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   Future<void> refresh() => load();
+
+  static String _friendlyDioError(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionError:
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return 'Cannot reach API. Is the backend running on '
+            '${e.requestOptions.baseUrl.isNotEmpty ? e.requestOptions.baseUrl : "configured base URL"}?';
+      case DioExceptionType.badResponse:
+        final code = e.response?.statusCode;
+        final body = e.response?.data;
+        final msg = body is Map ? (body['message'] ?? body['detail']) : null;
+        return 'Server error${code != null ? " ($code)" : ""}'
+            '${msg != null ? ": $msg" : ""}. Pull to refresh.';
+      default:
+        final m = e.message ?? '';
+        if (m.contains('XMLHttpRequest') || m.contains('connection errored')) {
+          return 'Cannot reach API (network). Start backend: '
+              'cd backend && python scripts/run_dev.py';
+        }
+        return m.isNotEmpty ? m : 'Failed to load home';
+    }
+  }
 }

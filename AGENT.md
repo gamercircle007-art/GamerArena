@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-07-18 — Render deploy config pushed (`render.yaml` + backend start/URL normalize); Android release APK built for Render API URL; code on `sit` → GitHub
-- **In progress:** user must click Render Dashboard → New → Blueprint → apply `render.yaml` (cannot be done from CLI without Render API token)
-- **Next up:** Apply Blueprint on Render; wait for `https://gamer-circle-api.onrender.com/health`; install APK; seed demo if needed
-- **Known open issues / blockers:** Render free tier cold starts ~30–60s; PostGIS may need paid Postgres if extension blocked
+- **Last completed:** 2026-07-23 — Prod E2E readiness: phone+username login, admin always seeded on boot, Angular → Render `/api/v1` with mock fallback off, smoke test + PRODUCTION_DEPLOYMENT.md
+- **In progress:** Live Render HTTP unresponsive from this environment (TCP ok / HTTP hang) — confirm service Live in Dashboard and redeploy `sit`
+- **Next up:** Push `sit`; set Twilio secrets; run `prod_smoke_test.py`; verify admin + Flutter against live API
+- **Known open issues / blockers:** Render free-tier may be suspended/cold (health hung 180s+); Twilio required for prod OTP; community/events still stub
 
 ---
 
@@ -107,6 +107,9 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-07-23 — Prod E2E: password login accepts phone; seed always ensures admin; Angular env → Render; mock fallback off in prod; prod_smoke_test.py + PRODUCTION_DEPLOYMENT.md.
+- 2026-07-23 — Admin parity: full parlor CRUD/soft-delete/manager assign on main API; posts/reels/comments/likes/tournaments/ratings/stories moderation; Angular env → main backend; parlor create/edit form.
+- 2026-07-18 — Production ready: render APP_ENV=prod, OTP bypass forced off in prod, /ready probe, Twilio errors hardened, Flutter prod flavor, no Dio logs/OTP hints in release, HTTPS network security, release APK → Render.
 - 2026-07-18 — Render Blueprint (`render.yaml`: Postgres+Redis+API), DATABASE_URL asyncpg/SSL normalize, render-start.sh migrations+PostGIS; Flutter API_BASE_URL dart-define; Android AGP/Kotlin fix; release APK → Render URL; pushed `sit`.
 - 2026-07-11 — Added + (create) button to lower navbar; then full check+fix pass until 0 errors: fixed ranked override name, dms_upload FilePicker via alias + pinned file_picker ^7 + integration_test sdk in pubspec, re-ran pub get + analyze x times (0 errors now).
 - 2026-07-10 — Algorithm brain kit: migrations+models+full engine (track/compute/score/rank/build/trending/smart_search), Celery beat tasks, routers for ranked/interactions/search/admin, Flutter repo+providers+Trackable+home integration. Progress tracked in PROGRESS_ALGORITHM.md

@@ -16,6 +16,35 @@ Flutter API base (with `/api/v1`):
 https://gamer-circle-api.onrender.com/api/v1
 ```
 
+## Production env (set in Render Dashboard)
+
+| Key | Production value |
+|---|---|
+| `APP_ENV` | `prod` |
+| `DEBUG` | `false` |
+| `OTP_DEV_BYPASS_CODE` | *(empty)* |
+| `TWILIO_ACCOUNT_SID` | your `ACxxxx` |
+| `TWILIO_AUTH_TOKEN` | console secret |
+| `TWILIO_WHATSAPP_FROM` | `whatsapp:+1...` (sandbox or approved) |
+| `AWS_*` | S3 for media (optional until uploads needed) |
+| `RAZORPAY_*` | optional payments |
+
+Full production runbook: **`PRODUCTION_DEPLOYMENT.md`** (env vars, migrations, Flutter/Angular URLs, smoke tests, troubleshooting).
+
+Checks (allow 60–90s free-tier cold start):
+
+```bash
+curl -sS -m 120 https://gamer-circle-api.onrender.com/health
+curl -sS -m 60  https://gamer-circle-api.onrender.com/ready
+python backend/scripts/prod_smoke_test.py --base https://gamer-circle-api.onrender.com --insecure
+```
+
+`/ready` reports DB/Redis + `twilio_configured` (no secrets).
+
+**Seeded logins (after SEED_ON_BOOT):**  
+- Admin: `admin` / `Admin@123`  
+- User: `+919999999010` or `lens_by_manish` / `Demo@123`
+
 ## One-time setup (you click once)
 
 1. Push this branch (`sit`) to GitHub (already configured: `gamercircle007-art/GamerArena`).

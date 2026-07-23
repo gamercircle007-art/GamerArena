@@ -73,9 +73,47 @@ async def list_parlors(
     return store.list_parlors(page=page, limit=limit, is_verified=is_verified, search=search)
 
 
+@router.get("/parlors/{parlor_id}")
+async def get_parlor(parlor_id: str, _: AdminDep) -> dict:
+    parlor = store.get_parlor(parlor_id)
+    if not parlor:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parlor not found")
+    return parlor
+
+
+@router.post("/parlors", status_code=status.HTTP_201_CREATED)
+async def create_parlor(body: dict, _: AdminDep) -> dict:
+    return store.create_parlor(body)
+
+
+@router.patch("/parlors/{parlor_id}")
+@router.put("/parlors/{parlor_id}")
+async def update_parlor(parlor_id: str, body: dict, _: AdminDep) -> dict:
+    parlor = store.update_parlor(parlor_id, body)
+    if not parlor:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parlor not found")
+    return parlor
+
+
 @router.patch("/parlors/{parlor_id}/verify")
 async def verify_parlor(parlor_id: str, body: ParlorVerifyPatch, _: AdminDep) -> dict:
     parlor = store.verify_parlor(parlor_id, body.is_verified)
+    if not parlor:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parlor not found")
+    return parlor
+
+
+@router.patch("/parlors/{parlor_id}/assign-owner")
+async def assign_owner(parlor_id: str, body: dict, _: AdminDep) -> dict:
+    parlor = store.assign_owner(parlor_id, body.get("owner_id"))
+    if not parlor:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parlor not found")
+    return parlor
+
+
+@router.post("/parlors/{parlor_id}/restore")
+async def restore_parlor(parlor_id: str, _: AdminDep) -> dict:
+    parlor = store.restore_parlor(parlor_id)
     if not parlor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parlor not found")
     return parlor

@@ -5,7 +5,7 @@ from datetime import datetime
 
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, Numeric, String, Text, Uuid
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin
@@ -69,3 +69,7 @@ class GamingPlaceExtension(Base, TimestampMixin):
     checkin_rating: Mapped[Decimal | None] = mapped_column(Numeric(3, 2), nullable=True)
     is_wizard_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_couples_allowed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Admin lifecycle (soft-delete preferred over hard-delete)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

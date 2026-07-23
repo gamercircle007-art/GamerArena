@@ -138,6 +138,64 @@ async def ensure_places(session: AsyncSession) -> int:
     return created
 
 
+async def ensure_admin(session: AsyncSession) -> None:
+    """Always upsert platform admin (needed for Angular admin panel)."""
+    from sqlalchemy import select
+
+    admin_username = "admin"
+    admin_password = "Admin@123"
+    admin_phone = "+919999999999"
+    admin_email = "admin@gameconnect.in"
+
+    result = await session.execute(select(User).where(User.username == admin_username))
+    user = result.scalar_one_or_none()
+    if user is None:
+        # phone unique — clear collision if any
+        phone_hit = (
+            await session.execute(select(User).where(User.phone == admin_phone))
+        ).scalar_one_or_none()
+        if phone_hit is not None:
+            phone_hit.username = admin_username
+            phone_hit.role = UserRole.ADMIN
+            phone_hit.hashed_password = hash_password(admin_password)
+            phone_hit.is_active = True
+            phone_hit.is_verified = True
+            phone_hit.email_verified = True
+            phone_hit.phone_verified = True
+            phone_hit.email = admin_email
+            phone_hit.full_name = "GameConnect Admin"
+            await session.commit()
+            print("Admin promoted from existing phone user")
+            return
+        session.add(
+            User(
+                full_name="GameConnect Admin",
+                username=admin_username,
+                email=admin_email,
+                phone=admin_phone,
+                hashed_password=hash_password(admin_password),
+                role=UserRole.ADMIN,
+                is_active=True,
+                is_verified=True,
+                email_verified=True,
+                phone_verified=True,
+            )
+        )
+        await session.commit()
+        print("Admin user created: admin / Admin@123")
+    else:
+        user.role = UserRole.ADMIN
+        user.hashed_password = hash_password(admin_password)
+        user.is_active = True
+        user.is_verified = True
+        user.email_verified = True
+        user.phone_verified = True
+        user.phone = admin_phone
+        user.email = admin_email
+        await session.commit()
+        print("Admin user ensured: admin / Admin@123")
+
+
 async def main() -> None:
     # reset engine so DATABASE_URL from env is used
     db_session._engine = None  # type: ignore[attr-defined]
@@ -146,6 +204,7 @@ async def main() -> None:
     factory = db_session.get_session_factory()
     async with factory() as session:
         await ensure_places(session)
+        await ensure_admin(session)
 
     # Full demo users/posts/bookings
     import importlib.util
@@ -159,8 +218,13 @@ async def main() -> None:
 
     async with factory() as session:
         await mod.seed(session)
+        # Re-ensure admin after full seed (in case seed overwrote)
+        await ensure_admin(session)
 
-    print("Bootstrap complete. Login: +919999999010 / Demo@123  OTP: 123456")
+    print("Bootstrap complete.")
+    print("  User:  +919999999010 / Demo@123  (or username lens_by_manish)")
+    print("  Admin: admin / Admin@123  (phone +919999999999)")
+    print("  OTP bypass only when APP_ENV!=prod and OTP_DEV_BYPASS_CODE set")
 
 
 if __name__ == "__main__":

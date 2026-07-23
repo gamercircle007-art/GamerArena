@@ -56,6 +56,8 @@ class ParlorResponse(BaseModel):
     website: str | None = None
     latitude: float | None = None
     longitude: float | None = None
+    is_active: bool = True
+    is_deleted: bool = False
     created_at: datetime
     updated_at: datetime
 

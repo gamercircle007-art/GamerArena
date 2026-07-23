@@ -62,8 +62,12 @@ type VerifiedFilter = '' | 'verified' | 'pending';
     <div class="parlors-page">
       <app-page-header
         title="Parlors"
-        subtitle="Review and verify gaming parlors on the platform"
-        [breadcrumbs]="[{ label: 'Home', route: '/dashboard' }, { label: 'Parlors' }]" />
+        subtitle="Create, review, verify, and manage gaming parlors"
+        [breadcrumbs]="[{ label: 'Home', route: '/dashboard' }, { label: 'Parlors' }]">
+        @if (canManage()) {
+          <a routerLink="/parlors/new" class="btn btn-sm btn-primary">+ Create Parlor</a>
+        }
+      </app-page-header>
 
       <div class="card filters-card mb-4">
         <div class="card-body">
@@ -264,6 +268,11 @@ type VerifiedFilter = '' | 'verified' | 'pending';
                       <li>
                         <a class="dropdown-item" [routerLink]="['/parlors', row.id]">View Detail</a>
                       </li>
+                      @if (canManage()) {
+                        <li>
+                          <a class="dropdown-item" [routerLink]="['/parlors', row.id, 'edit']">Edit</a>
+                        </li>
+                      }
                       @if (canDelete()) {
                         <li><hr class="dropdown-divider" /></li>
                         <li>
@@ -272,7 +281,7 @@ type VerifiedFilter = '' | 'verified' | 'pending';
                             class="dropdown-item text-danger"
                             [disabled]="actionParlorId() === row.id"
                             (click)="deleteParlor(row)">
-                            Delete
+                            Soft Delete
                           </button>
                         </li>
                       }
@@ -491,6 +500,13 @@ export class ParlorsListComponent implements OnInit {
     return role ? hasPermission(role, PERMISSIONS.DELETE_PARLORS) : false;
   });
 
+  readonly canManage = computed(() => {
+    const role = this.auth.currentUser()?.role;
+    return role
+      ? hasPermission(role, PERMISSIONS.MANAGE_PARLORS) || hasPermission(role, PERMISSIONS.VERIFY_PARLORS)
+      : false;
+  });
+
   readonly getRowClass = (row: Parlor): Record<string, boolean> => ({
     'row-unverified': !row.is_verified,
   });
@@ -599,8 +615,8 @@ export class ParlorsListComponent implements OnInit {
 
   async deleteParlor(parlor: Parlor): Promise<void> {
     const confirmed = await this.confirm.confirmDanger(
-      'Delete Parlor',
-      `Permanently delete "${parlor.name}"? This cannot be undone.`,
+      'Soft Delete Parlor',
+      `Deactivate and soft-delete "${parlor.name}"? It can be restored later.`,
     );
     if (!confirmed) return;
 

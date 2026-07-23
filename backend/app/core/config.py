@@ -218,7 +218,12 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     # CORS
     # -------------------------------------------------------------------------
-    cors_origins: str = "http://localhost:3000,http://localhost:8080"
+    # Flutter native ignores CORS; Angular admin (localhost:4200) needs it.
+    # Render Blueprint sets CORS_ORIGINS=* (credentials forced off for wildcard).
+    cors_origins: str = (
+        "http://localhost:3000,http://localhost:4200,http://localhost:8080,"
+        "http://127.0.0.1:4200,http://127.0.0.1:8080"
+    )
     cors_allow_credentials: bool = True
 
     # -------------------------------------------------------------------------
