@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_providers.dart';
@@ -21,7 +22,7 @@ class AppDrawer extends ConsumerWidget {
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF7B2FF7),
+              backgroundColor: AppColors.primary,
             ),
             child: const Text('Log out'),
           ),
@@ -57,7 +58,7 @@ class AppDrawer extends ConsumerWidget {
     };
 
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -68,7 +69,7 @@ class AppDrawer extends ConsumerWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF7B2FF7), Color(0xFF3B82F6)],
+                  colors: [AppColors.primary, AppColors.secondary],
                 ),
               ),
               child: Row(
@@ -152,6 +153,11 @@ class AppDrawer extends ConsumerWidget {
                     onTap: () => _navigate(context, '/notifications'),
                   ),
                   _DrawerTile(
+                    icon: Icons.chat_bubble_outline,
+                    label: 'Messages',
+                    onTap: () => _navigate(context, '/messages'),
+                  ),
+                  _DrawerTile(
                     icon: Icons.person_outline,
                     label: 'Profile',
                     onTap: () => _navigate(context, '/profile'),
@@ -159,7 +165,7 @@ class AppDrawer extends ConsumerWidget {
                   _DrawerTile(
                     icon: Icons.event_seat_outlined,
                     label: 'My Bookings',
-                    onTap: () => _navigate(context, '/my-bookings'),
+                    onTap: () => _navigate(context, '/gaming-bookings'),
                   ),
                   _DrawerTile(
                     icon: Icons.bookmark_outline,
@@ -173,7 +179,7 @@ class AppDrawer extends ConsumerWidget {
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    child: Divider(color: Color(0xFFE8E8E8)),
+                    child: Divider(color: AppColors.borderLight),
                   ),
                   _DrawerTile(
                     icon: Icons.groups_outlined,
@@ -193,7 +199,7 @@ class AppDrawer extends ConsumerWidget {
                 ],
               ),
             ),
-            const Divider(height: 1, color: Color(0xFFE8E8E8)),
+            const Divider(height: 1, color: AppColors.borderLight),
             ListTile(
               leading: isLoggingOut
                   ? const SizedBox(
@@ -201,11 +207,11 @@ class AppDrawer extends ConsumerWidget {
                       height: 24,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.logout, color: Color(0xFFE53935)),
+                  : const Icon(Icons.logout, color: AppColors.error),
               title: Text(
                 isLoggingOut ? 'Logging out...' : 'Log out',
                 style: const TextStyle(
-                  color: Color(0xFFE53935),
+                  color: AppColors.error,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -233,13 +239,13 @@ class _DrawerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: const Color(0xFF7B2FF7)),
+      leading: Icon(icon, color: AppColors.primary),
       title: Text(
         label,
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF1A1A2E),
+          color: AppColors.textPrimaryLight,
         ),
       ),
       onTap: onTap,

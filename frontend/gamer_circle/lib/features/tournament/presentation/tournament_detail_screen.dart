@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/network/ws_service.dart';
@@ -58,7 +59,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   gradient: LinearGradient(
-                    colors: [Colors.deepPurple.shade400, Colors.deepPurple.shade800],
+                    colors: [AppColors.primary, AppColors.primaryDark],
                   ),
                 ),
                 alignment: Alignment.bottomLeft,

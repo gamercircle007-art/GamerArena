@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:gamer_circle/app/config/app_config.dart';
 import 'package:gamer_circle/core/constants/app_constants.dart';
 import 'package:gamer_circle/core/constants/onboarding_colors.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/login_otp_providers.dart';
@@ -161,21 +163,22 @@ class _MobileOtpPageState extends ConsumerState<MobileOtpPage> {
                         ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: OnboardingColors.permissionIconBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Dev mode — OTP is: ${AppConstants.devOtpBypass}',
-                  style: const TextStyle(
-                    color: OnboardingColors.primary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+              if (!kReleaseMode && !AppConfig.instance.isProd)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: OnboardingColors.permissionIconBg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Dev mode — OTP is: ${AppConstants.devOtpBypass}',
+                    style: const TextStyle(
+                      color: OnboardingColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
               const Spacer(),
               OnboardingPrimaryButton(
                 label: 'Verify & Continue',

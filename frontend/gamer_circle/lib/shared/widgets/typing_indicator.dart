@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 
 class TypingIndicator extends StatefulWidget {
   const TypingIndicator({super.key, this.userName});
@@ -58,7 +59,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
                     width: 6,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF7367F0).withOpacity(opacity),
+                      color: AppColors.primary.withOpacity(opacity),
                       shape: BoxShape.circle,
                     ),
                   );
@@ -71,7 +72,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
           const SizedBox(width: 8),
           Text(
             '${widget.userName} is typing...',
-            style: const TextStyle(fontSize: 11, color: Color(0xFF82868B)),
+            style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
           ),
         ],
       ],

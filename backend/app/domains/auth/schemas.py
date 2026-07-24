@@ -119,28 +119,45 @@ class LoginVerifyOtpRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    """Login with username and password."""
+    """Login with username *or* phone + password."""
 
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                {"username": "janedoe", "password": "SecurePass1"}
+                {"username": "janedoe", "password": "SecurePass1"},
+                {"username": "+919999999010", "password": "Demo@123"},
             ]
         }
     )
 
-    username: str = Field(..., min_length=3, max_length=30)
+    # Accepts handle (janedoe) or E.164 / 10-digit phone (+9199… / 9999999010)
+    username: str = Field(
+        ...,
+        min_length=3,
+        max_length=32,
+        description="Username handle or phone number",
+    )
     password: str = Field(..., min_length=1, max_length=128)
 
     @field_validator("username")
     @classmethod
-    def validate_username(cls, value: str) -> str:
-        if not _USERNAME_PATTERN.match(value):
+    def validate_login_identifier(cls, value: str) -> str:
+        raw = value.strip()
+        if not raw:
+            raise ValueError("Username or phone is required")
+        # Phone: +E.164 or bare digits (10–15)
+        digits = "".join(c for c in raw if c.isdigit())
+        if raw.startswith("+") or (digits and len(digits) >= 10 and raw.replace("+", "").replace(" ", "").isdigit()):
+            if len(digits) < 10 or len(digits) > 15:
+                raise ValueError("Phone number must be 10–15 digits")
+            return raw
+        if not _USERNAME_PATTERN.match(raw):
             raise ValueError(
                 "Username must be 3-30 characters, start with a letter, "
-                "and contain only letters, numbers, and underscores"
+                "and contain only letters, numbers, and underscores — "
+                "or use a valid phone number"
             )
-        return value
+        return raw
 
 
 class RefreshTokenRequest(BaseModel):

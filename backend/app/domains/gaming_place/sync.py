@@ -8,6 +8,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -81,11 +82,19 @@ async def sync_gaming_places(session: AsyncSession, source_url: str) -> int:
             for key in payload
             if key not in ("id", "google_place_id")
         }
-        stmt = sqlite_insert(GamingPlace).values(**payload)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=[GamingPlace.google_place_id],
-            set_=update_cols,
-        )
+        bind = session.get_bind()
+        if bind.dialect.name == "postgresql":
+            stmt = pg_insert(GamingPlace).values(**payload)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[GamingPlace.google_place_id],
+                set_=update_cols,
+            )
+        else:
+            stmt = sqlite_insert(GamingPlace).values(**payload)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[GamingPlace.google_place_id],
+                set_=update_cols,
+            )
         await session.execute(stmt)
         synced += 1
 

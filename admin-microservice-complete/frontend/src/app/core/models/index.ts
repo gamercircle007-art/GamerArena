@@ -52,8 +52,36 @@ export interface Parlor {
   rating: number | null;
   phone: string | null;
   website: string | null;
+  is_active?: boolean;
+  is_deleted?: boolean;
+  business_status?: string | null;
+  opening_hours?: Record<string, unknown> | null;
+  price_per_hour?: number | null;
+  original_price?: number | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ParlorCreateRequest {
+  name: string;
+  address?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  image_url?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  primary_type?: string | null;
+  game_types?: string[];
+  owner_id?: string | null;
+  is_verified?: boolean;
+  is_active?: boolean;
+  price_per_hour?: number | null;
+  original_price?: number | null;
+  opening_hours?: Record<string, unknown> | null;
+}
+
+export interface ParlorUpdateRequest extends Partial<ParlorCreateRequest> {
+  business_status?: string | null;
 }
 
 export interface Post {

@@ -18,6 +18,27 @@ class PostCreate(BaseModel):
     media_urls: list[str] = Field(default_factory=list, max_length=10)
     tournament_id: UUID | None = None
     parlor_id: UUID | None = None
+    # YouTube upload extensions
+    post_type: str = "post"
+    title: str | None = None
+    description: str | None = None
+    visibility: str = "public"
+    audience: str = "everyone"
+    game_types: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    hashtags: list[str] = Field(default_factory=list)
+    mentions: list[str] = Field(default_factory=list)
+    location_parlor_id: UUID | None = None
+    allow_comments: bool = True
+    allow_remix: bool = True
+    allow_duet: bool = True
+    hide_likes: bool = False
+    is_ai_content: bool = False
+    is_paid_promo: bool = False
+    is_for_kids: bool = False
+    duration_seconds: float | None = None
+    thumbnail_asset_id: UUID | None = None
+    video_asset_id: UUID | None = None
 
 
 class PostResponse(BaseModel):
@@ -32,3 +53,10 @@ class PostResponse(BaseModel):
     comments_count: int
     is_liked: bool = False
     created_at: datetime
+    # extensions
+    post_type: str = "post"
+    title: str | None = None
+    description: str | None = None
+    visibility: str = "public"
+    game_types: list[str] = Field(default_factory=list)
+    hashtags: list[str] = Field(default_factory=list)

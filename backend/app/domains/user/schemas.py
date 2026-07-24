@@ -41,6 +41,9 @@ class UserUpdate(BaseModel):
     username: str | None = Field(default=None, pattern=_USERNAME_PATTERN)
     email: EmailStr | None = None
     phone_number: str | None = Field(default=None, pattern=r"^\+?[1-9]\d{6,14}$")
+    avatar_url: str | None = None
+    bio: str | None = None
+    city: str | None = None
 
 
 class UserResponse(BaseModel):
@@ -67,6 +70,7 @@ class UserResponse(BaseModel):
     longitude: float | None = None
     city: str | None = None
     country: str | None = None
+    bio: str | None = None
     location_updated_at: datetime | None = None
     created_at: datetime
     updated_at: datetime

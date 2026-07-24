@@ -291,3 +291,75 @@ class GamingBookingRepository:
         )
         self.session.add(entry)
         await self.session.flush()
+
+    async def record_parlour_view(
+        self,
+        user_id: UUID,
+        *,
+        parlour_id: UUID,
+        parlour_name: str | None,
+        city: str | None,
+    ) -> None:
+        await self.record_search(
+            user_id,
+            query=parlour_name,
+            city=city,
+            filters={"parlour_id": str(parlour_id), "type": "view"},
+        )
+
+    async def get_recently_viewed_parlour_ids(
+        self,
+        user_id: UUID,
+        *,
+        limit: int = 20,
+    ) -> list[UUID]:
+        result = await self.session.execute(
+            select(UserSearchHistory)
+            .where(UserSearchHistory.user_id == user_id)
+            .order_by(UserSearchHistory.created_at.desc())
+            .limit(100)
+        )
+        seen: set[UUID] = set()
+        ordered: list[UUID] = []
+        for entry in result.scalars():
+            filters = entry.filters or {}
+            if filters.get("type") != "view":
+                continue
+            raw_id = filters.get("parlour_id")
+            if not raw_id:
+                continue
+            try:
+                parlour_id = UUID(str(raw_id))
+            except ValueError:
+                continue
+            if parlour_id in seen:
+                continue
+            seen.add(parlour_id)
+            ordered.append(parlour_id)
+            if len(ordered) >= limit:
+                break
+        return ordered
+
+    async def get_past_stay_parlour_ids(
+        self,
+        user_id: UUID,
+        *,
+        limit: int = 20,
+    ) -> list[UUID]:
+        today = date.today()
+        result = await self.session.execute(
+            select(
+                GamingBooking.parlour_id,
+                func.max(GamingBooking.slot_date).label("last_stay"),
+            )
+            .where(
+                GamingBooking.user_id == user_id,
+                GamingBooking.booking_status != "cancelled",
+                GamingBooking.slot_date.isnot(None),
+                GamingBooking.slot_date < today,
+            )
+            .group_by(GamingBooking.parlour_id)
+            .order_by(func.max(GamingBooking.slot_date).desc())
+            .limit(limit)
+        )
+        return [row[0] for row in result.all()]

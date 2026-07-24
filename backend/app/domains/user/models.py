@@ -14,7 +14,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Uuid
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -52,6 +52,7 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ForeignKey("media_assets.id", ondelete="SET NULL"),
         nullable=True,
     )
+    bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, name="user_role", values_callable=lambda roles: [r.value for r in roles]),
         default=UserRole.USER,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_providers.dart';
@@ -56,7 +57,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
     return SafeArea(
       child: RefreshIndicator(
         onRefresh: () => ref.read(parlorSearchProvider.notifier).refresh(),
-        color: const Color(0xFF7B2FF7),
+        color: AppColors.primary,
         child: CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
@@ -70,13 +71,13 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                       builder: (context) => IconButton(
                         onPressed: () => Scaffold.of(context).openDrawer(),
                         icon: const Icon(Icons.menu_rounded),
-                        color: const Color(0xFF1A1A2E),
+                        color: AppColors.textPrimary,
                         tooltip: 'Menu',
                       ),
                     ),
                     ShaderMask(
                       shaderCallback: (bounds) => const LinearGradient(
-                        colors: [Color(0xFF7B2FF7), Color(0xFF3B82F6)],
+                        colors: [AppColors.primary, AppColors.secondary],
                       ).createShader(bounds),
                       child: const Text(
                         'GAMER CIRCLE',
@@ -92,7 +93,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                     IconButton(
                       onPressed: () => context.push('/discover'),
                       icon: const Icon(Icons.map_outlined),
-                      color: const Color(0xFF1A1A2E),
+                      color: AppColors.textPrimary,
                       tooltip: 'Map',
                     ),
                   ],
@@ -109,7 +110,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                       'Hey $greeting,',
                       style: const TextStyle(
                         fontSize: 15,
-                        color: Color(0xFF888888),
+                        color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -119,7 +120,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1A1A2E),
+                        color: AppColors.textPrimary,
                         height: 1.2,
                       ),
                     ),
@@ -163,17 +164,17 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide:
-                          const BorderSide(color: Color(0xFFE8E8E8)),
+                          const BorderSide(color: AppColors.divider),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide:
-                          const BorderSide(color: Color(0xFFE8E8E8)),
+                          const BorderSide(color: AppColors.divider),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: const BorderSide(
-                        color: Color(0xFF7B2FF7),
+                        color: AppColors.primary,
                         width: 1.5,
                       ),
                     ),
@@ -233,7 +234,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1A1A2E),
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -319,7 +320,7 @@ class _EmptyState extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A2E),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -330,7 +331,7 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFF888888),
+                color: AppColors.textSecondary,
               ),
             ),
           ],

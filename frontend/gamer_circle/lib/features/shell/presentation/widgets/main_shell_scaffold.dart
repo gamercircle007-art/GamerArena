@@ -1,79 +1,189 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:gamer_circle/core/constants/onboarding_colors.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
+import 'package:gamer_circle/features/messaging/providers/conversations_provider.dart';
+import 'package:gamer_circle/features/shell/presentation/widgets/app_drawer.dart';
 
 class MainShellScaffold extends ConsumerWidget {
   const MainShellScaffold({super.key, required this.child});
 
   final Widget child;
 
+  static const _tabs = <_ShellTab>[
+    _ShellTab(
+      path: '/',
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home_rounded,
+      label: 'HOME',
+    ),
+    _ShellTab(
+      path: '/reels',
+      icon: Icons.play_circle_outline_rounded,
+      selectedIcon: Icons.play_circle_rounded,
+      label: 'REELS',
+    ),
+    _ShellTab(
+      path: '/search-input',
+      icon: Icons.search_rounded,
+      selectedIcon: Icons.search_rounded,
+      label: 'SEARCH',
+    ),
+    _ShellTab(
+      path: '/gaming-bookings',
+      icon: Icons.calendar_month_outlined,
+      selectedIcon: Icons.calendar_month,
+      label: 'BOOKING',
+    ),
+    _ShellTab(
+      path: '/messages',
+      icon: Icons.chat_bubble_outline_rounded,
+      selectedIcon: Icons.chat_bubble_rounded,
+      label: 'MESSAGES',
+    ),
+    _ShellTab(
+      path: '/profile',
+      icon: Icons.person_outline_rounded,
+      selectedIcon: Icons.person_rounded,
+      label: 'PROFILE',
+    ),
+  ];
+
   int _indexForLocation(String location) {
-    if (location.startsWith('/events')) return 4;
-    if (location.startsWith('/store')) return 3;
+    if (location.startsWith('/profile')) return 5;
+    if (location.startsWith('/messages')) return 4;
+    if (location.startsWith('/gaming-bookings') ||
+        location.startsWith('/my-bookings')) {
+      return 3;
+    }
+    if (location.startsWith('/search-input') ||
+        location.startsWith('/search-results')) {
+      return 2;
+    }
     if (location.startsWith('/feed') || location.startsWith('/reels')) return 1;
     return 0;
+  }
+
+  bool _shouldHideNavBar(String location) {
+    return location.startsWith('/messages/chat') || location == '/messages/new';
+  }
+
+  void _goTab(BuildContext context, String path) {
+    final current = GoRouterState.of(context).matchedLocation;
+    if (path == '/') {
+      if (current == '/' || current == '/home-booking') return;
+      context.go('/');
+      return;
+    }
+    if (current == path) return;
+    context.go(path);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).matchedLocation;
     final index = _indexForLocation(location);
+    final hideNavBar = _shouldHideNavBar(location);
+    final unreadMessages = ref.watch(unreadCountProvider);
 
     return Scaffold(
+      drawer: hideNavBar ? null : const AppDrawer(),
       body: child,
       extendBody: true,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: SizedBox(
-            height: 64,
-            child: Row(
-              children: [
-                _NavItem(
-                  icon: Icons.home_rounded,
-                  label: 'HOME',
-                  selected: index == 0,
-                  onTap: () => context.go('/'),
-                ),
-                _NavItem(
-                  icon: Icons.workspace_premium_outlined,
-                  label: 'PRIME',
-                  selected: index == 1,
-                  onTap: () => context.go('/feed'),
-                ),
-                Expanded(
-                  child: Center(
-                    child: _PayBillButton(
-                      onTap: () => context.push('/search-input'),
-                    ),
+      bottomNavigationBar: hideNavBar
+          ? null
+          : Material(
+              color: AppColors.surface,
+              elevation: 8,
+              shadowColor: Colors.black26,
+              child: SafeArea(
+                top: false,
+                child: SizedBox(
+                  height: 64,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      Positioned.fill(
+                        child: Row(
+                          children: [
+                            for (var i = 0; i < 3; i++)
+                              Expanded(
+                                child: _NavItem(
+                                  icon: index == i
+                                      ? _tabs[i].selectedIcon
+                                      : _tabs[i].icon,
+                                  label: _tabs[i].label,
+                                  selected: index == i,
+                                  onTap: () => _goTab(context, _tabs[i].path),
+                                ),
+                              ),
+                            const SizedBox(width: 56),
+                            for (var i = 3; i < 6; i++)
+                              Expanded(
+                                child: _NavItem(
+                                  icon: index == i
+                                      ? _tabs[i].selectedIcon
+                                      : _tabs[i].icon,
+                                  label: _tabs[i].label,
+                                  selected: index == i,
+                                  badgeCount:
+                                      i == 4 ? unreadMessages : 0,
+                                  onTap: () => _goTab(context, _tabs[i].path),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 12,
+                        child: _PlusButton(
+                          onTap: () => context.push('/create-post'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                _NavItem(
-                  icon: Icons.credit_card_outlined,
-                  label: 'CARD',
-                  selected: index == 3,
-                  onTap: () => context.go('/store'),
-                ),
-                _NavItem(
-                  icon: Icons.confirmation_number_outlined,
-                  label: 'EVENTS',
-                  selected: index == 4,
-                  badge: 'NEW!',
-                  onTap: () => context.go('/events'),
-                ),
-              ],
+              ),
             ),
-          ),
+    );
+  }
+}
+
+class _ShellTab {
+  const _ShellTab({
+    required this.path,
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+  });
+
+  final String path;
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+}
+
+/// Raised + control for Post / Short / Video / Live.
+class _PlusButton extends StatelessWidget {
+  const _PlusButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.primary,
+      shape: const CircleBorder(),
+      elevation: 4,
+      shadowColor: Colors.black38,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: const SizedBox(
+          width: 52,
+          height: 52,
+          child: Icon(Icons.add, color: Colors.white, size: 30),
         ),
       ),
     );
@@ -86,107 +196,73 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
-    this.badge,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final String? badge;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? OnboardingColors.primary : OnboardingColors.textMuted;
+    final color = selected ? AppColors.primary : AppColors.textSecondaryLight;
 
-    return Expanded(
+    // Parent Row already wraps each item in Expanded.
+    // Fill the entire cell so taps are reliable on small screens.
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  icon,
-                  color: color,
-                  size: 24,
-                ),
-                if (badge != null)
-                  Positioned(
-                    right: -18,
-                    top: -8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: OnboardingColors.payBillRed,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        badge!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 7,
-                          fontWeight: FontWeight.w800,
+        child: SizedBox.expand(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, color: color, size: 24),
+                  if (badgeCount > 0)
+                    Positioned(
+                      right: -10,
+                      top: -6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.error,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(minWidth: 16),
+                        child: Text(
+                          badgeCount > 99 ? '99+' : '$badgeCount',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: color,
-                letterSpacing: 0.3,
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PayBillButton extends StatelessWidget {
-  const _PayBillButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.translate(
-      offset: const Offset(0, -16),
-      child: Material(
-        color: OnboardingColors.payBillRed,
-        shape: const CircleBorder(),
-        elevation: 6,
-        shadowColor: OnboardingColors.payBillRed.withOpacity(0.4),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: const SizedBox(
-            width: 56,
-            height: 56,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.receipt_long, color: Colors.white, size: 22),
-                SizedBox(height: 2),
-                Text(
-                  'Pay Bill',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w700,
-                  ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  letterSpacing: 0.2,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

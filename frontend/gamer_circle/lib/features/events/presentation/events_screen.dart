@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/constants/social_api_paths.dart';
@@ -59,7 +60,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                   itemBuilder: (context, i) {
                     final e = _events[i] as Map<String, dynamic>;
                     return ListTile(
-                      leading: const Icon(Icons.event, color: Colors.deepPurple),
+                      leading: const Icon(Icons.event, color: AppColors.primary),
                       title: Text(e['title'] as String),
                       subtitle: Text(
                         '${e['parlor_name']} · ${(e['distance_meters'] as num).round()}m away',

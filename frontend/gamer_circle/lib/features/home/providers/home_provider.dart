@@ -1,10 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/providers/dio_provider.dart';
-import 'package:gamer_circle/core/providers/location_provider.dart';
 import 'package:gamer_circle/features/home/data/home_repository.dart';
+import 'package:gamer_circle/features/home/providers/home_filters_provider.dart';
 import 'package:gamer_circle/features/home/providers/selected_location_provider.dart';
-import 'package:gamer_circle/shared/models/gc_points.dart';
 import 'package:gamer_circle/shared/models/home_data.dart';
 
 final homeRepositoryProvider = Provider<HomeRepository>((ref) {
@@ -55,21 +54,37 @@ class HomeNotifier extends Notifier<HomeState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
+      final selectedCity = ref.read(homeSelectedCityProvider);
+      final pickFilter = ref.read(homeQuickPickFilterProvider);
+      final radiusFilter = ref.read(homeRadiusFilterProvider);
       final selectedLocation =
           await ref.read(selectedLocationProvider.future);
 
-      ref.read(currentPositionProvider.notifier).setManualPosition(
-            selectedLocation.latitude,
-            selectedLocation.longitude,
-          );
+      double? lat;
+      double? lng;
+      String? city;
+      String locationLabel = selectedLocation.label;
+
+      if (selectedCity != null) {
+        city = selectedCity.name;
+        locationLabel = selectedCity.name;
+        lat = selectedCity.latitude ?? selectedLocation.latitude;
+        lng = selectedCity.longitude ?? selectedLocation.longitude;
+      } else {
+        lat = selectedLocation.latitude;
+        lng = selectedLocation.longitude;
+      }
 
       final data = await _repo.fetchHomeData(
-        lat: selectedLocation.latitude,
-        lng: selectedLocation.longitude,
+        lat: lat,
+        lng: lng,
+        city: city,
+        pickFilter: pickFilter,
+        radiusMeters: radiusFilter.radiusMeters,
         cancelToken: _cancelToken,
       );
       state = state.copyWith(
-        data: data.copyWithLocationLabel(selectedLocation.label),
+        data: data.copyWithLocationLabel(locationLabel),
         isLoading: false,
         locationDenied: false,
         clearError: true,
@@ -81,20 +96,47 @@ class HomeNotifier extends Notifier<HomeState> {
               SelectedLocation.defaultLocation;
       state = state.copyWith(
         isLoading: false,
-        error: e.message ?? 'Failed to load home',
+        error: _friendlyDioError(e),
         data: HomeData.empty.copyWithLocationLabel(selectedLocation.label),
       );
     } catch (e) {
       final selectedLocation =
           ref.read(selectedLocationProvider).valueOrNull ??
               SelectedLocation.defaultLocation;
+      final message = e is StateError || e.toString().contains('Assertion failed')
+          ? 'Failed to load home data. Pull to refresh.'
+          : e.toString();
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: message,
         data: HomeData.empty.copyWithLocationLabel(selectedLocation.label),
       );
     }
   }
 
   Future<void> refresh() => load();
+
+  static String _friendlyDioError(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionError:
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return 'Cannot reach API. Is the backend running on '
+            '${e.requestOptions.baseUrl.isNotEmpty ? e.requestOptions.baseUrl : "configured base URL"}?';
+      case DioExceptionType.badResponse:
+        final code = e.response?.statusCode;
+        final body = e.response?.data;
+        final msg = body is Map ? (body['message'] ?? body['detail']) : null;
+        return 'Server error${code != null ? " ($code)" : ""}'
+            '${msg != null ? ": $msg" : ""}. Pull to refresh.';
+      default:
+        final m = e.message ?? '';
+        if (m.contains('XMLHttpRequest') || m.contains('connection errored')) {
+          return 'Cannot reach API (network). Start backend: '
+              'cd backend && python scripts/run_dev.py';
+        }
+        return m.isNotEmpty ? m : 'Failed to load home';
+    }
+  }
 }

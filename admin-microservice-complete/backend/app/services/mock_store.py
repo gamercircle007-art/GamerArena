@@ -258,9 +258,61 @@ class MockStore:
         return parlor
 
     def delete_parlor(self, parlor_id: str) -> bool:
-        before = len(self.parlors)
-        self.parlors = [p for p in self.parlors if p["id"] != parlor_id]
-        return len(self.parlors) < before
+        parlor = self.get_parlor(parlor_id)
+        if not parlor:
+            return False
+        parlor["is_deleted"] = True
+        parlor["is_active"] = False
+        parlor["updated_at"] = _now()
+        return True
+
+    def create_parlor(self, data: dict) -> dict:
+        parlor = {
+            "id": f"p-{len(self.parlors) + 1}",
+            "owner_id": data.get("owner_id"),
+            "name": data.get("name") or "New Parlor",
+            "description": data.get("description"),
+            "logo_url": data.get("image_url") or data.get("logo_url"),
+            "address": data.get("address"),
+            "latitude": data.get("latitude"),
+            "longitude": data.get("longitude"),
+            "game_types": data.get("game_types") or [],
+            "is_verified": bool(data.get("is_verified", False)),
+            "follower_count": 0,
+            "post_count": 0,
+            "is_following": False,
+            "rating": None,
+            "phone": data.get("phone"),
+            "website": data.get("website"),
+            "is_active": bool(data.get("is_active", True)),
+            "is_deleted": False,
+            "created_at": _now(),
+            "updated_at": _now(),
+        }
+        self.parlors.insert(0, parlor)
+        return parlor
+
+    def update_parlor(self, parlor_id: str, data: dict) -> dict | None:
+        parlor = self.get_parlor(parlor_id)
+        if not parlor:
+            return None
+        for key, value in data.items():
+            if key == "image_url":
+                parlor["logo_url"] = value
+            elif key in parlor or key in (
+                "owner_id", "name", "address", "phone", "website",
+                "latitude", "longitude", "game_types", "is_verified",
+                "is_active", "is_deleted", "description",
+            ):
+                parlor[key] = value
+        parlor["updated_at"] = _now()
+        return parlor
+
+    def assign_owner(self, parlor_id: str, owner_id: str | None) -> dict | None:
+        return self.update_parlor(parlor_id, {"owner_id": owner_id})
+
+    def restore_parlor(self, parlor_id: str) -> dict | None:
+        return self.update_parlor(parlor_id, {"is_deleted": False, "is_active": True})
 
     def list_parlors(
         self,
@@ -269,7 +321,7 @@ class MockStore:
         is_verified: bool | None = None,
         search: str | None = None,
     ) -> dict:
-        items = list(self.parlors)
+        items = [p for p in self.parlors if not p.get("is_deleted")]
         if is_verified is not None:
             items = [p for p in items if p.get("is_verified") == is_verified]
         if search:

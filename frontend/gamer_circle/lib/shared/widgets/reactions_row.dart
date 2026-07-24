@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 
 class ReactionsRow extends StatelessWidget {
   const ReactionsRow({
@@ -32,11 +33,11 @@ class ReactionsRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: mine
-                    ? const Color(0xFF7367F0).withOpacity(0.15)
+                    ? AppColors.primary.withOpacity(0.15)
                     : Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: mine ? const Color(0xFF7367F0) : Colors.transparent,
+                  color: mine ? AppColors.primary : Colors.transparent,
                 ),
               ),
               child: Text('$emoji $count', style: const TextStyle(fontSize: 12)),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/providers/dio_provider.dart';
@@ -153,7 +154,7 @@ class _LoadingSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: const Color(0xFF1A1A2E),
+      baseColor: AppColors.textPrimary,
       highlightColor: const Color(0xFF2D2D44),
       child: Container(color: Colors.black),
     );

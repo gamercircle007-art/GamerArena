@@ -59,3 +59,6 @@ frontend/gamer_circle/.dart_tool/
 frontend/gamer_circle/build/
 frontend/gamer_circle/.flutter-plugins
 frontend/gamer_circle/.flutter-plugins-dependencies
+# Local release artifacts
+releases/
+*.apk

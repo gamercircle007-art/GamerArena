@@ -45,7 +45,7 @@ class SocialApiPaths {
   static const locationPrivacy = '/location/privacy';
   static const heartbeat = '/users/me/heartbeat';
   static const statusPrivacy = '/users/me/status-privacy';
-  static const myProfile = '/users/me/profile';
+  static const myProfile = '/users/me';
   static const searchUsers = '/users/search';
   static const qrCode = '/users/me/qr-code';
 

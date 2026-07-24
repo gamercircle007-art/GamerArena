@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/constants/onboarding_colors.dart';
 import 'package:gamer_circle/features/home/providers/home_provider.dart';
@@ -217,7 +218,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                       onPressed: _onSearch,
                     ),
               filled: true,
-              fillColor: const Color(0xFFF5F5F5),
+              fillColor: AppColors.backgroundLight,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,

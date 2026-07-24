@@ -41,6 +41,12 @@ class UserService:
             raise NotFoundError("User not found")
         if data.name is not None:
             user.full_name = data.name
+        if data.avatar_url is not None:
+            user.avatar_url = data.avatar_url
+        if data.bio is not None:
+            user.bio = data.bio
+        if data.city is not None:
+            user.city = data.city
         await self.repo.session.flush()
         await self.repo.session.refresh(user)
         return UserResponse.model_validate(user)

@@ -40,6 +40,9 @@ import 'package:gamer_circle/features/notifications/presentation/notifications_s
 import 'package:gamer_circle/features/parlor/presentation/owner_dashboard_screen.dart';
 import 'package:gamer_circle/features/parlor/presentation/parlor_profile_screen.dart';
 import 'package:gamer_circle/features/post/presentation/create_post_screen.dart';
+import 'package:gamer_circle/features/create_content/presentation/add_details_screen.dart';
+import 'package:gamer_circle/features/create_content/presentation/camera_screen.dart';
+import 'package:gamer_circle/features/create_content/presentation/trim_preview_screen.dart';
 import 'package:gamer_circle/features/profile/presentation/my_bookings_screen.dart';
 import 'package:gamer_circle/features/profile/presentation/pages/profile_page.dart';
 import 'package:gamer_circle/features/friends/presentation/friends_list_screen.dart';
@@ -114,6 +117,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/search-results',
             builder: (context, state) => const SearchResultsScreen(),
           ),
+          GoRoute(
+            path: '/search-input',
+            builder: (context, state) => const SearchInputScreen(),
+          ),
           GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
           GoRoute(path: '/feed', builder: (context, state) => const FeedScreen()),
           GoRoute(path: '/reels', builder: (context, state) => const ReelsScreen()),
@@ -126,6 +133,24 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/messages',
             builder: (context, state) => const ConversationsScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (context, state) => const NewChatScreen(),
+              ),
+              GoRoute(
+                path: 'chat/:id',
+                builder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>? ?? {};
+                  return ChatScreen(
+                    conversationId: state.pathParameters['id']!,
+                    otherUserId: extra['otherUserId'] as String? ?? '',
+                    otherUserName: extra['otherUserName'] as String? ?? 'Chat',
+                    otherUserAvatar: extra['otherUserAvatar'] as String?,
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(path: '/profile', builder: (context, state) => const MyProfileScreen()),
           GoRoute(path: '/store', builder: (context, state) => const StorePage()),
@@ -134,10 +159,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/profile/legacy', builder: (context, state) => const ProfilePage()),
       GoRoute(path: '/my-bookings', builder: (context, state) => const MyBookingsScreen()),
-      GoRoute(
-        path: '/search-input',
-        builder: (context, state) => const SearchInputScreen(),
-      ),
       GoRoute(
         path: '/parlour/:id/detail',
         builder: (context, state) => ParlourDetailScreen(
@@ -191,6 +212,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/owner-dashboard', builder: (context, state) => const OwnerDashboardScreen()),
       GoRoute(path: '/create-post', builder: (context, state) => const CreatePostScreen()),
       GoRoute(path: '/create-reel', builder: (context, state) => const CreateReelScreen()),
+      GoRoute(
+        path: '/create/add-details',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return AddDetailsScreen(
+            postType: extra['postType'] as String? ?? 'post',
+            videoUrl: extra['videoUrl'] as String?,
+            durationSeconds: extra['duration'] as int?,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/create/camera',
+        builder: (context, state) {
+          final mode = state.extra as String? ?? 'short';
+          return CameraScreen(mode: mode);
+        },
+      ),
+      GoRoute(
+        path: '/create/trim',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return TrimPreviewScreen(
+            videoPath: extra['videoPath'] as String? ?? '',
+            maxDuration: extra['maxDuration'] as int? ?? 60,
+          );
+        },
+      ),
       GoRoute(path: '/reels/search', builder: (context, state) => const ReelSearchScreen()),
       GoRoute(
         path: '/reels/:id/comments',
@@ -213,19 +262,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(path: '/messages/new', builder: (context, state) => const NewChatScreen()),
-      GoRoute(
-        path: '/messages/chat/:id',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>? ?? {};
-          return ChatScreen(
-            conversationId: state.pathParameters['id']!,
-            otherUserId: extra['otherUserId'] as String? ?? '',
-            otherUserName: extra['otherUserName'] as String? ?? 'Chat',
-            otherUserAvatar: extra['otherUserAvatar'] as String?,
-          );
-        },
-      ),
+
       GoRoute(path: '/friends-list', builder: (context, state) => const FriendsListScreen()),
       GoRoute(
         path: '/friend-requests',

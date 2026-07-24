@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:gamer_circle/features/home/providers/parlor_search_provider.dart';
 
 class ParlorFilterChips extends StatelessWidget {
@@ -31,12 +32,12 @@ class ParlorFilterChips extends StatelessWidget {
               child: FilterChip(
                 label: Text(_radiusLabels[radius] ?? '$radius m'),
                 selected: filters.radiusMeters == radius,
-                selectedColor: const Color(0xFFEDE9FE),
-                checkmarkColor: const Color(0xFF7B2FF7),
+                selectedColor: AppColors.primaryLight,
+                checkmarkColor: AppColors.primary,
                 labelStyle: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: filters.radiusMeters == radius
-                      ? const Color(0xFF7B2FF7)
+                      ? AppColors.primary
                       : const Color(0xFF4B5563),
                 ),
                 onSelected: (_) =>
@@ -49,8 +50,8 @@ class ParlorFilterChips extends StatelessWidget {
             child: FilterChip(
               label: const Text('4+ Rating'),
               selected: filters.minRating == 4,
-              selectedColor: const Color(0xFFEDE9FE),
-              checkmarkColor: const Color(0xFF7B2FF7),
+              selectedColor: AppColors.primaryLight,
+              checkmarkColor: AppColors.primary,
               onSelected: (selected) => onChanged(
                 filters.copyWith(
                   minRating: selected ? 4 : null,
@@ -64,8 +65,8 @@ class ParlorFilterChips extends StatelessWidget {
             child: FilterChip(
               label: const Text('Open Now'),
               selected: filters.openNow,
-              selectedColor: const Color(0xFFEDE9FE),
-              checkmarkColor: const Color(0xFF7B2FF7),
+              selectedColor: AppColors.primaryLight,
+              checkmarkColor: AppColors.primary,
               onSelected: (selected) =>
                   onChanged(filters.copyWith(openNow: selected)),
             ),
@@ -73,8 +74,8 @@ class ParlorFilterChips extends StatelessWidget {
           FilterChip(
             label: const Text('BGMI'),
             selected: filters.gameType == 'BGMI',
-            selectedColor: const Color(0xFFEDE9FE),
-            checkmarkColor: const Color(0xFF7B2FF7),
+            selectedColor: AppColors.primaryLight,
+            checkmarkColor: AppColors.primary,
             onSelected: (selected) => onChanged(
               filters.copyWith(
                 gameType: selected ? 'BGMI' : null,
@@ -86,8 +87,8 @@ class ParlorFilterChips extends StatelessWidget {
           FilterChip(
             label: const Text('Valorant'),
             selected: filters.gameType == 'Valorant',
-            selectedColor: const Color(0xFFEDE9FE),
-            checkmarkColor: const Color(0xFF7B2FF7),
+            selectedColor: AppColors.primaryLight,
+            checkmarkColor: AppColors.primary,
             onSelected: (selected) => onChanged(
               filters.copyWith(
                 gameType: selected ? 'Valorant' : null,

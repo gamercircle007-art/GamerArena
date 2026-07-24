@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 
 class OtpInputWidget extends StatefulWidget {
@@ -98,7 +99,7 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A2E),
+                color: AppColors.textPrimary,
               ),
               decoration: InputDecoration(
                 counterText: '',
@@ -114,7 +115,7 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      const BorderSide(color: Color(0xFF7B2FF7), width: 2),
+                      const BorderSide(color: AppColors.primary, width: 2),
                 ),
                 filled: true,
                 fillColor: const Color(0xFFF9F9F9),

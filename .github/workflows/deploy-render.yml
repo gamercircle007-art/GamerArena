@@ -1,0 +1,96 @@
+# Deploy gamer-circle-api on Render when backend changes land on `sit`.
+#
+# Paths that actually deploy:
+#   1) Render autoDeploy on push to `sit` (render.yaml) — always on, no secrets.
+#   2) This workflow — optional explicit trigger via Deploy Hook or API key.
+#
+# GitHub secrets (optional; either works):
+#   RENDER_DEPLOY_HOOK  — Dashboard → gamer-circle-api → Settings → Deploy Hook
+#   RENDER_API_KEY      — Dashboard → Account Settings → API Keys
+#   RENDER_SERVICE_ID   — default srv-d9dlbtrtqb8s738uohkg (from .render-deploy.json)
+
+name: Deploy Render
+
+on:
+  push:
+    branches: [sit]
+    paths:
+      - "backend/**"
+      - "render.yaml"
+      - ".github/workflows/deploy-render.yml"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why are you redeploying?"
+        required: false
+        default: "manual"
+
+concurrency:
+  group: deploy-render-sit
+  cancel-in-progress: true
+
+jobs:
+  # Smoke that the tree still installs before we poke Render.
+  backend-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install poetry + deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry==1.8.4
+          poetry config virtualenvs.create false
+          poetry install --only main --no-root --no-interaction
+      - name: Import app (settings with dummy JWT)
+        env:
+          JWT_SECRET_KEY: test_jwt_secret_key_for_ci_only_32chars
+          APP_ENV: local
+          DATABASE_URL: postgresql+asyncpg://u:p@localhost:5432/db
+          REDIS_URL: redis://localhost:6379/0
+        run: python -c "from app.main import app; print('app_ok', app.title)"
+
+  trigger-deploy:
+    needs: backend-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          set -euo pipefail
+          SERVICE_ID="${RENDER_SERVICE_ID:-srv-d9dlbtrtqb8s738uohkg}"
+
+          if [ -n "${RENDER_DEPLOY_HOOK:-}" ]; then
+            echo "Using RENDER_DEPLOY_HOOK..."
+            curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+            echo
+            echo "Deploy hook accepted."
+            exit 0
+          fi
+
+          if [ -n "${RENDER_API_KEY:-}" ]; then
+            echo "Using Render API deploys for service ${SERVICE_ID}..."
+            RESP=$(curl -fsS -X POST \
+              -H "Authorization: Bearer ${RENDER_API_KEY}" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              "https://api.render.com/v1/services/${SERVICE_ID}/deploys" \
+              -d '{"clearCache":"do_not_clear"}')
+            echo "$RESP" | head -c 800
+            echo
+            echo "API deploy triggered."
+            exit 0
+          fi
+
+          echo "No RENDER_DEPLOY_HOOK or RENDER_API_KEY secret set."
+          echo "Render still auto-deploys on push to sit (autoDeployTrigger: commit)."
+          echo "This job is a no-op explicit trigger — push already queued a deploy."
+          exit 0

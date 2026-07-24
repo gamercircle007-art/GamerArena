@@ -10,7 +10,10 @@ from httpx import ASGITransport, AsyncClient
 # Set test env before importing app
 os.environ.setdefault("JWT_SECRET_KEY", "test_secret_key_minimum_32_characters_long")
 os.environ.setdefault("APP_ENV", "local")
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://paythan:test@localhost:5432/paythan_test")
+
+# Default to existing dev.db (SQLite) for easy local testing
+# Override with env var for Postgres/CI if needed
+os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dev.db'))}")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/1")
 
 from app.core.dependencies import get_redis_client  # noqa: E402

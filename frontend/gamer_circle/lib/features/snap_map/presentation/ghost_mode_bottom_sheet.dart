@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/features/snap_map/providers/snap_map_provider.dart';
 
@@ -17,7 +18,7 @@ class GhostModeBottomSheet extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.visibility_off, color: Color(0xFF7367F0)),
+              const Icon(Icons.visibility_off, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
                 'Ghost Mode',
@@ -29,7 +30,7 @@ class GhostModeBottomSheet extends ConsumerWidget {
           const Text(
             'While in ghost mode, you won\'t appear on others\' maps. '
             'Friends can still message you.',
-            style: TextStyle(color: Color(0xFF82868B)),
+            style: TextStyle(color: AppColors.textSecondaryLight),
           ),
           const SizedBox(height: 16),
           SwitchListTile(
@@ -44,7 +45,7 @@ class GhostModeBottomSheet extends ConsumerWidget {
             onPressed: () => Navigator.pop(context),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(48),
-              backgroundColor: const Color(0xFF7367F0),
+              backgroundColor: AppColors.primary,
             ),
             child: const Text('Done'),
           ),

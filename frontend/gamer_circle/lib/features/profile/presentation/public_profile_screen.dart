@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/providers/messaging_providers.dart';
@@ -80,7 +81,7 @@ class PublicProfileScreen extends ConsumerWidget {
                   spacing: 8,
                   alignment: WrapAlignment.center,
                   children: profile.gameTags
-                      .map((t) => Chip(label: Text(t), backgroundColor: const Color(0xFFF0EFFF)))
+                      .map((t) => Chip(label: Text(t), backgroundColor: AppColors.primaryLight))
                       .toList(),
                 ),
               ],
@@ -98,7 +99,7 @@ class PublicProfileScreen extends ConsumerWidget {
                 Text(
                   '${profile.mutualFriendsCount} mutual friends',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFF82868B)),
+                  style: const TextStyle(color: AppColors.textSecondaryLight),
                 ),
               ],
               const SizedBox(height: 20),
@@ -109,7 +110,7 @@ class PublicProfileScreen extends ConsumerWidget {
                   child: Text(
                     'This account is private. Add friend to see posts.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xFF82868B)),
+                    style: TextStyle(color: AppColors.textSecondaryLight),
                   ),
                 ),
             ],
@@ -131,7 +132,7 @@ class _Stat extends StatelessWidget {
     return Column(
       children: [
         Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Color(0xFF82868B), fontSize: 12)),
+        Text(label, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 12)),
       ],
     );
   }

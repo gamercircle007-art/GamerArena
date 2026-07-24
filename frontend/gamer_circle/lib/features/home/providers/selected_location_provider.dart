@@ -37,6 +37,12 @@ class SelectedLocationNotifier extends AsyncNotifier<SelectedLocation> {
   static const _lngKey = 'selected_location_lng';
   static const _isGpsKey = 'selected_location_is_gps';
 
+  void _schedulePositionSync(double lat, double lng) {
+    Future.microtask(() {
+      ref.read(currentPositionProvider.notifier).setManualPosition(lat, lng);
+    });
+  }
+
   @override
   Future<SelectedLocation> build() async {
     final prefs = getIt<SharedPreferences>();
@@ -45,7 +51,7 @@ class SelectedLocationNotifier extends AsyncNotifier<SelectedLocation> {
     final lng = prefs.getDouble(_lngKey);
 
     if (label != null && lat != null && lng != null) {
-      ref.read(currentPositionProvider.notifier).setManualPosition(lat, lng);
+      _schedulePositionSync(lat, lng);
       return SelectedLocation(
         label: label,
         latitude: lat,
@@ -59,7 +65,7 @@ class SelectedLocationNotifier extends AsyncNotifier<SelectedLocation> {
       final city = cached['city'] as String?;
       final lat = cached['latitude'] as double;
       final lng = cached['longitude'] as double;
-      ref.read(currentPositionProvider.notifier).setManualPosition(lat, lng);
+      _schedulePositionSync(lat, lng);
       return SelectedLocation(
         label: city ?? 'Around you',
         latitude: lat,
@@ -68,7 +74,9 @@ class SelectedLocationNotifier extends AsyncNotifier<SelectedLocation> {
       );
     }
 
-    return SelectedLocation.defaultLocation;
+    const fallback = SelectedLocation.defaultLocation;
+    _schedulePositionSync(fallback.latitude, fallback.longitude);
+    return fallback;
   }
 
   Future<void> _persist(SelectedLocation location) async {
@@ -84,10 +92,7 @@ class SelectedLocationNotifier extends AsyncNotifier<SelectedLocation> {
       city: location.label,
     );
 
-    ref.read(currentPositionProvider.notifier).setManualPosition(
-          location.latitude,
-          location.longitude,
-        );
+    _schedulePositionSync(location.latitude, location.longitude);
     state = AsyncData(location);
   }
 

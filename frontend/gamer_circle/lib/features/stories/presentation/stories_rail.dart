@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_providers.dart';
@@ -158,13 +159,13 @@ class _StoryBubble extends StatelessWidget {
                   size: 56,
                   child: CircleAvatar(
                     radius: 24,
-                    backgroundColor: const Color(0xFF7367F0).withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
                     backgroundImage:
                         avatarUrl != null ? NetworkImage(avatarUrl!) : null,
                     child: avatarUrl == null
                         ? Text(
                             name.isNotEmpty ? name[0].toUpperCase() : '?',
-                            style: const TextStyle(color: Color(0xFF7367F0)),
+                            style: const TextStyle(color: AppColors.primary),
                           )
                         : null,
                   ),
@@ -175,7 +176,7 @@ class _StoryBubble extends StatelessWidget {
                     right: -2,
                     child: CircleAvatar(
                       radius: 10,
-                      backgroundColor: Color(0xFF7367F0),
+                      backgroundColor: AppColors.primary,
                       child: Icon(Icons.add, size: 14, color: Colors.white),
                     ),
                   ),

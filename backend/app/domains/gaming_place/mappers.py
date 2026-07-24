@@ -29,6 +29,8 @@ class GamingPlaceView:
     longitude: float | None
     created_at: datetime
     updated_at: datetime
+    is_active: bool = True
+    is_deleted: bool = False
 
 
 def resolve_media_url(url: str | None) -> str | None:
@@ -75,6 +77,8 @@ def to_view(
         longitude=place.longitude,
         created_at=place.created_at,
         updated_at=place.updated_at,
+        is_active=ext.is_active if ext else True,
+        is_deleted=ext.is_deleted if ext else False,
     )
 
 

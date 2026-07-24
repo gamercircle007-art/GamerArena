@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/constants/booking_colors.dart';
 import 'package:gamer_circle/core/utils/currency_formatter.dart';
+import 'package:gamer_circle/features/auth/presentation/providers/auth_providers.dart';
+import 'package:gamer_circle/features/auth/presentation/providers/auth_state.dart';
 import 'package:gamer_circle/features/booking/providers/gaming_booking_provider.dart';
 import 'package:gamer_circle/shared/models/gaming_booking.dart';
 import 'package:intl/intl.dart';
@@ -24,9 +26,12 @@ class _GamingMyBookingsScreenState extends ConsumerState<GamingMyBookingsScreen>
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref.read(gamingBookingProvider.notifier).loadMyBookings(),
-    );
+    Future.microtask(() {
+      final auth = ref.read(authNotifierProvider);
+      if (auth is AuthAuthenticated) {
+        ref.read(gamingBookingProvider.notifier).loadMyBookings();
+      }
+    });
   }
 
   @override
@@ -37,6 +42,8 @@ class _GamingMyBookingsScreenState extends ConsumerState<GamingMyBookingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final auth = ref.watch(authNotifierProvider);
+    final isGuest = auth is! AuthAuthenticated;
     final state = ref.watch(gamingBookingProvider);
 
     return Scaffold(
@@ -44,40 +51,76 @@ class _GamingMyBookingsScreenState extends ConsumerState<GamingMyBookingsScreen>
         title: const Text('My Bookings'),
         backgroundColor: BookingColors.oyoRed,
         foregroundColor: Colors.white,
-        bottom: TabBar(
-          controller: _tabs,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          tabs: const [
-            Tab(text: 'Upcoming'),
-            Tab(text: 'Past'),
-          ],
-        ),
-      ),
-      body: state.isLoadingList
-          ? ListView.builder(
-              itemCount: 4,
-              itemBuilder: (_, __) => const _BookingCardShimmer(),
-            )
-          : RefreshIndicator(
-              color: BookingColors.oyoRed,
-              onRefresh: () =>
-                  ref.read(gamingBookingProvider.notifier).loadMyBookings(),
-              child: TabBarView(
+        bottom: isGuest
+            ? null
+            : TabBar(
                 controller: _tabs,
-                children: [
-                  _BookingList(
-                    bookings: state.upcoming,
-                    emptyMessage: 'No upcoming bookings',
-                  ),
-                  _BookingList(
-                    bookings: state.past,
-                    emptyMessage: 'No past bookings',
-                  ),
+                indicatorColor: Colors.white,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                tabs: const [
+                  Tab(text: 'Upcoming'),
+                  Tab(text: 'Past'),
                 ],
               ),
-            ),
+      ),
+      body: isGuest
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.event_note_outlined,
+                      size: 56,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Sign in to view your bookings',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: () => context.go('/login'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: BookingColors.oyoRed,
+                      ),
+                      child: const Text('Login'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () => context.go('/'),
+                      child: const Text('Explore parlours'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : state.isLoadingList
+              ? ListView.builder(
+                  itemCount: 4,
+                  itemBuilder: (_, __) => const _BookingCardShimmer(),
+                )
+              : RefreshIndicator(
+                  color: BookingColors.oyoRed,
+                  onRefresh: () =>
+                      ref.read(gamingBookingProvider.notifier).loadMyBookings(),
+                  child: TabBarView(
+                    controller: _tabs,
+                    children: [
+                      _BookingList(
+                        bookings: state.upcoming,
+                        emptyMessage: 'No upcoming bookings',
+                      ),
+                      _BookingList(
+                        bookings: state.past,
+                        emptyMessage: 'No past bookings',
+                      ),
+                    ],
+                  ),
+                ),
     );
   }
 }

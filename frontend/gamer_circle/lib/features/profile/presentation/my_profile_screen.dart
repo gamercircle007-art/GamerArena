@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/auth_providers.dart';
@@ -10,6 +11,9 @@ import 'package:gamer_circle/shared/widgets/stories_avatar_ring.dart';
 import 'package:gamer_circle/shared/widgets/user_avatar.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:gamer_circle/core/services/dms_service.dart';
 
 class MyProfileScreen extends ConsumerWidget {
   const MyProfileScreen({super.key});
@@ -18,7 +22,27 @@ class MyProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authNotifierProvider);
     if (auth is! AuthAuthenticated) {
-      return const Scaffold(body: Center(child: Text('Not logged in')));
+      return Scaffold(
+        appBar: AppBar(title: const Text('Profile')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.person_outline, size: 64, color: Colors.grey),
+                const SizedBox(height: 12),
+                const Text('Sign in to view your profile'),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () => context.go('/login'),
+                  child: const Text('Login'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     final userId = auth.user.id;
@@ -37,27 +61,61 @@ class MyProfileScreen extends ConsumerWidget {
       ),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Could not load profile:\n$e', textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () => ref.invalidate(publicProfileProvider(userId)),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (profile) {
           final hasStory = myStoriesAsync.valueOrNull?.isNotEmpty ?? false;
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
             children: [
               Center(
-                child: StoriesAvatarRing(
-                  hasStory: hasStory,
-                  allViewed: false,
-                  size: 108,
-                  onTap: hasStory
-                      ? () => context.push('/story/create')
-                      : () => context.push('/story/create'),
-                  child: UserAvatar(
-                    name: profile.name ?? profile.username,
-                    imageUrl: profile.avatarUrl,
-                    radius: 48,
-                    showOnlineDot: true,
-                    isOnline: true,
-                  ),
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    StoriesAvatarRing(
+                      hasStory: hasStory,
+                      allViewed: false,
+                      size: 108,
+                      onTap: () => _changeAvatar(context, ref, userId),
+                      child: UserAvatar(
+                        name: profile.name ?? profile.username,
+                        imageUrl: profile.avatarUrl,
+                        radius: 48,
+                        showOnlineDot: true,
+                        isOnline: true,
+                      ),
+                    ),
+                    Material(
+                      color: AppColors.primary,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => _changeAvatar(context, ref, userId),
+                        child: const Padding(
+                          padding: EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.camera_alt,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
@@ -83,7 +141,7 @@ class MyProfileScreen extends ConsumerWidget {
                   spacing: 8,
                   alignment: WrapAlignment.center,
                   children: profile.gameTags
-                      .map((t) => Chip(label: Text(t), backgroundColor: const Color(0xFFF0EFFF)))
+                      .map((t) => Chip(label: Text(t), backgroundColor: AppColors.primaryLight))
                       .toList(),
                 ),
               ],
@@ -134,6 +192,42 @@ class MyProfileScreen extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  Future<void> _changeAvatar(BuildContext context, WidgetRef ref, String userId) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+    );
+    if (pickedFile == null) return;
+    final file = File(pickedFile.path);
+    try {
+      final dms = ref.read(dmsServiceProvider);
+      final result = await dms.uploadFile(
+        file: file,
+        assetType: 'image',
+        fileType: 'image/jpeg',
+        context: 'profile',
+        contextId: userId,
+      );
+      await ref.read(profileRepositoryProvider).updateProfile({
+        'avatar_url': result.cdnUrl,
+      });
+      ref.invalidate(publicProfileProvider(userId));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile picture updated')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload failed: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _showQrSheet(

@@ -1,0 +1,113 @@
+# Render Blueprint — GamerCircle production API
+# Deploy: Dashboard → New → Blueprint → repo branch `sit`
+# URL: https://gamer-circle-api.onrender.com
+#
+# SECRETS: set TWILIO_*, AWS_*, RAZORPAY_* in Dashboard (sync: false below).
+# Never commit Auth Tokens or AWS keys into this file.
+
+databases:
+  - name: gamer-circle-db
+    plan: free
+    databaseName: gamer_circle
+    user: gamer_circle
+    postgresMajorVersion: "16"
+
+services:
+  - type: keyvalue
+    name: gamer-circle-redis
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru
+
+  - type: web
+    name: gamer-circle-api
+    runtime: python
+    plan: free
+    region: oregon
+    branch: sit
+    rootDir: backend
+    # Build must succeed; start always binds PORT (script falls through to uvicorn).
+    buildCommand: pip install poetry==1.8.4 && poetry config virtualenvs.create false && poetry install --only main --no-root && python -c "from app.main import app; print('import_ok', app.title)"
+    startCommand: bash scripts/render-start.sh
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      # --- Production core ---
+      - key: APP_ENV
+        value: prod
+      - key: APP_NAME
+        value: gamer-circle
+      - key: DEBUG
+        value: "false"
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: DATABASE_POOL_SIZE
+        value: "5"
+      - key: DATABASE_MAX_OVERFLOW
+        value: "5"
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      # Cap seed so free-tier start does not OOM/timeout
+      - key: SEED_TIMEOUT_SECONDS
+        value: "40"
+      - key: DB_WAIT_ATTEMPTS
+        value: "8"
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: AUTH_METHODS
+        value: "whatsapp_otp,password"
+      - key: OTP_PROVIDER
+        value: twilio
+      # * = all browser origins (Angular admin + local). Credentials off when wildcard.
+      # For tighter prod: set explicit origins in Dashboard (include http://localhost:4200).
+      - key: CORS_ORIGINS
+        value: "*"
+      # * avoids TrustedHost rejecting internal health-check Host headers on free tier
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: LOG_JSON
+        value: "true"
+      # Admin ensure + optional full seed (time-boxed in render-start.sh)
+      - key: SEED_ON_BOOT
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gamer-circle-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: gamer-circle-redis
+          type: keyvalue
+          property: connectionString
+
+      # --- OTP: empty = real Twilio only (required for prod login) ---
+      # If you still need fixed 123456 for testing, temporarily set APP_ENV=staging
+      # and OTP_DEV_BYPASS_CODE=123456 in Dashboard (do not use in real launch).
+      - key: OTP_DEV_BYPASS_CODE
+        value: ""
+
+      # --- Secrets: set real values in Render Dashboard → Environment ---
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: TWILIO_SMS_FROM
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+      - key: AWS_CLOUDFRONT_DOMAIN
+        sync: false
+      - key: AWS_REGION
+        value: ap-south-1
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false

@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/config/app_config.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -131,7 +134,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A2E),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -141,14 +144,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           text: 'Code sent to ',
                           style: const TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF888888),
+                            color: AppColors.textSecondary,
                           ),
                           children: [
                             TextSpan(
                               text: _maskedPhone,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1A1A2E),
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -159,7 +162,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         'Sign in with phone number or username',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF888888),
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     const SizedBox(height: 28),
@@ -200,37 +203,39 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       const SizedBox(height: 16),
                       _buildOtpActions(),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3E8FF),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: const Color(0xFF7B2FF7).withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.info_outline,
-                              color: Color(0xFF7B2FF7),
-                              size: 18,
+                      if (!kReleaseMode && !AppConfig.instance.isProd) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.3),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Dev mode — OTP is: ${AppConstants.devOtpBypass}',
-                                style: const TextStyle(
-                                  color: Color(0xFF7B2FF7),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.info_outline,
+                                color: AppColors.primary,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Dev mode — OTP is: ${AppConstants.devOtpBypass}',
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                     const SizedBox(height: 20),
                     Center(
@@ -240,14 +245,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           text: const TextSpan(
                             text: 'New user? ',
                             style: TextStyle(
-                              color: Color(0xFF888888),
+                              color: AppColors.textSecondary,
                               fontSize: 14,
                             ),
                             children: [
                               TextSpan(
                                 text: 'Sign Up',
                                 style: TextStyle(
-                                  color: Color(0xFF3B82F6),
+                                  color: AppColors.secondary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -285,6 +290,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       enabled: enabled,
       keyboardType: TextInputType.text,
       textInputAction: TextInputAction.next,
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+      ),
+      cursorColor: AppColors.primary,
       onChanged: (_) => setState(() {}),
       onFieldSubmitted: (_) {
         if (_isPhoneLogin) {
@@ -295,9 +306,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       },
       decoration: InputDecoration(
         hintText: 'Phone Number or Username',
+        hintStyle: const TextStyle(color: AppColors.textSecondary),
         prefixIcon: Icon(
           _isPhoneLogin ? Icons.phone_outlined : Icons.alternate_email,
-          color: const Color(0xFF7B2FF7),
+          color: AppColors.primary,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -309,10 +321,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF7B2FF7), width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
-        fillColor: const Color(0xFFF9F9F9),
+        fillColor: Colors.white,
       ),
       validator: validateLoginIdentifier,
     );
@@ -324,16 +336,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       enabled: enabled,
       obscureText: _obscurePassword,
       textInputAction: TextInputAction.done,
+      style: const TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+      ),
+      cursorColor: AppColors.primary,
       onFieldSubmitted: (_) => _onPasswordLogin(),
       decoration: InputDecoration(
         hintText: 'Password',
-        prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF7B2FF7)),
+        hintStyle: const TextStyle(color: AppColors.textSecondary),
+        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
         suffixIcon: IconButton(
           icon: Icon(
             _obscurePassword
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
-            color: const Color(0xFF888888),
+            color: AppColors.textSecondary,
           ),
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
@@ -347,10 +366,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF7B2FF7), width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
-        fillColor: const Color(0xFFF9F9F9),
+        fillColor: Colors.white,
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -370,7 +389,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: const Text(
             'Change number',
             style: TextStyle(
-              color: Color(0xFF3B82F6),
+              color: AppColors.secondary,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -380,7 +399,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ? Text(
                 'Resend in ${_secondsLeft}s',
                 style: const TextStyle(
-                  color: Color(0xFF888888),
+                  color: AppColors.textSecondary,
                   fontSize: 13,
                 ),
               )
@@ -389,7 +408,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 child: const Text(
                   'Resend OTP',
                   style: TextStyle(
-                    color: Color(0xFF3B82F6),
+                    color: AppColors.secondary,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
@@ -458,13 +477,13 @@ class _GradientButton extends StatelessWidget {
             : const LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
-                colors: [Color(0xFF7B2FF7), Color(0xFF3B82F6)],
+                colors: [AppColors.primary, AppColors.secondary],
               ),
         boxShadow: onPressed == null
             ? null
             : [
                 BoxShadow(
-                  color: const Color(0xFF7B2FF7).withOpacity(0.4),
+                  color: AppColors.primary.withOpacity(0.4),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),

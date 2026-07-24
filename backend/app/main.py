@@ -37,6 +37,7 @@ from app.domains.comment.router import router as comment_router
 from app.domains.feed.router import router as feed_router
 from app.domains.feed.store_router import router as store_router
 from app.domains.follow.router import router as follow_router
+from app.routers.recommendation import router as recommendation_router
 from app.domains.gaming_booking.gc_points_router import router as gc_points_router
 from app.domains.gaming_booking.parlor_router import router as gaming_parlor_router
 from app.domains.gaming_booking.router import router as gaming_booking_router
@@ -123,15 +124,55 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     logger.info("application_starting", app_name=settings.app_name, env=settings.app_env)
 
+    readiness = settings.production_readiness()
+    logger.info("production_readiness", **{k: str(v) for k, v in readiness.items()})
+    if settings.is_production and not settings.twilio_configured:
+        logger.error(
+            "twilio_missing_in_production",
+            hint="Set TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_WHATSAPP_FROM on Render",
+        )
+    if settings.is_production and settings.debug:
+        logger.error("debug_enabled_in_production")
+
+    import asyncio
+
     import redis.asyncio as aioredis
 
     from app.ws.manager import ws_manager
 
-    redis_client = aioredis.from_url(settings.redis_url, decode_responses=True)
-    await ws_manager.start_redis_listener(redis_client)
+    # Keep Redis boot short: long retries delay /health and mark free-tier Failed.
+    redis_client = aioredis.from_url(
+        settings.redis_url,
+        decode_responses=True,
+        socket_connect_timeout=3,
+        socket_timeout=3,
+        health_check_interval=30,
+    )
+    for attempt in range(1, 4):
+        try:
+            await redis_client.ping()
+            logger.info("redis_ready", attempt=attempt)
+            break
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("redis_not_ready", attempt=attempt, error=str(exc))
+            if attempt == 3:
+                # Do not crash the whole API if Redis is briefly unavailable —
+                # auth will 503; health still serves.
+                logger.error("redis_unavailable_continuing_without_ws")
+                try:
+                    await redis_client.aclose()
+                except Exception:  # noqa: BLE001
+                    pass
+                redis_client = None
+                break
+            await asyncio.sleep(1)
+
+    if redis_client is not None:
+        await ws_manager.start_redis_listener(redis_client)
     yield
     await ws_manager.stop()
-    await redis_client.aclose()
+    if redis_client is not None:
+        await redis_client.aclose()
     logger.info("application_shutdown")
 
 
@@ -139,25 +180,22 @@ def create_app() -> FastAPI:
     settings = get_settings()
 
     app = FastAPI(
-        title=f"{settings.app_name.title()} API",
+        title="GamerCircle API",
         description=(
-            "## Paythan Backend API\n\n"
-            "Modular monolith with domain-driven design.\n\n"
+            "## GamerCircle / GameConnect Backend\n\n"
+            "Modular monolith: booking, social, messaging, reels, admin.\n\n"
             "### Authentication\n"
-            "- **Signup**: Name + Email + Phone → WhatsApp OTP → Password → Account\n"
-            "- **Login**: Phone + Password → JWT tokens\n"
-            "- **Security**: Argon2 passwords, Redis OTP, token rotation, brute-force lockout\n\n"
-            "### Extensibility\n"
-            "OAuth (Google/Apple) and alternative OTP channels (Email/SMS) are scaffolded "
-            "in `domains/auth/providers/`."
+            "- **Signup**: Phone → WhatsApp OTP → Password → Account\n"
+            "- **Login**: Phone + OTP or password → JWT tokens\n"
+            "- **Security**: Argon2, Redis OTP, token rotation, rate limits\n"
         ),
-        version="0.2.0",
+        version="1.0.0",
         openapi_tags=OPENAPI_TAGS,
         docs_url="/docs" if not settings.is_production else None,
         redoc_url="/redoc" if not settings.is_production else None,
         openapi_url="/openapi.json" if not settings.is_production else None,
         lifespan=lifespan,
-        contact={"name": "Paythan Engineering"},
+        contact={"name": "GamerCircle Engineering"},
         license_info={"name": "Proprietary"},
     )
 
@@ -171,10 +209,15 @@ def create_app() -> FastAPI:
         "allow_headers": ["*"],
         "expose_headers": ["X-Request-ID"],
     }
+    origins = settings.cors_origins_list
     if settings.is_local:
         cors_kwargs["allow_origin_regex"] = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+    elif origins == ["*"]:
+        # Browsers forbid credentials + wildcard; native Flutter does not use CORS.
+        cors_kwargs["allow_origins"] = ["*"]
+        cors_kwargs["allow_credentials"] = False
     else:
-        cors_kwargs["allow_origins"] = settings.cors_origins_list
+        cors_kwargs["allow_origins"] = origins
     app.add_middleware(CORSMiddleware, **cors_kwargs)
 
     @app.middleware("http")
@@ -240,9 +283,13 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("unhandled_exception", path=request.url.path)
+        # Surface error class in non-prod so Render/staging debugging is possible
+        message = "An unexpected error occurred"
+        if not settings.is_production:
+            message = f"{type(exc).__name__}: {exc}"
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": "internal_error", "message": "An unexpected error occurred"},
+            content={"error": "internal_error", "message": message},
         )
 
     @app.get("/health", tags=["Health"], summary="Health check")
@@ -252,7 +299,76 @@ def create_app() -> FastAPI:
             "service": settings.app_name,
             "environment": settings.app_env,
             "auth_methods": settings.auth_methods_list,
+            "version": "1.0.0",
         }
+
+    @app.get("/ready", tags=["Health"], summary="Readiness (DB + Redis + config)")
+    async def readiness_check() -> dict[str, Any]:
+        """Deeper check for load balancers / ops. Never returns secrets."""
+        import redis.asyncio as aioredis
+        from sqlalchemy import text
+        from sqlalchemy.ext.asyncio import create_async_engine
+
+        checks: dict[str, Any] = {"database": False, "redis": False}
+        try:
+            engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+            async with engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+            checks["database"] = True
+            await engine.dispose()
+        except Exception as exc:  # noqa: BLE001
+            checks["database_error"] = str(exc)[:200]
+
+        try:
+            client = aioredis.from_url(settings.redis_url, decode_responses=True)
+            await client.ping()
+            checks["redis"] = True
+            await client.aclose()
+        except Exception as exc:  # noqa: BLE001
+            checks["redis_error"] = str(exc)[:200]
+
+        ready = checks["database"] and checks["redis"]
+        body = {
+            "status": "ready" if ready else "degraded",
+            "checks": checks,
+            "config": settings.production_readiness(),
+        }
+        if not ready:
+            return JSONResponse(status_code=503, content=body)
+        return body
+
+    @app.post("/api/v1/dev/seed", tags=["Health"], summary="Bootstrap demo data (staging only)")
+    async def dev_seed(request: Request) -> dict[str, Any]:
+        """One-shot demo seed for empty Render DBs. Header: X-Seed-Key: OTP_DEV_BYPASS_CODE."""
+        if settings.is_production:
+            return JSONResponse(status_code=404, content={"error": "not_found"})
+        key = request.headers.get("X-Seed-Key") or request.query_params.get("key")
+        if not settings.otp_dev_bypass_code or key != settings.otp_dev_bypass_code:
+            return JSONResponse(status_code=403, content={"error": "forbidden"})
+        try:
+            import importlib.util
+            from pathlib import Path
+
+            script = Path(__file__).resolve().parent.parent / "scripts" / "seed_render_bootstrap.py"
+            spec = importlib.util.spec_from_file_location("seed_render_bootstrap", script)
+            if spec is None or spec.loader is None:
+                raise RuntimeError(f"Cannot load seed script: {script}")
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            # Await async main() — never asyncio.run() inside the FastAPI loop
+            await mod.main()
+            return {
+                "status": "ok",
+                "message": "seed complete",
+                "demo_login": "+919999999010 / Demo@123",
+                "otp_bypass": settings.otp_dev_bypass_code,
+            }
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("dev_seed_failed")
+            return JSONResponse(
+                status_code=500,
+                content={"error": "seed_failed", "message": str(exc)[:500]},
+            )
 
     # --- Domain routers ---
     api_prefix = settings.api_v1_prefix
@@ -286,6 +402,7 @@ def create_app() -> FastAPI:
     app.include_router(snap_map_router, prefix=api_prefix)
     app.include_router(online_router, prefix=api_prefix)
     app.include_router(admin_router, prefix=api_prefix)
+    app.include_router(recommendation_router, prefix=api_prefix)
     app.include_router(ws_router)
 
     return app

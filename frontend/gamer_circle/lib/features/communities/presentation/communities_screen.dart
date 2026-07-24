@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/providers/dio_provider.dart';
 
@@ -55,7 +56,7 @@ class _CommunitiesScreenState extends ConsumerState<CommunitiesScreen> {
                     ..._following.map(
                       (name) => Card(
                         child: ListTile(
-                          leading: const Icon(Icons.groups, color: Colors.deepPurple),
+                          leading: const Icon(Icons.groups, color: AppColors.primary),
                           title: Text(name),
                           subtitle: const Text('Member'),
                         ),

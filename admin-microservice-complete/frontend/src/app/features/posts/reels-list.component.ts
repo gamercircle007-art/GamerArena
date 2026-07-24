@@ -298,7 +298,7 @@ export class ReelsListComponent implements OnInit {
 
     this.actionPostId.set(reel.id);
     this.api
-      .deletePost(reel.id)
+      .deleteReel(reel.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -319,17 +319,40 @@ export class ReelsListComponent implements OnInit {
     this.loadError.set(false);
 
     this.api
-      .getPosts({ media_type: 'reel', limit: 50 })
+      .getReels({ limit: 50 })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: res => {
-          this.reels.set(res.items);
+          // Map reel API shape → Post-like for existing template / media viewer
+          const mapped: Post[] = res.items.map((r: Record<string, unknown>) => ({
+            id: String(r['id']),
+            content: String(r['caption'] ?? ''),
+            media_urls: [String(r['video_url'] ?? r['thumbnail_url'] ?? '')].filter(Boolean),
+            media_type: 'reel' as const,
+            parlor_id: '',
+            likes_count: Number(r['likes_count'] ?? 0),
+            comments_count: Number(r['comments_count'] ?? 0),
+            created_at: String(r['created_at'] ?? ''),
+          }));
+          this.reels.set(mapped);
           this.loading.set(false);
         },
         error: () => {
-          this.loading.set(false);
-          this.loadError.set(true);
-          this.toast.error('Failed to load reels');
+          // Fallback: posts filtered as reels
+          this.api
+            .getPosts({ media_type: 'reel', limit: 50 })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: res => {
+                this.reels.set(res.items);
+                this.loading.set(false);
+              },
+              error: () => {
+                this.loading.set(false);
+                this.loadError.set(true);
+                this.toast.error('Failed to load reels');
+              },
+            });
         },
       });
   }

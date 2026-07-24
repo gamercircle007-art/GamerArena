@@ -56,35 +56,56 @@ class LoginService:
     async def _clear_attempts(self, username: str) -> None:
         await self.redis.delete(self._attempts_key(username))
 
-    async def authenticate(self, username: str, password: str) -> User:
-        """Verify username + password. Raises AuthenticationError on failure."""
-        normalized = UserRepository.normalize_username(username)
+    @staticmethod
+    def _looks_like_phone(identifier: str) -> bool:
+        raw = identifier.strip()
+        digits = "".join(c for c in raw if c.isdigit())
+        if not digits or len(digits) < 10:
+            return False
+        stripped = raw.replace("+", "").replace(" ", "").replace("-", "")
+        return stripped.isdigit() or raw.startswith("+")
 
-        if await self._is_locked_out(normalized):
-            logger.warning("login_blocked_lockout", username=normalized)
+    async def authenticate(self, username: str, password: str) -> User:
+        """Verify username *or* phone + password. Raises AuthenticationError on failure."""
+        raw = username.strip()
+        # Lockout key: phone-normalized or username-normalized
+        if self._looks_like_phone(raw):
+            lock_key = UserRepository.normalize_phone(raw)
+        else:
+            lock_key = UserRepository.normalize_username(raw)
+
+        if await self._is_locked_out(lock_key):
+            logger.warning("login_blocked_lockout", username=lock_key)
             raise RateLimitError(
                 "Account temporarily locked. Please try again later."
             )
 
-        user = await self.user_repo.get_by_username(normalized)
+        if self._looks_like_phone(raw):
+            user = await self.user_repo.get_by_phone(raw)
+        else:
+            user = await self.user_repo.get_by_username(raw)
 
-        # Generic message — never reveal whether username exists
+        # Generic message — never reveal whether username/phone exists
         invalid_msg = "Invalid username or password"
 
         if user is None or not user.is_active or not user.hashed_password:
-            await self._record_failed_attempt(normalized)
+            await self._record_failed_attempt(lock_key)
             logger.warning(
                 "login_failed",
-                username=normalized,
+                username=lock_key,
                 reason="user_not_found_or_inactive",
             )
             raise AuthenticationError(invalid_msg)
 
         if not verify_password(password, user.hashed_password, self.settings):
-            await self._record_failed_attempt(normalized)
-            logger.warning("login_failed", username=normalized, reason="invalid_password")
+            await self._record_failed_attempt(lock_key)
+            logger.warning("login_failed", username=lock_key, reason="invalid_password")
             raise AuthenticationError(invalid_msg)
 
-        await self._clear_attempts(normalized)
-        logger.info("login_success", user_id=str(user.id), username=normalized)
+        await self._clear_attempts(lock_key)
+        logger.info(
+            "login_success",
+            user_id=str(user.id),
+            username=user.username,
+        )
         return user

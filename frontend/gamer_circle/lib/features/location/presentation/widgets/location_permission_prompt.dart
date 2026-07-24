@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/app/di/injection.dart';
 import 'package:gamer_circle/core/usecases/usecase.dart';
@@ -52,7 +53,7 @@ class _LocationPermissionPromptState
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF7B2FF7),
+              backgroundColor: AppColors.primary,
             ),
             child: const Text('Allow'),
           ),

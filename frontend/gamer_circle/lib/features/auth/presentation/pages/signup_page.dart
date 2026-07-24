@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -77,7 +78,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A2E),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -85,7 +86,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       'Join the Gamer Circle community',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF888888),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -108,19 +109,19 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                     const SizedBox(height: 20),
                     Center(
                       child: TextButton(
-                        onPressed: () => context.pop(),
+                        onPressed: () => context.go('/login'),
                         child: RichText(
                           text: const TextSpan(
                             text: 'Already have an account? ',
                             style: TextStyle(
-                              color: Color(0xFF888888),
+                              color: AppColors.textSecondary,
                               fontSize: 14,
                             ),
                             children: [
                               TextSpan(
                                 text: 'Login',
                                 style: TextStyle(
-                                  color: Color(0xFF3B82F6),
+                                  color: AppColors.secondary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -227,7 +228,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
   }) {
     return InputDecoration(
       hintText: hint,
-      prefixIcon: Icon(icon, color: const Color(0xFF7B2FF7)),
+      prefixIcon: Icon(icon, color: AppColors.primary),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -238,7 +239,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF7B2FF7), width: 2),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2),
       ),
       filled: true,
       fillColor: const Color(0xFFF9F9F9),
@@ -259,7 +260,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
             _obscurePassword
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
-            color: const Color(0xFF888888),
+            color: AppColors.textSecondary,
           ),
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
@@ -283,7 +284,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
             _obscureConfirmPassword
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
-            color: const Color(0xFF888888),
+            color: AppColors.textSecondary,
           ),
           onPressed: () => setState(
             () => _obscureConfirmPassword = !_obscureConfirmPassword,
@@ -328,13 +329,13 @@ class _SendOtpButton extends StatelessWidget {
             : const LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
-                colors: [Color(0xFF7B2FF7), Color(0xFF3B82F6)],
+                colors: [AppColors.primary, AppColors.secondary],
               ),
         boxShadow: onPressed == null
             ? null
             : [
                 BoxShadow(
-                  color: const Color(0xFF7B2FF7).withOpacity(0.4),
+                  color: AppColors.primary.withOpacity(0.4),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),

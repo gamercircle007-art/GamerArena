@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:gamer_circle/shared/models/message.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -18,8 +19,8 @@ class MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMine = message.isMine;
     final align = isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final bg = isMine ? const Color(0xFF7367F0) : Colors.white;
-    final fg = isMine ? Colors.white : const Color(0xFF5E5873);
+    final bg = isMine ? AppColors.primary : AppColors.surfaceLight;
+    final fg = isMine ? Colors.white : AppColors.textSecondaryLight;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -62,7 +63,7 @@ class MessageBubble extends StatelessWidget {
                   fontSize: 10,
                   color: message.status == 'sending'
                       ? Colors.grey
-                      : const Color(0xFF7367F0),
+                      : AppColors.primary,
                 ),
               ),
             ),

@@ -1655,6 +1655,45 @@ export class MockDataService {
     return this.mockParlors.length < before;
   }
 
+  createParlor(data: Partial<Parlor>): Parlor {
+    const now = new Date().toISOString();
+    const parlor: Parlor = {
+      id: crypto.randomUUID(),
+      owner_id: data.owner_id ?? null,
+      name: data.name ?? 'New Parlor',
+      description: data.description ?? null,
+      logo_url: data.logo_url ?? null,
+      address: data.address ?? null,
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
+      game_types: data.game_types ?? [],
+      is_verified: data.is_verified ?? false,
+      follower_count: 0,
+      post_count: 0,
+      is_following: false,
+      rating: null,
+      phone: data.phone ?? null,
+      website: data.website ?? null,
+      is_active: data.is_active ?? true,
+      is_deleted: false,
+      created_at: now,
+      updated_at: now,
+    };
+    this.mockParlors = [parlor, ...this.mockParlors];
+    return parlor;
+  }
+
+  updateParlor(id: string, data: Partial<Parlor>): Parlor | null {
+    const index = this.mockParlors.findIndex(p => p.id === id);
+    if (index === -1) return null;
+    this.mockParlors[index] = {
+      ...this.mockParlors[index],
+      ...data,
+      updated_at: new Date().toISOString(),
+    };
+    return this.mockParlors[index];
+  }
+
   getParlorTimeSlots(parlorId: string) {
     return this.mockTimeSlots.filter(s => s.parlor_id === parlorId);
   }

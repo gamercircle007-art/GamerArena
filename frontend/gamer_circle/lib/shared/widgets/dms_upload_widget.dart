@@ -1,8 +1,9 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_picker/file_picker.dart' as file_picker;
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/core/constants/onboarding_colors.dart';
 import 'package:gamer_circle/core/services/dms_service.dart';
@@ -67,12 +68,15 @@ class _DmsUploadWidgetState extends ConsumerState<DmsUploadWidget> {
       mimeType = 'video/mp4';
       assetType = 'video';
     } else {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
+      // Use alias to ensure resolution for FilePicker.platform in all analyzer contexts
+      final result = await file_picker.FilePicker.platform.pickFiles(
+        type: file_picker.FileType.custom,
         allowedExtensions: const ['pdf', 'doc', 'docx', 'txt', 'jpg', 'png'],
       );
       if (result == null || result.files.isEmpty) return;
-      file = File(result.files.first.path!);
+      final pickedPath = result.files.first.path;
+      if (pickedPath == null) return;
+      file = File(pickedPath);
       final ext = result.files.first.extension?.toLowerCase();
       mimeType = ext == 'pdf' ? 'application/pdf' : 'image/jpeg';
       assetType = ext == 'pdf' ? 'document' : 'image';
@@ -118,7 +122,7 @@ class _DmsUploadWidgetState extends ConsumerState<DmsUploadWidget> {
       child: Container(
         height: widget.height,
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
+          color: AppColors.dmBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _error != null ? Colors.red : const Color(0xFFE0E0E0),

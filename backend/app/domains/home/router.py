@@ -16,16 +16,20 @@ async def get_home(
     lat: float | None = Query(default=None, ge=-90, le=90),
     lng: float | None = Query(default=None, ge=-180, le=180),
     city: str | None = None,
-    radius: float = Query(default=5000, ge=100, le=50000),
+    radius: float | None = Query(default=None, ge=100, le=50000),
+    pick_filter: str = Query(default="recommended"),
     current_user: OptionalCurrentUserDep = None,
 ) -> HomeResponse:
-    if current_user and current_user.city and not city:
+    if current_user and current_user.city and not city and lat is None and lng is None:
         city = current_user.city
+    user_id = current_user.id if current_user else None
     return await HomeService(db).get_home(
         lat=lat,
         lng=lng,
         city=city,
         radius_m=radius,
+        pick_filter=pick_filter,
+        user_id=user_id,
         redis=redis,
     )
 
@@ -49,13 +53,21 @@ async def get_quick_picks(
     lat: float | None = Query(default=None, ge=-90, le=90),
     lng: float | None = Query(default=None, ge=-180, le=180),
     city: str | None = None,
+    pick_filter: str = Query(default="recommended"),
     limit: int = Query(default=8, ge=1, le=20),
     current_user: OptionalCurrentUserDep = None,
 ) -> list[HomeParlorCard]:
-    if current_user and current_user.city and not city:
+    if current_user and current_user.city and not city and lat is None and lng is None:
         city = current_user.city
+    user_id = current_user.id if current_user else None
     return await HomeService(db).get_quick_picks(
-        lat=lat, lng=lng, city=city, limit=limit, redis=redis
+        lat=lat,
+        lng=lng,
+        city=city,
+        pick_filter=pick_filter,
+        user_id=user_id,
+        limit=limit,
+        redis=redis,
     )
 
 

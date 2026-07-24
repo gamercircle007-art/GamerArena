@@ -70,6 +70,28 @@ async def _override_redis() -> AsyncGenerator[fake_aioredis.FakeRedis, None]:
     yield _fake_redis
 
 
+def _ensure_sqlite_columns(sync_conn) -> None:
+    """create_all does not ALTER existing tables — add columns the model expects."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(sync_conn)
+    tables = set(inspector.get_table_names())
+
+    # gaming_place_extensions soft-delete / active flags (migration 020)
+    table = "gaming_place_extensions"
+    if table in tables:
+        existing = {c["name"] for c in inspector.get_columns(table)}
+        alters = [
+            ("is_active", "BOOLEAN NOT NULL DEFAULT 1"),
+            ("is_deleted", "BOOLEAN NOT NULL DEFAULT 0"),
+            ("deleted_at", "DATETIME"),
+        ]
+        for col, decl in alters:
+            if col not in existing:
+                sync_conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {decl}"))
+                print(f"SQLite schema patch → {table}.{col}")
+
+
 async def init_db() -> None:
     settings = get_settings()
     if os.environ.get("DEV_RESET_DB") == "1" and settings.database_url.startswith("sqlite"):
@@ -82,6 +104,8 @@ async def init_db() -> None:
     engine = db_session.get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        if settings.database_url.startswith("sqlite"):
+            await conn.run_sync(_ensure_sqlite_columns)
 
     settings = get_settings()
     if settings.gaming_places_database_url:

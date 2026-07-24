@@ -43,16 +43,27 @@ class RouterNotifier extends ChangeNotifier {
       location == '/mobile-otp' ||
       location == '/permissions';
 
-  bool _isProtectedRoute(String location) =>
-      location.startsWith('/profile') ||
-      location.startsWith('/messages') ||
-      location.startsWith('/my-bookings') ||
-      location.startsWith('/gaming-bookings') ||
-      location.startsWith('/owner-dashboard') ||
-      location.startsWith('/create-post') ||
-      location.startsWith('/create-reel') ||
-      location.startsWith('/create-tournament') ||
-      location.startsWith('/admin');
+  bool _isAuthRoute(String location) => location.startsWith('/login');
+
+  bool _isProtectedRoute(String location) {
+    // Bottom-nav PROFILE has in-screen guest UI — do not redirect away.
+    if (location == '/profile' || location.startsWith('/profile/')) {
+      return false;
+    }
+    // Bottom-nav BOOKING shows guest UI on screen (no hard redirect).
+    if (location.startsWith('/gaming-bookings')) {
+      return false;
+    }
+    return location.startsWith('/messages/chat') ||
+        location == '/messages/new' ||
+        location.startsWith('/my-bookings') ||
+        location.startsWith('/owner-dashboard') ||
+        location.startsWith('/create-post') ||
+        location.startsWith('/create-reel') ||
+        location.startsWith('/create/') ||
+        location.startsWith('/create-tournament') ||
+        location.startsWith('/admin');
+  }
 
   String? redirect(BuildContext context, GoRouterState state) {
     final authState = _ref.read(authNotifierProvider);
@@ -99,23 +110,20 @@ class RouterNotifier extends ChangeNotifier {
   }
 
   String? _redirectGuest(String location) {
-    if (location.startsWith('/login') ||
-        location == '/onboarding' ||
-        location == '/mobile-number') {
+    if (location == '/onboarding' || location == '/mobile-number') {
       return '/';
     }
-    if (_isProtectedRoute(location)) return '/mobile-number';
+    if (_isAuthRoute(location)) return null;
+    if (_isProtectedRoute(location)) return '/login';
     return null;
   }
 
   String? _redirectUnauthenticated(String location) {
-    if (_isOnboardingRoute(location)) return null;
+    if (_isOnboardingRoute(location) || _isAuthRoute(location)) return null;
 
     if (_isProtectedRoute(location)) {
-      return '/mobile-number';
+      return '/login';
     }
-
-    if (location.startsWith('/login')) return '/mobile-number';
 
     return null;
   }

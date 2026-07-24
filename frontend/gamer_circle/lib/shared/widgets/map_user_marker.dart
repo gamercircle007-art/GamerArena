@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:gamer_circle/shared/widgets/online_dot.dart';
 import 'package:gamer_circle/shared/widgets/stories_avatar_ring.dart';
 
@@ -38,7 +39,7 @@ class MapUserMarker extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
-              color: const Color(0xFF7367F0).withOpacity(0.1),
+              color: AppColors.primary.withOpacity(0.1),
             ),
             child: ClipOval(
               child: avatarUrl != null
@@ -47,7 +48,7 @@ class MapUserMarker extends StatelessWidget {
                       child: Text(
                         (name?.isNotEmpty == true ? name![0] : '?').toUpperCase(),
                         style: const TextStyle(
-                          color: Color(0xFF7367F0),
+                          color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

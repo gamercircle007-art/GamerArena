@@ -2,11 +2,12 @@
 
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.comment.models import Comment
 from app.domains.follow.models import Follow
+from app.domains.gaming_place.models import GamingPlace
 from app.domains.like.models import Like
 from app.domains.post.models import Post
 
@@ -27,6 +28,28 @@ class PostRepository:
             .limit(limit)
             .offset(offset)
         )
+        return list(result.scalars().all())
+
+    async def list_recent(
+        self,
+        *,
+        limit: int = 20,
+        offset: int = 0,
+        city: str | None = None,
+    ) -> list[Post]:
+        stmt = select(Post)
+        if city:
+            needle = city.strip().lower()
+            stmt = (
+                select(Post)
+                .join(GamingPlace, GamingPlace.id == Post.parlor_id)
+                .where(
+                    func.lower(GamingPlace.address).contains(needle)
+                    | func.lower(GamingPlace.name).contains(needle)
+                )
+            )
+        stmt = stmt.order_by(Post.created_at.desc()).limit(limit).offset(offset)
+        result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
     async def list_from_followed(self, user_id: UUID, *, limit: int, offset: int) -> list[Post]:

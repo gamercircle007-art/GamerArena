@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/providers/dio_provider.dart';
@@ -45,7 +46,7 @@ class UserProfileScreen extends ConsumerWidget {
                   label: const Text('Upload Reel'),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),
-                    backgroundColor: const Color(0xFF7B2FF7),
+                    backgroundColor: AppColors.primary,
                   ),
                 ),
                 const SizedBox(height: 24),
