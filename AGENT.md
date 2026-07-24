@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-07-24 — Diagnosed Failed Render API (DB/Redis Available, web Failed); hardened boot (JWT fallback, short Redis lifespan, time-boxed seed, ALLOWED_HOSTS=*); added `.github/workflows/deploy-render.yml` + CI on `sit`
-- **In progress:** Push/redeploy `sit` → wait for Live `/health`; then OTP with Twilio
-- **Next up:** Confirm Render Live; set Twilio secrets; smoke OTP from Flutter prod
-- **Known open issues / blockers:** gamer-circle-api was Failed (not Suspended); Twilio still required for real WhatsApp OTP; community/events still stub
+- **Last completed:** 2026-07-24 — Full GH→Render diagnosis: Deploy Render OK on `sit`; CI failed (pytest service name + flutter analyze noise + missing requirements.txt); API still dead
+- **In progress:** Fix CI (health test, analyze flags, test.yml poetry); push sit; need Manual Deploy on Render if Failed
+- **Next up:** Dashboard Manual Deploy (clear cache) on `sit` / `b58f67d+`; set Twilio; smoke OTP
+- **Known open issues / blockers:** Render web Failed (DB/Redis Available); no Render logs without Dashboard; Twilio for OTP
 
 ---
 
@@ -107,6 +107,7 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-07-24 — Fail-safe Render start (no set -e, always uvicorn), render_seed_boot.py, build import_ok check; redeploy push b58f67d.
 - 2026-07-24 — Render Failed recovery: short Redis boot, JWT env fallback, 45s seed timeout, ALLOWED_HOSTS=*; GitHub Actions deploy-render + CI on sit.
 - 2026-07-23 — Prod E2E: password login accepts phone; seed always ensures admin; Angular env → Render; mock fallback off in prod; prod_smoke_test.py + PRODUCTION_DEPLOYMENT.md.
 - 2026-07-23 — Admin parity: full parlor CRUD/soft-delete/manager assign on main API; posts/reels/comments/likes/tournaments/ratings/stories moderation; Angular env → main backend; parlor create/edit form.

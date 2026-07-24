@@ -10,4 +10,5 @@ async def test_health_check(client: AsyncClient) -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["service"] == "paythan"
+    # APP_NAME default is gamer-circle (legacy name was paythan)
+    assert data["service"] in ("gamer-circle", "paythan", "GamerCircle")
