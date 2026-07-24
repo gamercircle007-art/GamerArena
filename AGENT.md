@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-07-24 — Prod package: E_* error codes, /ready hints, login API banner, fail-safe startCommand, redeploy+APK scripts, PRODUCTION_DIAGNOSTICS.md
-- **In progress:** Push sit redeploy; Manual Deploy still required if Render stays Failed (no API key here)
-- **Next up:** Dashboard clear-cache deploy → /health 200 → build APK → Twilio for OTP
-- **Known open issues / blockers:** gamer-circle-api HTTP dead until Live; no RENDER_API_KEY in env; Twilio for WhatsApp OTP
+- **Last completed:** 2026-07-24 — API failure analysis: pure-uvicorn start (`USE_FULL_BOOT=0`) to exit Failed; DB wait timeouts; SEED off; API_FAILURE_ANALYSIS.md
+- **In progress:** Push sit; need Dashboard Manual Deploy (no Render API key / no server logs in repo)
+- **Next up:** Manual clear-cache deploy → /health → then USE_FULL_BOOT=1 or Shell migrate; Twilio OTP
+- **Known open issues / blockers:** Origin HTTP dead (TCP ok); cannot read Render logs without Dashboard; Twilio
 
 ---
 
@@ -107,6 +107,7 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-07-24 — API fail root: pure uvicorn boot (USE_FULL_BOOT=0), capped DB wait, SEED off; API_FAILURE_ANALYSIS.md.
 - 2026-07-24 — Prod diag: E_* Flutter errors, /ready hints, API status banner, redeploy_production.sh, rebuild APK script, startCommand uvicorn fallback.
 - 2026-07-24 — Fail-safe Render start (no set -e, always uvicorn), render_seed_boot.py, build import_ok check; redeploy push b58f67d.
 - 2026-07-24 — Render Failed recovery: short Redis boot, JWT env fallback, 45s seed timeout, ALLOWED_HOSTS=*; GitHub Actions deploy-render + CI on sit.

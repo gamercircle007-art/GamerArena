@@ -26,9 +26,10 @@ services:
     region: oregon
     branch: sit
     rootDir: backend
-    # Build must succeed; start always binds PORT (fallback pure uvicorn if script dies).
+    # Build proves import. Default start = pure uvicorn so free-tier can leave Failed.
+    # USE_FULL_BOOT=1 runs migrations/seed (scripts/render-start.sh) after Live is stable.
     buildCommand: pip install poetry==1.8.4 && poetry config virtualenvs.create false && poetry install --only main --no-root && python -c "from app.main import app; print('import_ok', app.title)"
-    startCommand: bash -c 'bash scripts/render-start.sh || exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}'
+    startCommand: bash -c 'if [ "${USE_FULL_BOOT:-0}" = "1" ]; then bash scripts/render-start.sh || exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}; else exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}; fi'
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
@@ -47,11 +48,17 @@ services:
         value: "5"
       - key: PYTHON_VERSION
         value: "3.12.8"
-      # Cap seed so free-tier start does not OOM/timeout
+      # 0 = uvicorn only (recover Failed). Set 1 after Live for migrate+seed on boot.
+      - key: USE_FULL_BOOT
+        value: "0"
+      - key: SEED_ON_BOOT
+        value: "0"
       - key: SEED_TIMEOUT_SECONDS
-        value: "40"
+        value: "30"
       - key: DB_WAIT_ATTEMPTS
-        value: "8"
+        value: "4"
+      - key: DB_WAIT_TIMEOUT_SEC
+        value: "4"
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: AUTH_METHODS
@@ -69,9 +76,7 @@ services:
         value: "INFO"
       - key: LOG_JSON
         value: "true"
-      # Admin ensure + optional full seed (time-boxed in render-start.sh)
-      - key: SEED_ON_BOOT
-        value: "1"
+      # SEED_ON_BOOT set above (0 for fast Live recovery)
       - key: DATABASE_URL
         fromDatabase:
           name: gamer-circle-db
