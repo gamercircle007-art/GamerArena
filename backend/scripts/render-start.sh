@@ -2,12 +2,19 @@
 # Start script for Render (native Python or Docker override).
 # Runs migrations then serves the API on $PORT.
 # Never hang silently: every stage logs success/failure.
+# Always reach uvicorn so free-tier can leave "Failed" and pass /health.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
 PORT="${PORT:-8000}"
 WORKERS="${WEB_CONCURRENCY:-1}"
+
+# JWT must be >=32 chars or pydantic Settings crashes before uvicorn binds.
+if [ -z "${JWT_SECRET_KEY:-}" ] || [ "${#JWT_SECRET_KEY}" -lt 32 ]; then
+  export JWT_SECRET_KEY="gc-render-fallback-$(head -c 48 /dev/urandom | od -An -tx1 | tr -d ' \n' | head -c 48)"
+  echo "WARNING: JWT_SECRET_KEY missing/short — using ephemeral fallback (set a stable key in Dashboard)"
+fi
 
 echo "=== render-start: env diagnostics (no secrets) ==="
 python - <<'PY'
@@ -57,8 +64,9 @@ from app.core.config import get_settings
 
 # Free-tier recovery: do not hard-exit if DB is slow/missing — start API so
 # status becomes Live and /health answers. /ready reports database=false.
+# Cap wait so deploy health checks are not starved (default ~20s).
 HARD_FAIL = os.environ.get("DB_WAIT_HARD_FAIL", "0") == "1"
-MAX = int(os.environ.get("DB_WAIT_ATTEMPTS", "20"))
+MAX = int(os.environ.get("DB_WAIT_ATTEMPTS", "10"))
 
 
 async def wait_for_db() -> bool:
@@ -179,17 +187,24 @@ PY
   echo "Continuing to start uvicorn despite migration warning"
 fi
 
-echo "=== Seed / ensure admin ==="
+echo "=== Seed / ensure admin (time-boxed; never block uvicorn) ==="
+# Full seed can OOM free-tier; admin-only is enough for login smoke.
+# SEED_ON_BOOT=1 → admin ensure + optional full seed if empty
+# FORCE_SEED=1 → always full seed
+# SEED_ON_BOOT=0 → skip entirely
 if [ "${SEED_ON_BOOT:-1}" = "1" ]; then
-  python - <<'PY' || echo "Seed check failed (non-fatal — continuing to start API)"
+  SEED_TIMEOUT="${SEED_TIMEOUT_SECONDS:-45}"
+  set +e
+  timeout "${SEED_TIMEOUT}" python - <<'PY'
 import asyncio
+import os
 import runpy
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 from app.core.config import get_settings
 
 async def need_full_seed() -> bool:
-    if __import__("os").environ.get("FORCE_SEED") == "1":
+    if os.environ.get("FORCE_SEED") == "1":
         return True
     eng = create_async_engine(get_settings().database_url, pool_pre_ping=True)
     try:
@@ -197,7 +212,7 @@ async def need_full_seed() -> bool:
             try:
                 n = await conn.scalar(text("SELECT COUNT(*) FROM gaming_places"))
             except Exception:
-                return True
+                return False  # schema missing — migrations may have failed; skip full seed
             return int(n or 0) == 0
     finally:
         await eng.dispose()
@@ -255,13 +270,31 @@ async def ensure_admin_only() -> None:
             else:
                 print("Admin user already present")
 
-if asyncio.run(need_full_seed()):
-    print("Empty gaming_places — running seed_render_bootstrap...")
-    runpy.run_path("scripts/seed_render_bootstrap.py", run_name="__main__")
-else:
-    print("gaming_places populated — ensuring admin only")
-    asyncio.run(ensure_admin_only())
+async def main() -> None:
+    # Always prefer admin ensure first so login works even if full seed is skipped.
+    try:
+        await ensure_admin_only()
+    except Exception as exc:  # noqa: BLE001
+        print(f"ensure_admin failed (non-fatal): {exc}")
+
+    try:
+        if await need_full_seed():
+            print("Empty gaming_places — running seed_render_bootstrap...")
+            runpy.run_path("scripts/seed_render_bootstrap.py", run_name="__main__")
+        else:
+            print("gaming_places populated or schema not ready — skip full seed")
+    except Exception as exc:  # noqa: BLE001
+        print(f"full seed failed (non-fatal): {exc}")
+
+asyncio.run(main())
 PY
+  SEED_RC=$?
+  set -e
+  if [ "${SEED_RC}" -eq 124 ]; then
+    echo "WARNING: seed timed out after ${SEED_TIMEOUT}s — starting API anyway"
+  elif [ "${SEED_RC}" -ne 0 ]; then
+    echo "WARNING: seed exited ${SEED_RC} — starting API anyway"
+  fi
 else
   echo "SEED_ON_BOOT=0 — skip seed"
 fi

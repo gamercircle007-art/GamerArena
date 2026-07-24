@@ -140,28 +140,32 @@ async def lifespan(app: FastAPI):
 
     from app.ws.manager import ws_manager
 
+    # Keep Redis boot short: long retries delay /health and mark free-tier Failed.
     redis_client = aioredis.from_url(
         settings.redis_url,
         decode_responses=True,
-        socket_connect_timeout=10,
-        socket_timeout=10,
+        socket_connect_timeout=3,
+        socket_timeout=3,
         health_check_interval=30,
     )
-    # Retry Redis briefly — free-tier Key Value can lag on cold start
-    for attempt in range(1, 11):
+    for attempt in range(1, 4):
         try:
             await redis_client.ping()
             logger.info("redis_ready", attempt=attempt)
             break
         except Exception as exc:  # noqa: BLE001
             logger.warning("redis_not_ready", attempt=attempt, error=str(exc))
-            if attempt == 10:
+            if attempt == 3:
                 # Do not crash the whole API if Redis is briefly unavailable —
-                # auth will 503; health/home still serve parlors.
+                # auth will 503; health still serves.
                 logger.error("redis_unavailable_continuing_without_ws")
+                try:
+                    await redis_client.aclose()
+                except Exception:  # noqa: BLE001
+                    pass
                 redis_client = None
                 break
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
 
     if redis_client is not None:
         await ws_manager.start_redis_listener(redis_client)

@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-07-23 — Prod E2E readiness: phone+username login, admin always seeded on boot, Angular → Render `/api/v1` with mock fallback off, smoke test + PRODUCTION_DEPLOYMENT.md
-- **In progress:** Live Render HTTP unresponsive from this environment (TCP ok / HTTP hang) — confirm service Live in Dashboard and redeploy `sit`
-- **Next up:** Push `sit`; set Twilio secrets; run `prod_smoke_test.py`; verify admin + Flutter against live API
-- **Known open issues / blockers:** Render free-tier may be suspended/cold (health hung 180s+); Twilio required for prod OTP; community/events still stub
+- **Last completed:** 2026-07-24 — Diagnosed Failed Render API (DB/Redis Available, web Failed); hardened boot (JWT fallback, short Redis lifespan, time-boxed seed, ALLOWED_HOSTS=*); added `.github/workflows/deploy-render.yml` + CI on `sit`
+- **In progress:** Push/redeploy `sit` → wait for Live `/health`; then OTP with Twilio
+- **Next up:** Confirm Render Live; set Twilio secrets; smoke OTP from Flutter prod
+- **Known open issues / blockers:** gamer-circle-api was Failed (not Suspended); Twilio still required for real WhatsApp OTP; community/events still stub
 
 ---
 
@@ -107,6 +107,7 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-07-24 — Render Failed recovery: short Redis boot, JWT env fallback, 45s seed timeout, ALLOWED_HOSTS=*; GitHub Actions deploy-render + CI on sit.
 - 2026-07-23 — Prod E2E: password login accepts phone; seed always ensures admin; Angular env → Render; mock fallback off in prod; prod_smoke_test.py + PRODUCTION_DEPLOYMENT.md.
 - 2026-07-23 — Admin parity: full parlor CRUD/soft-delete/manager assign on main API; posts/reels/comments/likes/tournaments/ratings/stories moderation; Angular env → main backend; parlor create/edit form.
 - 2026-07-18 — Production ready: render APP_ENV=prod, OTP bypass forced off in prod, /ready probe, Twilio errors hardened, Flutter prod flavor, no Dio logs/OTP hints in release, HTTPS network security, release APK → Render.

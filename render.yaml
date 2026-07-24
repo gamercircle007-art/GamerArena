@@ -56,8 +56,9 @@ services:
       # For tighter prod: set explicit origins in Dashboard (include http://localhost:4200).
       - key: CORS_ORIGINS
         value: "*"
+      # * avoids TrustedHost rejecting internal health-check Host headers on free tier
       - key: ALLOWED_HOSTS
-        value: "gamer-circle-api.onrender.com,*.onrender.com,localhost,127.0.0.1"
+        value: "*"
       - key: LOG_LEVEL
         value: "INFO"
       - key: LOG_JSON
