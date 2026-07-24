@@ -26,7 +26,8 @@ services:
     region: oregon
     branch: sit
     rootDir: backend
-    buildCommand: pip install poetry==1.8.4 && poetry config virtualenvs.create false && poetry install --only main --no-root
+    # Build must succeed; start always binds PORT (script falls through to uvicorn).
+    buildCommand: pip install poetry==1.8.4 && poetry config virtualenvs.create false && poetry install --only main --no-root && python -c "from app.main import app; print('import_ok', app.title)"
     startCommand: bash scripts/render-start.sh
     healthCheckPath: /health
     autoDeployTrigger: commit
@@ -46,6 +47,11 @@ services:
         value: "5"
       - key: PYTHON_VERSION
         value: "3.12.8"
+      # Cap seed so free-tier start does not OOM/timeout
+      - key: SEED_TIMEOUT_SECONDS
+        value: "40"
+      - key: DB_WAIT_ATTEMPTS
+        value: "8"
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: AUTH_METHODS
@@ -63,7 +69,7 @@ services:
         value: "INFO"
       - key: LOG_JSON
         value: "true"
-      # Seed demo parlors/users once when gaming_places is empty
+      # Admin ensure + optional full seed (time-boxed in render-start.sh)
       - key: SEED_ON_BOOT
         value: "1"
       - key: DATABASE_URL
