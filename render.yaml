@@ -26,9 +26,9 @@ services:
     region: oregon
     branch: sit
     rootDir: backend
-    # Build must succeed; start always binds PORT (script falls through to uvicorn).
+    # Build must succeed; start always binds PORT (fallback pure uvicorn if script dies).
     buildCommand: pip install poetry==1.8.4 && poetry config virtualenvs.create false && poetry install --only main --no-root && python -c "from app.main import app; print('import_ok', app.title)"
-    startCommand: bash scripts/render-start.sh
+    startCommand: bash -c 'bash scripts/render-start.sh || exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}'
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:

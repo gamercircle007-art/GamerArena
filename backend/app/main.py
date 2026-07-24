@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.logging import get_logger, setup_logging
 from app.domains.admin.router import router as admin_router
 from app.domains.auth.router import router as auth_router
@@ -292,50 +292,96 @@ def create_app() -> FastAPI:
             content={"error": "internal_error", "message": message},
         )
 
-    @app.get("/health", tags=["Health"], summary="Health check")
+    @app.get("/health", tags=["Health"], summary="Health check (no I/O — always fast)")
     async def health_check() -> dict[str, Any]:
+        """Liveness for Render. Must never touch DB/Redis or hang."""
+        import os
+
         return {
             "status": "healthy",
             "service": settings.app_name,
             "environment": settings.app_env,
             "auth_methods": settings.auth_methods_list,
             "version": "1.0.0",
+            "port": os.environ.get("PORT"),
+            "twilio_configured": settings.twilio_configured,
+            "otp_bypass_active": settings.use_otp_dev_bypass,
         }
 
     @app.get("/ready", tags=["Health"], summary="Readiness (DB + Redis + config)")
     async def readiness_check() -> dict[str, Any]:
-        """Deeper check for load balancers / ops. Never returns secrets."""
+        """Deeper check for ops / AI debugging. Never returns secrets."""
+        import asyncio
+        import os
+
         import redis.asyncio as aioredis
         from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
 
         checks: dict[str, Any] = {"database": False, "redis": False}
-        try:
-            engine = create_async_engine(settings.database_url, pool_pre_ping=True)
-            async with engine.connect() as conn:
-                await conn.execute(text("SELECT 1"))
-            checks["database"] = True
-            await engine.dispose()
-        except Exception as exc:  # noqa: BLE001
-            checks["database_error"] = str(exc)[:200]
+        errors: dict[str, str] = {}
 
-        try:
-            client = aioredis.from_url(settings.redis_url, decode_responses=True)
-            await client.ping()
-            checks["redis"] = True
-            await client.aclose()
-        except Exception as exc:  # noqa: BLE001
-            checks["redis_error"] = str(exc)[:200]
+        async def check_db() -> None:
+            try:
+                engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+                async with engine.connect() as conn:
+                    await asyncio.wait_for(conn.execute(text("SELECT 1")), timeout=5)
+                checks["database"] = True
+                await engine.dispose()
+            except Exception as exc:  # noqa: BLE001
+                errors["database"] = f"{type(exc).__name__}: {exc}"[:200]
+
+        async def check_redis() -> None:
+            try:
+                client = aioredis.from_url(
+                    settings.redis_url,
+                    decode_responses=True,
+                    socket_connect_timeout=3,
+                    socket_timeout=3,
+                )
+                await client.ping()
+                checks["redis"] = True
+                await client.aclose()
+            except Exception as exc:  # noqa: BLE001
+                errors["redis"] = f"{type(exc).__name__}: {exc}"[:200]
+
+        await asyncio.gather(check_db(), check_redis())
 
         ready = checks["database"] and checks["redis"]
         body = {
             "status": "ready" if ready else "degraded",
             "checks": checks,
+            "errors": errors,
             "config": settings.production_readiness(),
+            "hints": _ready_hints(checks, settings),
+            "git_sha": os.environ.get("RENDER_GIT_COMMIT")
+            or os.environ.get("GIT_COMMIT")
+            or "unknown",
         }
         if not ready:
             return JSONResponse(status_code=503, content=body)
         return body
+
+    def _ready_hints(checks: dict[str, Any], s: Settings) -> list[str]:
+        hints: list[str] = []
+        if not checks.get("database"):
+            hints.append(
+                "E_DB: DATABASE_URL unreachable — link gamer-circle-db Internal URL"
+            )
+        if not checks.get("redis"):
+            hints.append(
+                "E_REDIS: REDIS_URL unreachable — OTP/sessions will fail; link Key Value"
+            )
+        if s.is_production and not s.twilio_configured:
+            hints.append(
+                "E_TWILIO: Set TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + "
+                "TWILIO_WHATSAPP_FROM for WhatsApp OTP"
+            )
+        if s.is_production and s.use_otp_dev_bypass:
+            hints.append("E_OTP_BYPASS: OTP_DEV_BYPASS must be empty in prod")
+        if not hints:
+            hints.append("OK: DB + Redis up; OTP needs Twilio if not using password")
+        return hints
 
     @app.post("/api/v1/dev/seed", tags=["Health"], summary="Bootstrap demo data (staging only)")
     async def dev_seed(request: Request) -> dict[str, Any]:
