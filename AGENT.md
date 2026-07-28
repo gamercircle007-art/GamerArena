@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-07-28 — Slot engine (auto-materialize hourly slots) + Cashfree client/orders/webhook scaffold; accept Flutter `date` query; fixes empty Slots tab
-- **In progress:** Deploy slot engine to Render; Cashfree sandbox keys; full Angular onboarding deferred
-- **Next up:** Redeploy sit; open parlor detail → slots appear; Book Now + pay_at_parlor; set CASHFREE_* for online
-- **Known open issues / blockers:** Twilio optional; Cashfree keys for real PG; Angular partner wizard not built (spec P5)
+- **Last completed:** 2026-07-28 — Angular admin live on Render free static site: https://gamer-circle-admin.onrender.com (srv-d9kch1laeets73an3tc0, commit e23a4d3). API still https://gamer-circle-api.onrender.com healthy. Fixed parlor-onboarding TS prod build break.
+- **In progress:** none
+- **Next up:** Set CASHFREE_* for real UPI; Flutter Cashfree SDK; admin refund UI polish; concurrent capacity pytest; rotate Render API key
+- **Known open issues / blockers:** Cashfree keys not set (mock_mode); Twilio optional; rotate Render API key still in .env
 
 ---
 
@@ -107,6 +107,8 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-07-28 — Deploy Angular admin free Static Site on Render (`gamer-circle-admin`); fixed onboarding TS build; render.yaml + SPA rewrite; API free web already live.
+- 2026-07-28 — Spec stack: stations/hours/holds/ledger/webhooks + bookings/v2 + availability + Celery holds + Flutter station/duration/Book Now + Angular onboarding; live booking confirmed.
 - 2026-07-28 — SlotEngine auto-generates gaming_slots on GET /parlors/{id}/slots; Cashfree create-order + webhook; Flutter date= query fixed.
 - 2026-07-24 — Render LIVE: logs showed alembic 019_users_bio missing on old deploy + exit 255; redeployed sit 34501ec uvicorn-only; health/ready/DB/Redis OK.
 - 2026-07-24 — API fail root: pure uvicorn boot (USE_FULL_BOOT=0), capped DB wait, SEED off; API_FAILURE_ANALYSIS.md.

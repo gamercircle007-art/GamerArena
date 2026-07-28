@@ -1,4 +1,4 @@
-# Deploy gamer-circle-api on Render when backend changes land on `sit`.
+# Deploy gamer-circle-api (+ optional admin static site) on Render when sit changes.
 #
 # Paths that actually deploy:
 #   1) Render autoDeploy on push to `sit` (render.yaml) — always on, no secrets.
@@ -8,6 +8,7 @@
 #   RENDER_DEPLOY_HOOK  — Dashboard → gamer-circle-api → Settings → Deploy Hook
 #   RENDER_API_KEY      — Dashboard → Account Settings → API Keys
 #   RENDER_SERVICE_ID   — default srv-d9dlbtrtqb8s738uohkg (from .render-deploy.json)
+#   RENDER_ADMIN_SERVICE_ID — default srv-d9kch1laeets73an3tc0 (Angular static)
 
 name: Deploy Render
 
@@ -16,6 +17,7 @@ on:
     branches: [sit]
     paths:
       - "backend/**"
+      - "admin-microservice-complete/frontend/**"
       - "render.yaml"
       - ".github/workflows/deploy-render.yml"
   workflow_dispatch:
@@ -64,31 +66,34 @@ jobs:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          RENDER_ADMIN_SERVICE_ID: ${{ secrets.RENDER_ADMIN_SERVICE_ID }}
         run: |
           set -euo pipefail
           SERVICE_ID="${RENDER_SERVICE_ID:-srv-d9dlbtrtqb8s738uohkg}"
-          echo "Render service expects branch=sit (see render.yaml)."
+          ADMIN_ID="${RENDER_ADMIN_SERVICE_ID:-srv-d9kch1laeets73an3tc0}"
+          echo "Render services expect branch=sit (see render.yaml)."
           echo "Commit: ${GITHUB_SHA}"
 
           if [ -n "${RENDER_DEPLOY_HOOK:-}" ]; then
             echo "Using RENDER_DEPLOY_HOOK..."
             curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
             echo
-            echo "Deploy hook accepted."
-            exit 0
+            echo "Deploy hook accepted (API)."
           fi
 
           if [ -n "${RENDER_API_KEY:-}" ]; then
-            echo "Using Render API deploys for service ${SERVICE_ID}..."
-            RESP=$(curl -fsS -X POST \
-              -H "Authorization: Bearer ${RENDER_API_KEY}" \
-              -H "Accept: application/json" \
-              -H "Content-Type: application/json" \
-              "https://api.render.com/v1/services/${SERVICE_ID}/deploys" \
-              -d '{"clearCache":"clear"}')
-            echo "$RESP" | head -c 800
-            echo
-            echo "API deploy triggered (clear cache)."
+            for SID in "$SERVICE_ID" "$ADMIN_ID"; do
+              echo "Using Render API deploys for service ${SID}..."
+              RESP=$(curl -fsS -X POST \
+                -H "Authorization: Bearer ${RENDER_API_KEY}" \
+                -H "Accept: application/json" \
+                -H "Content-Type: application/json" \
+                "https://api.render.com/v1/services/${SID}/deploys" \
+                -d '{"clearCache":"clear"}' || true)
+              echo "$RESP" | head -c 400
+              echo
+            done
+            echo "API deploys triggered (clear cache)."
             exit 0
           fi
 
