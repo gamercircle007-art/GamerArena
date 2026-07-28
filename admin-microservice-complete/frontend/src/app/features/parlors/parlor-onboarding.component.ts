@@ -70,7 +70,7 @@ import { environment } from '../../../environments/environment';
 export class ParlorOnboardingComponent {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
-  private readonly base = environment.apiUrl || environment.apiBaseUrl || '';
+  private readonly base = environment.apiUrl;
 
   parlorId = this.fb.nonNullable.control('', Validators.required);
   stationType = this.fb.nonNullable.control('PC');
@@ -136,12 +136,12 @@ export class ParlorOnboardingComponent {
     if (!id) return;
     this.busy.set(true);
     this.http
-      .get<{ slots: typeof this.previewSlots extends () => infer R ? R : never }>(
+      .get<{ slots: Array<{ start_time: string; price_paise: number; available_units: number; disabled?: boolean }> }>(
         `${this.base}/owner/parlors/${id}/preview`,
         { params: { station_type: this.stationType.value } },
       )
       .subscribe({
-        next: (res: any) => {
+        next: (res) => {
           this.previewSlots.set(res.slots || []);
           this.message.set(`Preview: ${(res.slots || []).length} slots`);
           this.error.set(false);

@@ -116,3 +116,28 @@ services:
         sync: false
       - key: RAZORPAY_KEY_SECRET
         sync: false
+
+  # Angular admin panel — free Static Site (CDN, no spin-down)
+  # URL: https://gamer-circle-admin.onrender.com
+  # Points at gamer-circle-api (environment.prod.ts)
+  - type: web
+    name: gamer-circle-admin
+    runtime: static
+    plan: free
+    region: oregon
+    branch: sit
+    rootDir: admin-microservice-complete/frontend
+    buildCommand: npm ci && npm run build -- --configuration production
+    staticPublishPath: ./dist/gameconnect-admin/browser
+    autoDeployTrigger: commit
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
