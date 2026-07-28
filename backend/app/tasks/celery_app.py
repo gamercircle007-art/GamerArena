@@ -41,5 +41,13 @@ celery_app.conf.beat_schedule = {
         "task": "recommendation.cleanup_old_data",
         "schedule": crontab(hour=3, minute=0),
     },
+    "sweep-expired-booking-holds": {
+        "task": "booking.sweep_expired_holds",
+        "schedule": crontab(minute="*/5"),
+    },
+    "nightly-booking-reconciliation": {
+        "task": "booking.nightly_reconciliation",
+        "schedule": crontab(hour=2, minute=15),
+    },
 }
 celery_app.conf.timezone = "Asia/Kolkata"

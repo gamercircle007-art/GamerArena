@@ -111,4 +111,67 @@ class GamingBookingRepository {
     );
     return GamingBooking.fromJson(response.data ?? {});
   }
+
+  /// Spec availability: virtual hourly inventory with capacity.
+  Future<List<Map<String, dynamic>>> fetchAvailability({
+    required String parlorId,
+    required DateTime date,
+    String stationType = 'PC',
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/parlors/$parlorId/availability',
+      queryParameters: {
+        'date': date.toIso8601String().split('T').first,
+        'station_type': stationType,
+      },
+    );
+    final slots = response.data?['slots'] as List<dynamic>? ?? [];
+    return slots.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> fetchStationTypes(String parlorId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/parlors/$parlorId/station-types',
+    );
+    final types = response.data?['station_types'] as List<dynamic>? ?? [];
+    return types.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  /// Create booking with hold + optional Cashfree session (Idempotency-Key).
+  Future<Map<String, dynamic>> createBookingV2({
+    required String parlorId,
+    required String stationType,
+    required DateTime date,
+    required String startTime,
+    int durationHours = 1,
+    int units = 1,
+    String paymentMode = 'pay_at_parlor',
+    String? guestName,
+    String? contactPhone,
+    required String idempotencyKey,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/bookings/v2',
+      data: {
+        'parlor_id': parlorId,
+        'station_type': stationType,
+        'date': date.toIso8601String().split('T').first,
+        'start_time': startTime.length == 5 ? '$startTime:00' : startTime,
+        'duration_hours': durationHours,
+        'units': units,
+        'payment_mode': paymentMode,
+        if (guestName != null) 'guest_name': guestName,
+        if (contactPhone != null) 'contact_phone': contactPhone,
+      },
+      options: Options(headers: {'Idempotency-Key': idempotencyKey}),
+    );
+    return response.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> fetchBookingStatus(String bookingId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/bookings/$bookingId/status',
+    );
+    return response.data ?? {};
+  }
 }

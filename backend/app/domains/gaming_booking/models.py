@@ -137,6 +137,17 @@ class GamingBooking(Base, UUIDPrimaryKeyMixin):
     contact_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
     contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     gstin: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Cashfree / virtual inventory (migration 021)
+    station_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    duration_hours: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    units: Mapped[int | None] = mapped_column(Integer, nullable=True, default=1)
+    amount_paise: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    commission_paise: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)
+    cf_order_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    payment_session_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    hold_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

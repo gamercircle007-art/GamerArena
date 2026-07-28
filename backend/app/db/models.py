@@ -24,6 +24,16 @@ from app.domains.gaming_booking.models import (  # noqa: F401
     ParlourRating,
     UserSearchHistory,
 )
+from app.domains.gaming_booking.inventory_models import (  # noqa: F401
+    BookingAudit,
+    BookingHold,
+    ParlorClosure,
+    ParlorHours,
+    ParlorStation,
+    PaymentLedger,
+    ReconciliationIssue,
+    WebhookEvent,
+)
 from app.domains.gaming_place.models import GamingPlace, GamingPlaceExtension  # noqa: F401
 from app.domains.like.models import Like  # noqa: F401
 from app.domains.notification.models import Notification  # noqa: F401

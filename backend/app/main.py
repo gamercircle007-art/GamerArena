@@ -41,6 +41,8 @@ from app.routers.recommendation import router as recommendation_router
 from app.domains.gaming_booking.gc_points_router import router as gc_points_router
 from app.domains.gaming_booking.parlor_router import router as gaming_parlor_router
 from app.domains.gaming_booking.router import router as gaming_booking_router
+from app.domains.gaming_booking.availability_router import router as availability_router
+from app.domains.gaming_booking.onboarding_router import router as onboarding_router
 from app.domains.geo.router import router as geo_router
 from app.domains.home.router import router as home_router
 from app.domains.like.router import router as like_router
@@ -422,7 +424,10 @@ def create_app() -> FastAPI:
     app.include_router(user_router, prefix=api_prefix)
     app.include_router(home_router, prefix=api_prefix)
     app.include_router(gaming_parlor_router, prefix=api_prefix)
+    # availability before gaming_booking so /bookings/v2 is not captured as {booking_id}
+    app.include_router(availability_router, prefix=api_prefix)
     app.include_router(gaming_booking_router, prefix=api_prefix)
+    app.include_router(onboarding_router, prefix=api_prefix)
     app.include_router(gc_points_router, prefix=api_prefix)
     app.include_router(parlor_router, prefix=api_prefix)
     app.include_router(tournament_router, prefix=api_prefix)

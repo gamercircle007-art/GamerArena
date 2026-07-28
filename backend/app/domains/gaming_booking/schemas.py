@@ -196,6 +196,13 @@ class GamingBookingResponse(BaseModel):
     contact_email: str | None = None
     contact_phone: str | None = None
     gstin: str | None = None
+    station_type: str | None = None
+    duration_hours: int | None = None
+    units: int | None = None
+    amount_paise: int | None = None
+    cf_order_id: str | None = None
+    payment_session_id: str | None = None
+    hold_expires_at: datetime | None = None
     created_at: datetime
 
 

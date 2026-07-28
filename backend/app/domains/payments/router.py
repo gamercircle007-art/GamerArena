@@ -193,28 +193,98 @@ async def create_cashfree_booking_order(
     )
 
 
-@router.post("/webhooks/cashfree", include_in_schema=False)
-async def cashfree_webhook(request: Request) -> dict[str, str]:
-    """Cashfree webhook — verify signature, acknowledge; process async later."""
+@router.post("/webhooks/cashfree")
+async def cashfree_webhook(request: Request, db: DbSessionDep) -> dict[str, str]:
+    """Cashfree webhook — verify signature, store event, process via Celery."""
+    import json
+    import uuid as uuid_lib
+
+    from sqlalchemy import select
+
+    from app.domains.gaming_booking.inventory_models import WebhookEvent
+
     s = get_settings()
     raw = await request.body()
     ts = request.headers.get("x-webhook-timestamp") or ""
     sig = request.headers.get("x-webhook-signature") or ""
     secret = (s.cashfree_webhook_secret or "").strip()
 
+    signature_valid = True
     if secret:
-        ok = cashfree_client.verify_webhook_signature(raw, ts, sig, secret)
-        if not ok:
+        signature_valid = cashfree_client.verify_webhook_signature(raw, ts, sig, secret)
+        if not signature_valid:
+            db.add(
+                WebhookEvent(
+                    provider="cashfree",
+                    event_id=f"invalid-{uuid_lib.uuid4()}",
+                    event_type="invalid_signature",
+                    payload=None,
+                    signature_valid=False,
+                    processed=True,
+                )
+            )
+            await db.commit()
             raise HTTPException(status_code=401, detail="invalid webhook signature")
 
-    # Parse lightly for logging only (no secrets)
     try:
-        import json
-
         payload = json.loads(raw.decode() or "{}")
-        event_type = payload.get("type") or payload.get("event") or "unknown"
     except Exception:  # noqa: BLE001
-        event_type = "parse_error"
+        payload = {}
+    event_type = str(payload.get("type") or payload.get("event") or "unknown")
+    event_id = str(
+        payload.get("event_time")
+        or payload.get("event_id")
+        or (payload.get("data") or {}).get("event_id")
+        or uuid_lib.uuid4()
+    )
 
-    # Full ledger/booking update via Celery in a follow-up; acknowledge now.
-    return {"status": "ok", "event": str(event_type)}
+    existing = (
+        await db.execute(select(WebhookEvent).where(WebhookEvent.event_id == event_id))
+    ).scalar_one_or_none()
+    if existing:
+        return {"status": "ok", "event": event_type, "duplicate": "true"}
+
+    row = WebhookEvent(
+        provider="cashfree",
+        event_id=event_id[:120],
+        event_type=event_type[:80],
+        payload=payload,
+        signature_valid=signature_valid,
+        processed=False,
+    )
+    db.add(row)
+    await db.commit()
+    await db.refresh(row)
+
+    try:
+        from app.tasks.booking_tasks import process_cashfree_webhook
+
+        process_cashfree_webhook.delay(str(row.id))
+    except Exception:  # noqa: BLE001
+        # Process inline if Celery down
+        from app.domains.gaming_booking.availability_service import AvailabilityService
+        from app.domains.gaming_booking.models import GamingBooking
+
+        data = payload.get("data") or payload
+        order = data.get("order") or data
+        order_id = order.get("order_id") or data.get("order_id")
+        if order_id and "SUCCESS" in event_type.upper():
+            booking = (
+                await db.execute(
+                    select(GamingBooking).where(
+                        (GamingBooking.cf_order_id == order_id)
+                        | (GamingBooking.booking_ref == order_id)
+                    )
+                )
+            ).scalar_one_or_none()
+            if booking:
+                await AvailabilityService(db).confirm_payment(
+                    booking.id,
+                    cf_reference=order_id,
+                    event_id=event_id,
+                    actor="webhook_inline",
+                )
+        row.processed = True
+        await db.commit()
+
+    return {"status": "ok", "event": event_type}

@@ -41,6 +41,13 @@ export const routes: Routes = [
           import('./features/parlors/parlor-form.component').then((m) => m.ParlorFormComponent),
       },
       {
+        path: 'parlors/onboarding',
+        loadComponent: () =>
+          import('./features/parlors/parlor-onboarding.component').then(
+            (m) => m.ParlorOnboardingComponent,
+          ),
+      },
+      {
         path: 'parlors/:id/edit',
         loadComponent: () =>
           import('./features/parlors/parlor-form.component').then((m) => m.ParlorFormComponent),
