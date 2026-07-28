@@ -441,6 +441,7 @@ def create_app() -> FastAPI:
     app.include_router(admin_dms_router, prefix=api_prefix)
     app.include_router(upload_router, prefix=api_prefix)
     app.include_router(payments_router, prefix=api_prefix)
+    # Spec alias: POST /api/v1/webhooks/cashfree → same handler (mounted under payments too)
     app.include_router(chat_router, prefix=api_prefix)
     app.include_router(messaging_router, prefix=api_prefix)
     app.include_router(friend_router, prefix=api_prefix)

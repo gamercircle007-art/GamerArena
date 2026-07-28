@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-07-24 — Root cause from Render logs: alembic `Can't locate revision 019_users_bio` → exit 255 crash loop. Redeployed `34501ec` pure uvicorn → **LIVE**; /health + /ready OK (DB+Redis true)
-- **In progress:** Twilio env still missing (OTP WhatsApp); password login may need admin seed
-- **Next up:** Set TWILIO_* on Render; verify Flutter APK against Live API; optional Shell `alembic upgrade head` if schema lag
-- **Known open issues / blockers:** Twilio not configured; rotate Render API key (was pasted in chat); OTP needs Twilio
+- **Last completed:** 2026-07-28 — Slot engine (auto-materialize hourly slots) + Cashfree client/orders/webhook scaffold; accept Flutter `date` query; fixes empty Slots tab
+- **In progress:** Deploy slot engine to Render; Cashfree sandbox keys; full Angular onboarding deferred
+- **Next up:** Redeploy sit; open parlor detail → slots appear; Book Now + pay_at_parlor; set CASHFREE_* for online
+- **Known open issues / blockers:** Twilio optional; Cashfree keys for real PG; Angular partner wizard not built (spec P5)
 
 ---
 
@@ -107,6 +107,7 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-07-28 — SlotEngine auto-generates gaming_slots on GET /parlors/{id}/slots; Cashfree create-order + webhook; Flutter date= query fixed.
 - 2026-07-24 — Render LIVE: logs showed alembic 019_users_bio missing on old deploy + exit 255; redeployed sit 34501ec uvicorn-only; health/ready/DB/Redis OK.
 - 2026-07-24 — API fail root: pure uvicorn boot (USE_FULL_BOOT=0), capped DB wait, SEED off; API_FAILURE_ANALYSIS.md.
 - 2026-07-24 — Prod diag: E_* Flutter errors, /ready hints, API status banner, redeploy_production.sh, rebuild APK script, startCommand uvicorn fallback.

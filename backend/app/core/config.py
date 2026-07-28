@@ -236,10 +236,20 @@ class Settings(BaseSettings):
     aws_region: str = "ap-south-1"
 
     # -------------------------------------------------------------------------
-    # Razorpay — tournament entry fee payments
+    # Razorpay — tournament entry fee payments (legacy; prefer Cashfree)
     # -------------------------------------------------------------------------
     razorpay_key_id: str = ""
     razorpay_key_secret: str = ""
+
+    # -------------------------------------------------------------------------
+    # Cashfree PG (booking payments) — sandbox or production
+    # -------------------------------------------------------------------------
+    cashfree_app_id: str = ""
+    cashfree_secret_key: str = ""
+    cashfree_webhook_secret: str = ""
+    cashfree_env: str = "sandbox"  # sandbox | production
+    cashfree_return_url: str = "gamercircle://payment/return"
+    cashfree_notify_url: str = ""  # e.g. https://api.../api/v1/webhooks/cashfree
 
     # -------------------------------------------------------------------------
     # Logging & security headers
@@ -319,7 +329,18 @@ class Settings(BaseSettings):
                 (self.razorpay_key_id or "").strip()
                 and (self.razorpay_key_secret or "").strip()
             ),
+            "cashfree_configured": bool(
+                (self.cashfree_app_id or "").strip()
+                and (self.cashfree_secret_key or "").strip()
+            ),
         }
+
+    @property
+    def cashfree_configured(self) -> bool:
+        return bool(
+            (self.cashfree_app_id or "").strip()
+            and (self.cashfree_secret_key or "").strip()
+        )
 
 
 @lru_cache
