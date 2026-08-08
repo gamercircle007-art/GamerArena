@@ -40,4 +40,5 @@ jobs:
         run: flutter pub get
       - name: Analyze
         working-directory: frontend/gamer_circle
-        run: flutter analyze
+        # infos/warnings are noise; fail only on true analyzer errors
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings

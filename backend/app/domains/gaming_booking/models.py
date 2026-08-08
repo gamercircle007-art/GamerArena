@@ -137,6 +137,48 @@ class GamingBooking(Base, UUIDPrimaryKeyMixin):
     contact_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
     contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     gstin: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Cashfree / virtual inventory (migration 021)
+    station_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    duration_hours: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    units: Mapped[int | None] = mapped_column(Integer, nullable=True, default=1)
+    amount_paise: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    commission_paise: Mapped[int | None] = mapped_column(Integer, nullable=True, default=0)
+    cf_order_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    payment_session_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    hold_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Club Management owner-ops lifecycle (migration 022). Additive only — the existing
+    # customer booking flow ignores these and behaves exactly as before.
+    resource_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("club_resources.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    club_customer_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("club_customers.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    club_promotion_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("club_promotions.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    #: Created at the counter by staff rather than through the customer app.
+    is_walk_in: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    checked_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    checked_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    #: Hours added after check-in via the owner "extend" action.
+    extended_hours: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Set when the owner marks a no-show, so it is distinguishable from a cancellation.
+    no_show_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    #: "user" | "owner" | "admin" | "system" — who moved it out of confirmed.
+    cancelled_by: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    #: Discount actually applied by a ClubPromotion, in paise.
+    club_discount_paise: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

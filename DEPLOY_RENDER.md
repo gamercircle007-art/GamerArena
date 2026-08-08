@@ -4,17 +4,26 @@
 
 `render.yaml` Blueprint creates:
 
-| Resource | Name | URL / role |
-|---|---|---|
-| Web Service | `gamer-circle-api` | `https://gamer-circle-api.onrender.com` |
-| Postgres | `gamer-circle-db` | internal + external connection string |
-| Key Value (Redis) | `gamer-circle-redis` | OTP, sessions, presence |
+| Resource | Name | URL / role | Plan |
+|---|---|---|---|
+| Web Service | `gamer-circle-api` | `https://gamer-circle-api.onrender.com` | free |
+| Static Site | `gamer-circle-admin` | `https://gamer-circle-admin.onrender.com` | free (CDN) |
+| Postgres | `gamer-circle-db` | internal + external connection string | free |
+| Key Value (Redis) | `gamer-circle-redis` | OTP, sessions, presence | free |
 
 Flutter API base (with `/api/v1`):
 
 ```
 https://gamer-circle-api.onrender.com/api/v1
 ```
+
+Angular admin (production build → same API):
+
+```
+https://gamer-circle-admin.onrender.com
+```
+
+Admin login (after seed): `admin` / `Admin@123` (or demo phones + password).
 
 ## Production env (set in Render Dashboard)
 

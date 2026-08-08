@@ -31,6 +31,10 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
   late final TabController _tabs = TabController(length: 3, vsync: this);
   DateTime _selectedDate = DateTime.now();
   GamingSlot? _selectedSlot;
+  String _stationType = 'PC';
+  int _durationHours = 1;
+  int _units = 1;
+  bool _booking = false;
 
   @override
   void initState() {
@@ -59,20 +63,49 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
     }
   }
 
-  void _bookNow(String parlourName, String? image) {
+  Future<void> _bookNow(String parlourName, String? image) async {
     if (_selectedSlot == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a time slot')),
       );
       return;
     }
-    ref.read(gamingBookingDraftProvider.notifier).state = GamingBookingDraft(
-      parlourId: widget.parlourId,
-      parlourName: parlourName,
-      parlourImage: image,
-      slot: _selectedSlot,
-    );
-    context.push('/booking/confirm');
+    // Prefer v2 booking (hold + Cashfree-ready). Fall back to legacy draft flow.
+    setState(() => _booking = true);
+    try {
+      final repo = ref.read(gamingBookingRepositoryProvider);
+      final idem = DateTime.now().microsecondsSinceEpoch.toString();
+      final result = await repo.createBookingV2(
+        parlorId: widget.parlourId,
+        stationType: _stationType,
+        date: _selectedDate,
+        startTime: _selectedSlot!.startTime,
+        durationHours: _durationHours,
+        units: _units,
+        paymentMode: 'pay_at_parlor',
+        idempotencyKey: idem,
+      );
+      final booking = result['booking'] as Map<String, dynamic>?;
+      final id = booking?['id']?.toString();
+      if (id != null && mounted) {
+        context.push(
+          '/booking/status/$id',
+          extra: {'mockMode': result['mock_mode'] == true},
+        );
+        return;
+      }
+    } catch (_) {
+      // Legacy path
+      ref.read(gamingBookingDraftProvider.notifier).state = GamingBookingDraft(
+        parlourId: widget.parlourId,
+        parlourName: parlourName,
+        parlourImage: image,
+        slot: _selectedSlot,
+      );
+      if (mounted) context.push('/booking/confirm');
+    } finally {
+      if (mounted) setState(() => _booking = false);
+    }
   }
 
   @override
@@ -98,7 +131,8 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
         body: Center(child: Text('Error: $e')),
       ),
       data: (detail) {
-        final price = _selectedSlot?.pricePerHour ?? detail.startingPrice ?? 0;
+        final base = _selectedSlot?.pricePerHour ?? detail.startingPrice ?? 0;
+        final price = base * _durationHours * _units;
         return Scaffold(
           body: NestedScrollView(
             headerSliverBuilder: (_, __) => [
@@ -237,6 +271,61 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
                           trailing: const Icon(Icons.calendar_today),
                           onTap: _pickDate,
                         ),
+                        const SizedBox(height: 8),
+                        Semantics(
+                          label: 'station_type_selector',
+                          child: Wrap(
+                            spacing: 8,
+                            children: ['PC', 'PS5', 'VR', 'XBOX', 'POOL']
+                                .map(
+                                  (t) => ChoiceChip(
+                                    label: Text(t),
+                                    selected: _stationType == t,
+                                    onSelected: (_) => setState(() {
+                                      _stationType = t;
+                                      _selectedSlot = null;
+                                    }),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Text('Duration'),
+                            const Spacer(),
+                            for (final h in [1, 2, 3])
+                              Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: ChoiceChip(
+                                  label: Text('${h}h'),
+                                  selected: _durationHours == h,
+                                  onSelected: (_) =>
+                                      setState(() => _durationHours = h),
+                                ),
+                              ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            const Text('Units'),
+                            const Spacer(),
+                            IconButton(
+                              onPressed: _units > 1
+                                  ? () => setState(() => _units--)
+                                  : null,
+                              icon: const Icon(Icons.remove_circle_outline),
+                            ),
+                            Text('$_units'),
+                            IconButton(
+                              onPressed: _units < 4
+                                  ? () => setState(() => _units++)
+                                  : null,
+                              icon: const Icon(Icons.add_circle_outline),
+                            ),
+                          ],
+                        ),
                         slotsAsync.when(
                           loading: () => const _SlotsShimmer(),
                           error: (_, __) => const Text('No slots available'),
@@ -246,19 +335,24 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
                                   spacing: 8,
                                   runSpacing: 8,
                                   children: slots.map((slot) {
-                                    final selected = _selectedSlot?.id == slot.id;
-                                    return ChoiceChip(
-                                      label: Text(
-                                        '${slot.startTime} - ${formatInr(slot.pricePerHour)}/hr',
+                                    final selected =
+                                        _selectedSlot?.id == slot.id;
+                                    return Semantics(
+                                      button: true,
+                                      label: 'slot_${slot.startTime}',
+                                      child: ChoiceChip(
+                                        label: Text(
+                                          '${slot.startTime} · ${formatInr(slot.pricePerHour)}/hr',
+                                        ),
+                                        selected: selected,
+                                        selectedColor: BookingColors.oyoRed
+                                            .withOpacity(0.15),
+                                        onSelected: slot.isAvailable
+                                            ? (_) => setState(
+                                                  () => _selectedSlot = slot,
+                                                )
+                                            : null,
                                       ),
-                                      selected: selected,
-                                      selectedColor:
-                                          BookingColors.oyoRed.withOpacity(0.15),
-                                      onSelected: slot.isAvailable
-                                          ? (_) => setState(
-                                                () => _selectedSlot = slot,
-                                              )
-                                          : null,
                                     );
                                   }).toList(),
                                 ),
@@ -301,9 +395,9 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
                   price: price,
                   originalPrice: _selectedSlot?.originalPrice,
                   subtitle: _selectedSlot != null
-                      ? '${_selectedSlot!.startTime} - ${_selectedSlot!.endTime}'
+                      ? '$_stationType · ${_selectedSlot!.startTime} · ${_durationHours}h · x$_units'
                       : 'Select a slot',
-                  enabled: _selectedSlot != null,
+                  enabled: _selectedSlot != null && !_booking,
                   onPressed: () => _bookNow(detail.name, detail.displayImage),
                 ),
               ],

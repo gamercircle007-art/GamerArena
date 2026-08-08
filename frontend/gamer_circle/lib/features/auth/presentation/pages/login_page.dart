@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/constants/app_constants.dart';
+import 'package:gamer_circle/core/services/api_status_service.dart';
 import 'package:gamer_circle/core/utils/login_identifier_utils.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/login_otp_providers.dart';
 import 'package:gamer_circle/features/auth/presentation/providers/login_otp_state.dart';
@@ -32,6 +33,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   int _secondsLeft = 0;
   Timer? _timer;
   bool _obscurePassword = true;
+  ApiStatusResult? _apiStatus;
+  bool _checkingApi = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _probeApi();
+  }
+
+  Future<void> _probeApi() async {
+    setState(() => _checkingApi = true);
+    final result = await ApiStatusService().check();
+    if (!mounted) return;
+    setState(() {
+      _apiStatus = result;
+      _checkingApi = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -165,7 +184,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 16),
+                    _buildApiStatusBanner(),
+                    const SizedBox(height: 12),
                     if (!showOtpStep) ...[
                       _buildIdentifierField(
                         enabled: !isSendingOtp && !isPasswordLoading,
@@ -377,6 +398,90 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         }
         return null;
       },
+    );
+  }
+
+  Widget _buildApiStatusBanner() {
+    if (_checkingApi) {
+      return Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Row(
+          children: [
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Checking API…',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    final status = _apiStatus;
+    if (status == null) return const SizedBox.shrink();
+    final ok = status.ok;
+    return Material(
+      color: ok ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: _probeApi,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                ok ? Icons.cloud_done : Icons.cloud_off,
+                size: 18,
+                color: ok ? Colors.green.shade800 : Colors.red.shade800,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      status.display,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: ok ? Colors.green.shade900 : Colors.red.shade900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      AppConstants.baseUrl,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    if (!ok)
+                      Text(
+                        'Tap to recheck · password login if OTP fails',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

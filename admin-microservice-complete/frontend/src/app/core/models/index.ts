@@ -412,4 +412,251 @@ export interface ListParams {
   date_from?: string;
   date_to?: string;
   refund_status?: string;
+  offset?: number;
+  range?: string;
+  view?: string;
+  from_date?: string;
+  to_date?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Club Management (platform oversight — read-only views + platform overrides)
+// Money fields are integer paise. *_bps fields: 10000 = 100%.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ClubResourceType = 'seat' | 'pc' | 'console' | 'ps5' | 'pool' | 'vr' | 'other';
+
+export type ClubResourceStatus =
+  | 'available'
+  | 'occupied'
+  | 'reserved'
+  | 'maintenance'
+  | 'offline';
+
+export type ClubRevenueRange = 'today' | 'week' | 'month';
+
+export type ClubBookingView = 'day' | 'week';
+
+export interface ClubSummary {
+  parlor_id: string;
+  name: string;
+  owner_id: string | null;
+}
+
+export interface ClubListResponse {
+  items: ClubSummary[];
+  limit: number;
+  offset: number;
+}
+
+export interface ClubResource {
+  id: string;
+  label: string;
+  resource_type: ClubResourceType;
+  status: ClubResourceStatus;
+  zone_name: string | null;
+  zone_id: string | null;
+  hourly_rate_override_paise: number | null;
+  layout_x: number | null;
+  layout_y: number | null;
+  is_active: boolean;
+  status_note: string | null;
+}
+
+export interface ClubResourceListResponse {
+  parlor_id: string;
+  items: ClubResource[];
+}
+
+export interface ClubOccupant {
+  booking_id: string;
+  booking_ref: string | null;
+  resource_id: string | null;
+  resource_label: string | null;
+  resource_type: ClubResourceType | null;
+  customer_name: string | null;
+  contact_phone: string | null;
+  checked_in_at: string | null;
+  ends_at: string | null;
+  minutes_remaining: number | null;
+  is_overdue: boolean;
+  units: number | null;
+  amount_paise: number | null;
+}
+
+export interface ClubLiveResponse {
+  parlor_id: string;
+  occupants: ClubOccupant[];
+}
+
+export interface ClubRevenueByResourceType {
+  resource_type: string;
+  gross_paise: number;
+  booking_count: number;
+}
+
+export interface ClubRevenueByPaymentMethod {
+  payment_method: string;
+  gross_paise: number;
+  booking_count: number;
+}
+
+export interface ClubRevenueDailyPoint {
+  date: string;
+  gross_paise: number;
+  net_paise: number;
+  booking_count: number;
+}
+
+export interface ClubRevenueSummary {
+  range: ClubRevenueRange;
+  from_date: string;
+  to_date: string;
+  gross_paise: number;
+  gross_rupees: number;
+  commission_paise: number;
+  net_paise: number;
+  net_rupees: number;
+  discount_paise: number;
+  booking_count: number;
+  completed_count: number;
+  cancelled_count: number;
+  no_show_count: number;
+  avg_session_paise: number;
+  by_resource_type: ClubRevenueByResourceType[];
+  by_payment_method: ClubRevenueByPaymentMethod[];
+  daily: ClubRevenueDailyPoint[];
+}
+
+export interface ClubHeatmapCell {
+  weekday: number;
+  hour: number;
+  occupied_minutes: number;
+  capacity_minutes: number;
+  utilization_bps: number;
+  booking_count: number;
+}
+
+export interface ClubUtilizationRow {
+  grain: string;
+  grain_key: string;
+  label: string;
+  occupied_minutes: number;
+  capacity_minutes: number;
+  utilization_bps: number;
+  booking_count: number;
+  revenue_paise: number;
+}
+
+export interface ClubNoShowByResourceType {
+  resource_type: string;
+  booking_count: number;
+  no_show_count: number;
+  no_show_rate_bps: number;
+}
+
+export interface ClubNoShowSummary {
+  from_date: string;
+  to_date: string;
+  booking_count: number;
+  no_show_count: number;
+  no_show_rate_bps: number;
+  by_resource_type: ClubNoShowByResourceType[];
+}
+
+export interface ClubOccupancyResponse {
+  parlor_id: string;
+  from_date: string;
+  to_date: string;
+  heatmap: ClubHeatmapCell[];
+  utilization: ClubUtilizationRow[];
+  no_show: ClubNoShowSummary;
+}
+
+export interface ClubBooking {
+  id: string;
+  booking_ref: string | null;
+  slot_date: string | null;
+  start_time: string | null;
+  booking_status: string;
+  payment_status: string | null;
+  amount_paise: number | null;
+  commission_paise: number | null;
+  is_walk_in: boolean;
+  station_type: string | null;
+  guest_name: string | null;
+  contact_phone: string | null;
+}
+
+export interface ClubBookingListResponse {
+  parlor_id: string;
+  items: ClubBooking[];
+}
+
+export interface ClubPromotion {
+  id: string;
+  name: string;
+  promo_type: string;
+  percent_bps: number | null;
+  flat_paise: number | null;
+  code: string | null;
+  used_count: number;
+  usage_limit: number | null;
+  is_active: boolean;
+  disabled_by_platform: boolean;
+  disabled_reason: string | null;
+  valid_from: string | null;
+  valid_to: string | null;
+}
+
+export interface ClubPromotionListResponse {
+  parlor_id: string;
+  items: ClubPromotion[];
+}
+
+export interface ClubCustomer {
+  id: string;
+  display_name: string | null;
+  phone: string | null;
+  user_id: string | null;
+  visit_count: number;
+  total_spend_paise: number;
+  loyalty_points: number;
+  is_banned: boolean;
+  ban_reason: string | null;
+  platform_flagged: boolean;
+  platform_flag_reason: string | null;
+  last_visit_at: string | null;
+}
+
+export interface ClubCustomerListResponse {
+  parlor_id: string;
+  items: ClubCustomer[];
+  total: number;
+}
+
+export interface ClubForceCancelResponse {
+  id: string;
+  booking_status: string;
+  cancelled_by: string | null;
+  cancellation_reason: string | null;
+}
+
+export interface ClubPromotionOverrideResponse {
+  id: string;
+  disabled_by_platform: boolean;
+  disabled_reason: string | null;
+}
+
+export interface ClubResourceOverrideResponse {
+  id: string;
+  is_active: boolean;
+  status: ClubResourceStatus;
+  status_note: string | null;
+}
+
+export interface ClubCustomerFlagResponse {
+  id: string;
+  platform_flagged: boolean;
+  platform_flag_reason: string | null;
 }

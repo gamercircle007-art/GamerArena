@@ -19,6 +19,7 @@ import 'package:gamer_circle/features/booking/presentation/booking_details_view_
 import 'package:gamer_circle/features/booking/presentation/cancellation_detail_screen.dart';
 import 'package:gamer_circle/features/booking/presentation/cancellation_reason_screen.dart';
 import 'package:gamer_circle/features/booking/presentation/gaming_my_bookings_screen.dart';
+import 'package:gamer_circle/features/booking/presentation/booking_status_screen.dart';
 import 'package:gamer_circle/features/home/presentation/home_screen.dart';
 
 import 'package:gamer_circle/features/parlors/presentation/parlour_detail_screen.dart';
@@ -177,6 +178,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => BookingConfirmedScreen(
           booking: state.extra,
         ),
+      ),
+      GoRoute(
+        path: '/booking/status/:id',
+        builder: (context, state) {
+          final extra = state.extra;
+          final mock = extra is Map && extra['mockMode'] == true;
+          return BookingStatusScreen(
+            bookingId: state.pathParameters['id']!,
+            mockMode: mock,
+          );
+        },
       ),
       GoRoute(
         path: '/booking/:id/details',

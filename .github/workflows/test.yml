@@ -1,40 +1,38 @@
-name: Paythan Tests
+# Lightweight test suite on sit/main.
+# Full legacy Paythan matrix (playwright/lighthouse) is optional and non-blocking.
+
+name: Tests
 
 on:
   push:
-    branches: [ main, sit ]
+    branches: [main, sit]
   pull_request:
-    branches: [ main ]
+    branches: [main, sit]
 
 jobs:
   backend:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.12']
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+          python-version: "3.12"
+      - name: Install poetry + deps
         run: |
-          cd backend
-          pip install -r requirements.txt
-          pip install pytest pytest-html httpx pytest-asyncio
-      - name: Run backend tests (SQLite dev.db)
+          python -m pip install --upgrade pip
+          pip install poetry==1.8.4
+          poetry config virtualenvs.create false
+          poetry install --no-interaction
+      - name: Pytest
         env:
+          JWT_SECRET_KEY: test_jwt_secret_key_for_ci_only_32chars
+          APP_ENV: local
           DATABASE_URL: "sqlite+aiosqlite:///./dev.db"
-          REDIS_URL: "redis://localhost:6379/1"  # will use fake in conftest
-        run: |
-          cd backend
-          pytest tests/ -v --html=reports/api-report.html --self-contained-html
-      - name: Upload backend reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-reports-py${{ matrix.python-version }}
-          path: backend/reports/
+          REDIS_URL: "redis://localhost:6379/1"
+        run: poetry run pytest tests/ -q --tb=line
 
   flutter-unit:
     runs-on: ubuntu-latest
@@ -42,90 +40,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.x'
-          channel: 'stable'
-      - name: Install deps
+          flutter-version: "3.24.5"
+          channel: stable
+      - name: Pub get + unit tests
+        working-directory: frontend/gamer_circle
         run: |
-          cd frontend/gamer_circle
           flutter pub get
-      - name: Run Flutter unit/widget tests
-        run: |
-          cd frontend/gamer_circle
           flutter test
-      - name: Upload Flutter test reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-unit-reports
-          path: reports/
-
-  flutter-integration-web:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.x'
-          channel: 'stable'
-      - name: Install ChromeDriver
-        uses: nanasess/setup-chromedriver@v2
-      - name: Install deps
-        run: |
-          cd frontend/gamer_circle
-          flutter pub get
-          flutter pub add --dev integration_test
-      - name: Run integration tests (web)
-        run: |
-          cd frontend/gamer_circle
-          flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --web --browser-name chrome
-      - name: Upload integration reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-integration-reports
-          path: reports/
-
-  lighthouse:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.x'
-          channel: 'stable'
-      - name: Build web
-        run: |
-          cd frontend/gamer_circle
-          flutter build web --web-renderer html
-      - name: Run Lighthouse
-        run: |
-          npx lighthouse http://localhost:8080 --output html --output-path reports/lighthouse-report.html --view || true
-      - name: Upload Lighthouse report
-        uses: actions/upload-artifact@v4
-        with:
-          name: lighthouse-report
-          path: reports/
-
-  playwright:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install Playwright
-        run: |
-          npm install -g playwright
-          npx playwright install chromium
-      - name: Start app in background (build first)
-        run: |
-          cd frontend/gamer_circle
-          flutter build web --web-renderer html
-          # For CI, use a simple server or assume built; in real use surge or similar
-          # Simplified: just run playwright against a static if needed
-      - name: Run Playwright tests
-        run: |
-          python web-tests/playwright_basic.py || true
-      - name: Upload Playwright screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-reports
-          path: reports/

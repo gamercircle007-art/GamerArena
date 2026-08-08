@@ -1,13 +1,15 @@
-"""Razorpay payment endpoints (Phase 3 scaffold)."""
+"""Payment endpoints: Cashfree (primary) + Razorpay (legacy)."""
 
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
+from app.core.config import get_settings
 from app.core.dependencies import CurrentUserDep, DbSessionDep
 from app.domains.booking.schemas import BookingResponse
 from app.domains.booking.service import BookingService
+from app.domains.payments import cashfree_client
 from app.domains.payments.razorpay_stub import (
     create_order,
     get_public_key_id,
@@ -106,3 +108,183 @@ async def verify_booking_payment(
         body.payment_id,
         body.signature,
     )
+
+# --- Cashfree (booking PG) ---
+
+
+class CashfreeConfigResponse(BaseModel):
+    enabled: bool
+    env: str
+    mock_mode: bool
+
+
+@router.get("/cashfree/config", response_model=CashfreeConfigResponse)
+async def cashfree_config() -> CashfreeConfigResponse:
+    s = get_settings()
+    enabled = cashfree_client.is_configured(s)
+    return CashfreeConfigResponse(
+        enabled=enabled,
+        env=s.cashfree_env or "sandbox",
+        mock_mode=not enabled,
+    )
+
+
+class CashfreeOrderRequest(BaseModel):
+    booking_id: UUID
+    return_url: str | None = None
+
+
+class CashfreeOrderResponse(BaseModel):
+    booking_id: str
+    cf_order_id: str
+    payment_session_id: str | None = None
+    order_amount: float
+    order_currency: str = "INR"
+    status: str
+    mock_mode: bool = False
+
+
+@router.post(
+    "/cashfree/bookings/{booking_id}/order",
+    response_model=CashfreeOrderResponse,
+    summary="Create Cashfree order for a gaming booking",
+)
+async def create_cashfree_booking_order(
+    booking_id: UUID,
+    db: DbSessionDep,
+    current_user: CurrentUserDep,
+    body: CashfreeOrderRequest | None = None,
+) -> CashfreeOrderResponse:
+    from decimal import Decimal
+
+    from app.domains.gaming_booking.service import GamingBookingService
+
+    svc = GamingBookingService(db)
+    booking = await svc.get_booking(booking_id, user_id=current_user.id)
+    if booking.payment_status == "paid":
+        raise HTTPException(status_code=400, detail="Already paid")
+    amount = booking.final_price or booking.total_price or Decimal("0")
+    amount_paise = int(amount * 100)
+    if amount_paise <= 0:
+        raise HTTPException(status_code=400, detail="Invalid booking amount")
+
+    s = get_settings()
+    return_url = (body.return_url if body else None) or s.cashfree_return_url
+    notify_url = s.cashfree_notify_url or ""
+    phone = booking.contact_phone or current_user.phone or "9999999999"
+
+    order = await cashfree_client.create_order(
+        order_id=str(booking.booking_ref or booking_id),
+        amount_paise=amount_paise,
+        customer_id=str(current_user.id),
+        customer_phone=phone,
+        return_url=return_url,
+        notify_url=notify_url,
+        settings=s,
+    )
+    return CashfreeOrderResponse(
+        booking_id=str(booking_id),
+        cf_order_id=str(order.get("cf_order_id") or ""),
+        payment_session_id=order.get("payment_session_id"),
+        order_amount=float(order.get("order_amount") or amount),
+        order_currency=str(order.get("order_currency") or "INR"),
+        status=str(order.get("status") or "created"),
+        mock_mode=order.get("status") == "mock",
+    )
+
+
+@router.post("/webhooks/cashfree")
+async def cashfree_webhook(request: Request, db: DbSessionDep) -> dict[str, str]:
+    """Cashfree webhook — verify signature, store event, process via Celery."""
+    import json
+    import uuid as uuid_lib
+
+    from sqlalchemy import select
+
+    from app.domains.gaming_booking.inventory_models import WebhookEvent
+
+    s = get_settings()
+    raw = await request.body()
+    ts = request.headers.get("x-webhook-timestamp") or ""
+    sig = request.headers.get("x-webhook-signature") or ""
+    secret = (s.cashfree_webhook_secret or "").strip()
+
+    signature_valid = True
+    if secret:
+        signature_valid = cashfree_client.verify_webhook_signature(raw, ts, sig, secret)
+        if not signature_valid:
+            db.add(
+                WebhookEvent(
+                    provider="cashfree",
+                    event_id=f"invalid-{uuid_lib.uuid4()}",
+                    event_type="invalid_signature",
+                    payload=None,
+                    signature_valid=False,
+                    processed=True,
+                )
+            )
+            await db.commit()
+            raise HTTPException(status_code=401, detail="invalid webhook signature")
+
+    try:
+        payload = json.loads(raw.decode() or "{}")
+    except Exception:  # noqa: BLE001
+        payload = {}
+    event_type = str(payload.get("type") or payload.get("event") or "unknown")
+    event_id = str(
+        payload.get("event_time")
+        or payload.get("event_id")
+        or (payload.get("data") or {}).get("event_id")
+        or uuid_lib.uuid4()
+    )
+
+    existing = (
+        await db.execute(select(WebhookEvent).where(WebhookEvent.event_id == event_id))
+    ).scalar_one_or_none()
+    if existing:
+        return {"status": "ok", "event": event_type, "duplicate": "true"}
+
+    row = WebhookEvent(
+        provider="cashfree",
+        event_id=event_id[:120],
+        event_type=event_type[:80],
+        payload=payload,
+        signature_valid=signature_valid,
+        processed=False,
+    )
+    db.add(row)
+    await db.commit()
+    await db.refresh(row)
+
+    try:
+        from app.tasks.booking_tasks import process_cashfree_webhook
+
+        process_cashfree_webhook.delay(str(row.id))
+    except Exception:  # noqa: BLE001
+        # Process inline if Celery down
+        from app.domains.gaming_booking.availability_service import AvailabilityService
+        from app.domains.gaming_booking.models import GamingBooking
+
+        data = payload.get("data") or payload
+        order = data.get("order") or data
+        order_id = order.get("order_id") or data.get("order_id")
+        if order_id and "SUCCESS" in event_type.upper():
+            booking = (
+                await db.execute(
+                    select(GamingBooking).where(
+                        (GamingBooking.cf_order_id == order_id)
+                        | (GamingBooking.booking_ref == order_id)
+                    )
+                )
+            ).scalar_one_or_none()
+            if booking:
+                await AvailabilityService(db).confirm_payment(
+                    booking.id,
+                    cf_reference=order_id,
+                    event_id=event_id,
+                    actor="webhook_inline",
+                )
+        row.processed = True
+        await db.commit()
+
+    return {"status": "ok", "event": event_type}

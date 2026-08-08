@@ -9,6 +9,20 @@ import {
   Booking,
   BroadcastHistory,
   BroadcastRequest,
+  ClubBookingListResponse,
+  ClubBookingView,
+  ClubCustomerFlagResponse,
+  ClubCustomerListResponse,
+  ClubForceCancelResponse,
+  ClubListResponse,
+  ClubLiveResponse,
+  ClubOccupancyResponse,
+  ClubPromotionListResponse,
+  ClubPromotionOverrideResponse,
+  ClubResourceListResponse,
+  ClubResourceOverrideResponse,
+  ClubRevenueRange,
+  ClubRevenueSummary,
   Comment,
   CommunityPost,
   GamingBooking,
@@ -659,6 +673,185 @@ export class AdminApiService {
     return this.http.post<{ deleted: number; requested: number }>(`${this.base}/dms/bulk-delete`, {
       asset_ids: assetIds,
     });
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Club Management (platform oversight) — /admin/club-management/*
+  // Read-only views + platform override actions. Money is integer paise.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  getClubManagementClubs(params: ListParams = {}): Observable<ClubListResponse> {
+    return this.http.get<ClubListResponse>(`${this.base}/club-management/clubs`, {
+      params: this.toParams(params),
+    }).pipe(
+      catchError(this.mockOrThrow<ClubListResponse>(() => ({
+        items: [],
+        limit: Number(params.limit ?? 20),
+        offset: Number(params.offset ?? 0),
+      }))),
+    );
+  }
+
+  getClubResources(parlorId: string): Observable<ClubResourceListResponse> {
+    return this.http.get<ClubResourceListResponse>(
+      `${this.base}/club-management/clubs/${parlorId}/resources`,
+    ).pipe(
+      catchError(this.mockOrThrow<ClubResourceListResponse>(() => ({
+        parlor_id: parlorId,
+        items: [],
+      }))),
+    );
+  }
+
+  getClubLive(parlorId: string): Observable<ClubLiveResponse> {
+    return this.http.get<ClubLiveResponse>(
+      `${this.base}/club-management/clubs/${parlorId}/live`,
+    ).pipe(
+      catchError(this.mockOrThrow<ClubLiveResponse>(() => ({
+        parlor_id: parlorId,
+        occupants: [],
+      }))),
+    );
+  }
+
+  getClubRevenue(parlorId: string, range: ClubRevenueRange = 'today'): Observable<ClubRevenueSummary> {
+    return this.http.get<ClubRevenueSummary>(
+      `${this.base}/club-management/clubs/${parlorId}/revenue`,
+      { params: this.toParams({ range }) },
+    ).pipe(
+      catchError(this.mockOrThrow<ClubRevenueSummary>(() => ({
+        range,
+        from_date: '',
+        to_date: '',
+        gross_paise: 0,
+        gross_rupees: 0,
+        commission_paise: 0,
+        net_paise: 0,
+        net_rupees: 0,
+        discount_paise: 0,
+        booking_count: 0,
+        completed_count: 0,
+        cancelled_count: 0,
+        no_show_count: 0,
+        avg_session_paise: 0,
+        by_resource_type: [],
+        by_payment_method: [],
+        daily: [],
+      }))),
+    );
+  }
+
+  getClubOccupancy(
+    parlorId: string,
+    params: { from_date?: string; to_date?: string } = {},
+  ): Observable<ClubOccupancyResponse> {
+    return this.http.get<ClubOccupancyResponse>(
+      `${this.base}/club-management/clubs/${parlorId}/occupancy`,
+      { params: this.toParams(params) },
+    ).pipe(
+      catchError(this.mockOrThrow<ClubOccupancyResponse>(() => ({
+        parlor_id: parlorId,
+        from_date: params.from_date ?? '',
+        to_date: params.to_date ?? '',
+        heatmap: [],
+        utilization: [],
+        no_show: {
+          from_date: params.from_date ?? '',
+          to_date: params.to_date ?? '',
+          booking_count: 0,
+          no_show_count: 0,
+          no_show_rate_bps: 0,
+          by_resource_type: [],
+        },
+      }))),
+    );
+  }
+
+  getClubBookings(
+    parlorId: string,
+    params: { date?: string; view?: ClubBookingView } = {},
+  ): Observable<ClubBookingListResponse> {
+    return this.http.get<ClubBookingListResponse>(
+      `${this.base}/club-management/clubs/${parlorId}/bookings`,
+      { params: this.toParams(params) },
+    ).pipe(
+      catchError(this.mockOrThrow<ClubBookingListResponse>(() => ({
+        parlor_id: parlorId,
+        items: [],
+      }))),
+    );
+  }
+
+  getClubPromotions(parlorId: string): Observable<ClubPromotionListResponse> {
+    return this.http.get<ClubPromotionListResponse>(
+      `${this.base}/club-management/clubs/${parlorId}/promotions`,
+    ).pipe(
+      catchError(this.mockOrThrow<ClubPromotionListResponse>(() => ({
+        parlor_id: parlorId,
+        items: [],
+      }))),
+    );
+  }
+
+  getClubCustomers(parlorId: string, params: ListParams = {}): Observable<ClubCustomerListResponse> {
+    return this.http.get<ClubCustomerListResponse>(
+      `${this.base}/club-management/clubs/${parlorId}/customers`,
+      { params: this.toParams(params) },
+    ).pipe(
+      catchError(this.mockOrThrow<ClubCustomerListResponse>(() => ({
+        parlor_id: parlorId,
+        items: [],
+        total: 0,
+      }))),
+    );
+  }
+
+  forceCancelClubBooking(
+    parlorId: string,
+    bookingId: string,
+    reason: string,
+    detail?: string,
+  ): Observable<ClubForceCancelResponse> {
+    return this.http.post<ClubForceCancelResponse>(
+      `${this.base}/club-management/clubs/${parlorId}/bookings/${bookingId}/force-cancel`,
+      { reason, detail },
+    );
+  }
+
+  disableClubPromotion(
+    parlorId: string,
+    promotionId: string,
+    disabled: boolean,
+    reason?: string,
+  ): Observable<ClubPromotionOverrideResponse> {
+    return this.http.post<ClubPromotionOverrideResponse>(
+      `${this.base}/club-management/clubs/${parlorId}/promotions/${promotionId}/disable`,
+      { disabled, reason },
+    );
+  }
+
+  deactivateClubResource(
+    parlorId: string,
+    resourceId: string,
+    isActive: boolean,
+    reason?: string,
+  ): Observable<ClubResourceOverrideResponse> {
+    return this.http.post<ClubResourceOverrideResponse>(
+      `${this.base}/club-management/clubs/${parlorId}/resources/${resourceId}/deactivate`,
+      { is_active: isActive, reason },
+    );
+  }
+
+  flagClubCustomer(
+    parlorId: string,
+    customerId: string,
+    flagged: boolean,
+    reason?: string,
+  ): Observable<ClubCustomerFlagResponse> {
+    return this.http.post<ClubCustomerFlagResponse>(
+      `${this.base}/club-management/clubs/${parlorId}/customers/${customerId}/flag`,
+      { flagged, reason },
+    );
   }
 
   private toParams(params: ListParams): HttpParams {

@@ -71,9 +71,12 @@ async def get_parlor_detail(
 async def list_parlor_slots(
     parlour_id: UUID,
     db: DbSessionDep,
-    slot_date: date | None = None,
+    slot_date: date | None = Query(default=None, alias="slot_date"),
+    date_alias: date | None = Query(default=None, alias="date"),
 ) -> SlotListResponse:
-    return await ParlourBookingViewService(db).get_slots(parlour_id, slot_date=slot_date)
+    # Flutter client sends `date=YYYY-MM-DD`; also accept `slot_date`.
+    resolved = slot_date or date_alias
+    return await ParlourBookingViewService(db).get_slots(parlour_id, slot_date=resolved)
 
 
 @router.get("/{parlour_id}/offers", response_model=OfferListResponse)

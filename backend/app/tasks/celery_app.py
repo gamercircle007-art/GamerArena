@@ -41,5 +41,23 @@ celery_app.conf.beat_schedule = {
         "task": "recommendation.cleanup_old_data",
         "schedule": crontab(hour=3, minute=0),
     },
+    "sweep-expired-booking-holds": {
+        "task": "booking.sweep_expired_holds",
+        "schedule": crontab(minute="*/5"),
+    },
+    "nightly-booking-reconciliation": {
+        "task": "booking.nightly_reconciliation",
+        "schedule": crontab(hour=2, minute=15),
+    },
+    # Club Management occupancy analytics read these rollups exclusively — if these
+    # stop running, the heatmap/utilization screens go stale rather than slow.
+    "refresh-occupancy-rollups": {
+        "task": "club_ops.refresh_occupancy_rollups",
+        "schedule": crontab(minute=10),
+    },
+    "nightly-rollup-repair": {
+        "task": "club_ops.nightly_rollup_repair",
+        "schedule": crontab(hour=2, minute=45),
+    },
 }
 celery_app.conf.timezone = "Asia/Kolkata"

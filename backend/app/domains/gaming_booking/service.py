@@ -198,8 +198,8 @@ class GamingBookingService:
             ),
             PaymentOption(
                 mode="online",
-                label="Pay Online",
-                description="Pay now via UPI, card, or net banking",
+                label="Pay Online (Cashfree)",
+                description="Pay now via UPI, card, or net banking (Cashfree)",
                 is_available=booking.final_price is not None and booking.final_price > 0,
             ),
             PaymentOption(
@@ -476,10 +476,18 @@ class ParlourBookingViewService:
 
     async def get_slots(self, parlour_id: UUID, slot_date: date | None = None):
         from app.domains.gaming_booking.schemas import GamingSlotResponse, SlotListResponse
+        from app.domains.gaming_booking.slot_engine import SlotEngine
 
         place = await self.repo.get_place(parlour_id)
         if place is None:
             raise NotFoundError("Parlor not found")
+
+        # Auto-materialize virtual hourly slots when inventory is empty
+        # (fixes Flutter "No slots for this date" for catalog parlors).
+        target = slot_date or date.today()
+        engine = SlotEngine(self.session)
+        await engine.ensure_slots_for_date(parlour_id, target)
+
         slots = await self.repo.list_slots(parlour_id, slot_date=slot_date)
         return SlotListResponse(
             parlour_id=parlour_id,
