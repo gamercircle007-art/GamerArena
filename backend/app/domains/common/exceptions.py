@@ -38,6 +38,17 @@ class AuthenticationError(DomainError):
         super().__init__(message=message, code="authentication_error")
 
 
+class ForbiddenError(DomainError):
+    """Authenticated, but not permitted to touch this resource.
+
+    Distinct from AuthenticationError (401): the caller is known, they just don't own
+    the club / lack the role. Multi-tenant club scoping raises this.
+    """
+
+    def __init__(self, message: str = "Not permitted") -> None:
+        super().__init__(message=message, code="forbidden")
+
+
 class RateLimitError(DomainError):
     """Rate limit exceeded."""
 

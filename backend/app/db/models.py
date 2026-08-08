@@ -34,6 +34,15 @@ from app.domains.gaming_booking.inventory_models import (  # noqa: F401
     ReconciliationIssue,
     WebhookEvent,
 )
+from app.domains.club_ops.models import (  # noqa: F401
+    ClubCustomer,
+    ClubCustomerNote,
+    ClubPricingRule,
+    ClubPromotion,
+    ClubResource,
+    ClubZone,
+    OccupancyRollup,
+)
 from app.domains.gaming_place.models import GamingPlace, GamingPlaceExtension  # noqa: F401
 from app.domains.like.models import Like  # noqa: F401
 from app.domains.notification.models import Notification  # noqa: F401

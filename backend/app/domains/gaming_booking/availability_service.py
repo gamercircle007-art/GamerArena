@@ -11,6 +11,8 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domains.club_ops.pricing import PriceResolver, resource_type_for
+from app.domains.club_ops.promotions import PromotionService
 from app.domains.common.exceptions import NotFoundError, ValidationError
 from app.domains.gaming_booking.booking_ref import generate_booking_ref
 from app.domains.gaming_booking.inventory_models import (
@@ -131,7 +133,6 @@ class AvailabilityService:
             return []
         station = stations[0]
         total = station.total_count
-        price_paise = station.hourly_price_paise
 
         shifts = await self._hours_for(parlor_id, d)
         now_ist = datetime.now(IST)
@@ -173,6 +174,13 @@ class AvailabilityService:
             )
         ).scalars().all()
 
+        # Price each hour through the club-ops resolver so the slot list, the pricing
+        # preview and the actual charge all come from one place. With no pricing rules
+        # configured the resolver falls back to this station's hourly_price_paise, i.e.
+        # identical output to the previous flat calculation.
+        resolver = PriceResolver(self.session)
+        resource_type = resource_type_for(station_type)
+
         result = []
         for st in candidates:
             used = 0
@@ -186,12 +194,25 @@ class AvailabilityService:
                 if _overlap_hours(h.start_time, h.duration_hours, st):
                     used += h.units
             available = max(0, total - used)
+
+            hour_price = await resolver.resolve(
+                parlor_id=parlor_id,
+                resource_type=resource_type,
+                booking_date=d,
+                start_time=st,
+                duration_hours=1,
+                units=1,
+            )
             result.append(
                 {
                     "start_time": st.strftime("%H:%M:%S"),
                     "available_units": available,
-                    "price_paise": price_paise,
-                    "price_per_hour": str(Decimal(price_paise) / 100),
+                    "price_paise": hour_price.subtotal_paise,
+                    "price_per_hour": str(Decimal(hour_price.subtotal_paise) / 100),
+                    "price_source": hour_price.source,
+                    "slab_label": hour_price.per_hour[0].slab_label
+                    if hour_price.per_hour
+                    else None,
                     "disabled": available <= 0,
                     "station_type": station_type,
                 }
@@ -228,6 +249,7 @@ class AvailabilityService:
         contact_phone: str | None = None,
         guest_name: str | None = None,
         payment_mode: str = "online",
+        promo_code: str | None = None,
     ) -> GamingBooking:
         if duration_hours < 1 or duration_hours > 3:
             raise ValidationError("duration_hours must be 1–3")
@@ -277,7 +299,47 @@ class AvailabilityService:
                 )
 
         stations = await self._stations(parlor_id, station_type)
-        price_paise = stations[0].hourly_price_paise * duration_hours * units
+
+        # One price authority for both booking paths (see club_ops.pricing). Falls back
+        # to stations[0].hourly_price_paise when the club has no pricing rules, so this
+        # is behaviour-preserving for clubs that have not configured Club Management.
+        resource_type = resource_type_for(station_type)
+        breakdown = await PriceResolver(self.session).resolve(
+            parlor_id=parlor_id,
+            resource_type=resource_type,
+            booking_date=slot_date,
+            start_time=start_time,
+            duration_hours=duration_hours,
+            units=units,
+        )
+        subtotal_paise = breakdown.subtotal_paise
+
+        # Resolve the club's customer record first: first_visit and loyalty promos are
+        # evaluated against visit_count / loyalty_points, so this must exist before
+        # promotions are considered.
+        from app.domains.club_ops.service import CustomerService
+
+        club_customer = await CustomerService(self.session).ensure_for_user(parlor_id, user_id)
+        if club_customer.is_banned:
+            raise ValidationError("You are not permitted to book at this club")
+
+        # Club promotions apply to customer-app bookings too — that is the point of a
+        # happy-hour or first-visit promo. An explicit code is validated strictly;
+        # automatic promos are best-value.
+        promo_outcome = await PromotionService(self.session).apply_best(
+            parlor_id=parlor_id,
+            subtotal_paise=subtotal_paise,
+            resource_type=resource_type,
+            booking_date=slot_date,
+            start_time=start_time,
+            code=promo_code,
+            club_customer_id=club_customer.id,
+        )
+        if promo_code and not promo_outcome.valid:
+            raise ValidationError(promo_outcome.reason or "Promotion is not valid")
+
+        club_discount = promo_outcome.discount_paise if promo_outcome.valid else 0
+        price_paise = max(0, subtotal_paise - club_discount)
         commission = (price_paise * COMMISSION_BPS) // 10000
         amount = Decimal(price_paise) / Decimal(100)
         end_time = (datetime.combine(slot_date, start_time) + timedelta(hours=duration_hours)).time()
@@ -332,8 +394,8 @@ class AvailabilityService:
             start_time=start_time,
             end_time=end_time,
             hours_booked=Decimal(duration_hours),
-            price_per_hour=Decimal(stations[0].hourly_price_paise) / 100,
-            total_price=amount,
+            price_per_hour=Decimal(breakdown.base_rate_paise) / 100,
+            total_price=Decimal(subtotal_paise) / Decimal(100),
             tax_amount=Decimal("0"),
             discount_amount=Decimal("0"),
             final_price=amount,
@@ -350,10 +412,20 @@ class AvailabilityService:
             commission_paise=commission,
             idempotency_key=idempotency_key,
             hold_expires_at=expires if payment_mode == "online" else None,
+            club_promotion_id=promo_outcome.promotion_id if promo_outcome.valid else None,
+            club_discount_paise=club_discount,
+            # Owner-side CRM covers app bookings, not just walk-ins.
+            club_customer_id=club_customer.id,
             updated_at=datetime.now(UTC),
         )
         self.session.add(booking)
         await self.session.flush()
+
+        if promo_outcome.valid and promo_outcome.promotion_id is not None:
+            promo_row = await PromotionService(self.session).get_scoped(
+                parlor_id, promo_outcome.promotion_id
+            )
+            await PromotionService(self.session).consume(promo_row)
 
         slot.current_bookings += units
         if slot.current_bookings >= slot.max_players:

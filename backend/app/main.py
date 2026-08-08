@@ -22,6 +22,7 @@ from app.domains.chat.router import router as chat_router
 from app.domains.common.exceptions import (
     AuthenticationError,
     DomainError,
+    ForbiddenError,
     NotFoundError,
     RateLimitError,
     ValidationError,
@@ -38,6 +39,8 @@ from app.domains.feed.router import router as feed_router
 from app.domains.feed.store_router import router as store_router
 from app.domains.follow.router import router as follow_router
 from app.routers.recommendation import router as recommendation_router
+from app.domains.club_ops.admin_router import router as club_admin_router
+from app.domains.club_ops.router import router as club_ops_router
 from app.domains.gaming_booking.gc_points_router import router as gc_points_router
 from app.domains.gaming_booking.parlor_router import router as gaming_parlor_router
 from app.domains.gaming_booking.router import router as gaming_booking_router
@@ -242,6 +245,8 @@ def create_app() -> FastAPI:
             status_code = status.HTTP_404_NOT_FOUND
         elif isinstance(exc, AuthenticationError):
             status_code = status.HTTP_401_UNAUTHORIZED
+        elif isinstance(exc, ForbiddenError):
+            status_code = status.HTTP_403_FORBIDDEN
         elif isinstance(exc, RateLimitError):
             status_code = status.HTTP_429_TOO_MANY_REQUESTS
         elif isinstance(exc, ValidationError):
@@ -429,6 +434,8 @@ def create_app() -> FastAPI:
     app.include_router(gaming_booking_router, prefix=api_prefix)
     app.include_router(onboarding_router, prefix=api_prefix)
     app.include_router(gc_points_router, prefix=api_prefix)
+    app.include_router(club_ops_router, prefix=api_prefix)
+    app.include_router(club_admin_router, prefix=api_prefix)
     app.include_router(parlor_router, prefix=api_prefix)
     app.include_router(tournament_router, prefix=api_prefix)
     app.include_router(booking_router, prefix=api_prefix)

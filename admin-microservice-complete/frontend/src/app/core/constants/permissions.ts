@@ -31,6 +31,8 @@ export const PERMISSIONS = {
   VIEW_COMMENTS: 'view_comments',
   MANAGE_ROLES: 'manage_roles',
   MANAGE_SETTINGS: 'manage_settings',
+  VIEW_CLUB_MANAGEMENT: 'view_club_management',
+  OVERRIDE_CLUB_MANAGEMENT: 'override_club_management',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -59,6 +61,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     PERMISSIONS.VIEW_GEO,
     PERMISSIONS.VIEW_LIKES,
     PERMISSIONS.VIEW_COMMENTS,
+    PERMISSIONS.VIEW_CLUB_MANAGEMENT,
+    PERMISSIONS.OVERRIDE_CLUB_MANAGEMENT,
   ],
   parlor_owner: ['view_own_analytics', 'view_own_bookings'],
   user: [],
