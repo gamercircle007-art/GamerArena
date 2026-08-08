@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-07-28 — Angular admin live on Render free static site: https://gamer-circle-admin.onrender.com (srv-d9kch1laeets73an3tc0, commit e23a4d3). API still https://gamer-circle-api.onrender.com healthy. Fixed parlor-onboarding TS prod build break.
-- **In progress:** none
-- **Next up:** Set CASHFREE_* for real UPI; Flutter Cashfree SDK; admin refund UI polish; concurrent capacity pytest; rotate Render API key
-- **Known open issues / blockers:** Cashfree keys not set (mock_mode); Twilio optional; rotate Render API key still in .env
+- **Last completed:** 2026-08-08 — Fixed club_ops FastAPI 204 import crash; pushed sit for Render redeploy; production Flutter APK (v1.0.1+2) built against `https://gamer-circle-api.onrender.com/api/v1` (release signing + Gradle 8.11 / AGP 8.7).
+- **In progress:** Confirm Render deploy picks up latest `sit` SHA (needs RENDER_API_KEY or Dashboard Manual Deploy if autoDeploy stuck on ad3fc6d).
+- **Next up:** Set CASHFREE_* for real UPI; Twilio for OTP; Flutter Cashfree SDK; admin refund UI polish; rotate Render API key into CI secrets.
+- **Known open issues / blockers:** Live `/ready` still reports `git_sha=ad3fc6d` until new deploy lands; Twilio/Cashfree/AWS unset; RENDER_API_KEY not in this agent env.
 
 ---
 

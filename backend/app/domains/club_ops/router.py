@@ -12,7 +12,7 @@ from datetime import date as date_cls
 from datetime import timedelta
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Response
 from sqlalchemy import select
 
 from app.core.dependencies import CurrentUserDep, DbSessionDep
@@ -212,15 +212,18 @@ async def update_zone(
     return ZoneResponse.model_validate(zone)
 
 
-@router.delete("/zones/{zone_id}", status_code=204)
+@router.delete("/zones/{zone_id}", status_code=204, response_class=Response)
 async def delete_zone(
     zone_id: UUID,
     db: DbSessionDep,
     current_user: CurrentUserDep,
     parlor_id: UUID | None = ParlorIdQuery,
-) -> None:
+) -> Response:
+    # response_class=Response required: with `from __future__ import annotations`,
+    # `-> None` becomes truthy NoneType and FastAPI 0.115 rejects status 204.
     club_id = await ClubScope(db).resolve_club_id(current_user, parlor_id)
     await ZoneService(db).delete(club_id, zone_id)
+    return Response(status_code=204)
 
 
 # --- Seat / PC management: resources ----------------------------------------------
@@ -284,15 +287,18 @@ async def update_resource(
     return _resource_out(resource)
 
 
-@router.delete("/resources/{resource_id}", status_code=204)
+@router.delete(
+    "/resources/{resource_id}", status_code=204, response_class=Response
+)
 async def delete_resource(
     resource_id: UUID,
     db: DbSessionDep,
     current_user: CurrentUserDep,
     parlor_id: UUID | None = ParlorIdQuery,
-) -> None:
+) -> Response:
     club_id = await ClubScope(db).resolve_club_id(current_user, parlor_id)
     await ResourceService(db).delete(club_id, resource_id)
+    return Response(status_code=204)
 
 
 @router.patch("/resources/{resource_id}/status", response_model=ResourceResponse)
@@ -596,15 +602,18 @@ async def update_pricing_rule(
     return PricingRuleResponse.model_validate(rule)
 
 
-@router.delete("/pricing/rules/{rule_id}", status_code=204)
+@router.delete(
+    "/pricing/rules/{rule_id}", status_code=204, response_class=Response
+)
 async def delete_pricing_rule(
     rule_id: UUID,
     db: DbSessionDep,
     current_user: CurrentUserDep,
     parlor_id: UUID | None = ParlorIdQuery,
-) -> None:
+) -> Response:
     club_id = await ClubScope(db).resolve_club_id(current_user, parlor_id)
     await PricingRuleService(db).delete(club_id, rule_id)
+    return Response(status_code=204)
 
 
 @router.post("/pricing/preview", response_model=PricePreviewResponse)
@@ -759,17 +768,20 @@ async def update_promotion(
     return PromotionResponse.model_validate(promo)
 
 
-@router.delete("/promotions/{promotion_id}", status_code=204)
+@router.delete(
+    "/promotions/{promotion_id}", status_code=204, response_class=Response
+)
 async def delete_promotion(
     promotion_id: UUID,
     db: DbSessionDep,
     current_user: CurrentUserDep,
     parlor_id: UUID | None = ParlorIdQuery,
-) -> None:
+) -> Response:
     club_id = await ClubScope(db).resolve_club_id(current_user, parlor_id)
     promo = await PromotionService(db).get_scoped(club_id, promotion_id)
     promo.is_active = False
     await db.commit()
+    return Response(status_code=204)
 
 
 @router.post("/promotions/validate")
