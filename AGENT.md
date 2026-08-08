@@ -107,6 +107,7 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-08-08 — Fixed club_ops FastAPI 204 import (unblocks Render/CI); Flutter prod APK v1.0.1+2 (Gradle 8.11/AGP 8.7, release signing, file_picker^8); sit@bb73749 pushed.
 - 2026-07-28 — Deploy Angular admin free Static Site on Render (`gamer-circle-admin`); fixed onboarding TS build; render.yaml + SPA rewrite; API free web already live.
 - 2026-07-28 — Spec stack: stations/hours/holds/ledger/webhooks + bookings/v2 + availability + Celery holds + Flutter station/duration/Book Now + Angular onboarding; live booking confirmed.
 - 2026-07-28 — SlotEngine auto-generates gaming_slots on GET /parlors/{id}/slots; Cashfree create-order + webhook; Flutter date= query fixed.
