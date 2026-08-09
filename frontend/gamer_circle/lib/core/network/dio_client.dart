@@ -31,6 +31,7 @@ class DioClient {
       );
     }
     if (authInterceptor != null) {
+      authInterceptor.dio = _dio;
       interceptors.add(authInterceptor);
     }
     _dio.interceptors.addAll(interceptors);

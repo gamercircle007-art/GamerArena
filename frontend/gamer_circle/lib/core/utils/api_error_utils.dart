@@ -60,6 +60,13 @@ String messageFromDioException(DioException e, String fallback) {
   }
 
   if (status != null) {
+    if (status == 401) {
+      return 'E_HTTP_401: Session expired — please log in again.';
+    }
+    if (status == 404) {
+      return 'E_HTTP_404: API route not found at $base'
+          '${e.requestOptions.path}. Check app/API version match.';
+    }
     return 'E_HTTP_$status: $fallback';
   }
   return 'E_UNKNOWN: $fallback';
