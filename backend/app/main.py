@@ -210,7 +210,7 @@ def create_app() -> FastAPI:
             "- **Login**: Phone + OTP or password → JWT tokens\n"
             "- **Security**: Argon2, Redis OTP, token rotation, rate limits\n"
         ),
-        version="1.0.0",
+        version="1.0.4",
         openapi_tags=OPENAPI_TAGS,
         docs_url="/docs" if not settings.is_production else None,
         redoc_url="/redoc" if not settings.is_production else None,
@@ -330,7 +330,7 @@ def create_app() -> FastAPI:
             "service": settings.app_name,
             "environment": settings.app_env,
             "auth_methods": settings.auth_methods_list,
-            "version": "1.0.0",
+            "version": "1.0.4",
             "port": os.environ.get("PORT"),
             "twilio_configured": settings.twilio_configured,
             "otp_bypass_active": settings.use_otp_dev_bypass,
