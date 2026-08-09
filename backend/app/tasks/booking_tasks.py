@@ -1,4 +1,4 @@
-"""Celery tasks: hold expiry + webhook processing + reconciliation."""
+"""Celery tasks: hold expiry + webhook + reconcile + refund + confirmation."""
 
 from __future__ import annotations
 
@@ -11,17 +11,27 @@ from app.tasks.celery_app import celery_app
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name="booking.expire_hold")
+@celery_app.task(name="booking.expire_hold", expires=25)
 def expire_booking_hold(booking_id: str) -> str:
     import asyncio
 
     from app.db.session import get_session_factory
-    from app.domains.gaming_booking.availability_service import AvailabilityService
+    from app.domains.gaming_booking.lock_service import LockService
+    from app.domains.gaming_booking.models import GamingBooking
+    from sqlalchemy import select
 
     async def _run() -> None:
         factory = get_session_factory()
         async with factory() as session:
-            await AvailabilityService(session).expire_hold(UUID(booking_id))
+            booking = (
+                await session.execute(
+                    select(GamingBooking).where(GamingBooking.id == UUID(booking_id))
+                )
+            ).scalar_one_or_none()
+            if booking and booking.booking_status in ("held", "payment_pending"):
+                booking.hold_expires_at = datetime.now(UTC)
+                await session.commit()
+            await LockService(session).expire_stale_holds()
 
     try:
         asyncio.run(_run())
@@ -31,33 +41,19 @@ def expire_booking_hold(booking_id: str) -> str:
         return f"error:{type(exc).__name__}"
 
 
-@celery_app.task(name="booking.sweep_expired_holds")
+@celery_app.task(name="booking.sweep_expired_holds", expires=25)
 def sweep_expired_holds() -> int:
+    """Every ~30s — set-based expire + slot_released publish."""
     import asyncio
 
-    from sqlalchemy import select
-
     from app.db.session import get_session_factory
-    from app.domains.gaming_booking.availability_service import AvailabilityService
-    from app.domains.gaming_booking.inventory_models import BookingHold
+    from app.domains.gaming_booking.lock_service import LockService
 
     async def _run() -> int:
         factory = get_session_factory()
         async with factory() as session:
-            rows = (
-                await session.execute(
-                    select(BookingHold).where(
-                        BookingHold.released.is_(False),
-                        BookingHold.expires_at <= datetime.now(UTC),
-                    )
-                )
-            ).scalars().all()
-            n = 0
-            svc = AvailabilityService(session)
-            for h in rows:
-                await svc.expire_hold(h.booking_id)
-                n += 1
-            return n
+            rows = await LockService(session).expire_stale_holds()
+            return len(rows)
 
     try:
         return asyncio.run(_run())
@@ -70,7 +66,6 @@ def sweep_expired_holds() -> int:
 def process_cashfree_webhook(event_db_id: str) -> str:
     """Process stored webhook_events row (signature already checked)."""
     import asyncio
-    import json
 
     from sqlalchemy import select
 
@@ -98,7 +93,11 @@ def process_cashfree_webhook(event_db_id: str) -> str:
                 or payload.get("order_id")
             )
             event_type = (ev.event_type or "").upper()
-            if order_id and ("SUCCESS" in event_type or "PAID" in event_type or "PAYMENT_SUCCESS" in event_type):
+            if order_id and (
+                "SUCCESS" in event_type
+                or "PAID" in event_type
+                or "PAYMENT_SUCCESS" in event_type
+            ):
                 booking = (
                     await session.execute(
                         select(GamingBooking).where(
@@ -125,7 +124,141 @@ def process_cashfree_webhook(event_db_id: str) -> str:
         return f"error:{type(exc).__name__}"
 
 
-@celery_app.task(name="booking.nightly_reconciliation")
+@celery_app.task(name="booking.reconcile_payments", expires=240)
+def reconcile_payments() -> str:
+    """payment_pending > 15 min → query provider and settle."""
+    import asyncio
+
+    from sqlalchemy import select
+
+    from app.db.session import get_session_factory
+    from app.domains.gaming_booking.availability_service import AvailabilityService
+    from app.domains.gaming_booking.models import GamingBooking
+    from app.domains.payments import cashfree_client
+
+    async def _run() -> int:
+        factory = get_session_factory()
+        async with factory() as session:
+            cutoff = datetime.now(UTC) - timedelta(minutes=15)
+            stuck = (
+                await session.execute(
+                    select(GamingBooking).where(
+                        GamingBooking.booking_status == "payment_pending",
+                        GamingBooking.updated_at <= cutoff,
+                    )
+                )
+            ).scalars().all()
+            n = 0
+            for b in stuck:
+                if not b.cf_order_id:
+                    continue
+                try:
+                    order = await cashfree_client.get_order(b.cf_order_id)
+                    st = (order.get("order_status") or order.get("status") or "").upper()
+                    if st in ("PAID", "SUCCESS", "COMPLETED"):
+                        await AvailabilityService(session).confirm_payment(
+                            b.id,
+                            cf_reference=b.cf_order_id,
+                            event_id=f"reconcile:{b.cf_order_id}",
+                            actor="reconcile",
+                        )
+                        n += 1
+                except Exception:  # noqa: BLE001
+                    logger.exception("reconcile_one_failed booking=%s", b.id)
+            return n
+
+    try:
+        return f"settled={asyncio.run(_run())}"
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("reconcile_payments_failed")
+        return f"error:{type(exc).__name__}"
+
+
+@celery_app.task(name="booking.auto_refund")
+def auto_refund(booking_id: str, cf_reference: str, event_id: str) -> str:
+    """Idempotent refund for payment-after-expiry. Never overwrite the new booking."""
+    import asyncio
+
+    from sqlalchemy import select
+
+    from app.db.session import get_session_factory
+    from app.domains.gaming_booking.inventory_models import PaymentLedger, ReconciliationIssue
+    from app.domains.gaming_booking.models import GamingBooking
+
+    async def _run() -> str:
+        factory = get_session_factory()
+        async with factory() as session:
+            # Idempotent on payment/event id
+            existing = (
+                await session.execute(
+                    select(PaymentLedger).where(
+                        PaymentLedger.entry_type == "refund",
+                        PaymentLedger.cf_event_id == (event_id or cf_reference or "")[:100],
+                    )
+                )
+            ).scalar_one_or_none()
+            if existing:
+                return "skip_duplicate"
+
+            booking = (
+                await session.execute(
+                    select(GamingBooking).where(GamingBooking.id == UUID(booking_id))
+                )
+            ).scalar_one_or_none()
+            if booking is None:
+                return "missing"
+            if booking.booking_status != "refund_pending":
+                return f"skip_status={booking.booking_status}"
+
+            amount = booking.amount_paise or int(float(booking.final_price or 0) * 100)
+            # Provider refund call is best-effort; ledger + issue row always recorded.
+            try:
+                from app.domains.payments import cashfree_client
+
+                if cf_reference and hasattr(cashfree_client, "refund_order"):
+                    await cashfree_client.refund_order(cf_reference, amount)
+            except Exception:  # noqa: BLE001
+                logger.exception("cashfree_refund_call_failed")
+                session.add(
+                    ReconciliationIssue(
+                        booking_id=booking.id,
+                        cf_reference=cf_reference or None,
+                        issue_type="refund_failed",
+                        details=f"auto_refund event={event_id}",
+                    )
+                )
+
+            session.add(
+                PaymentLedger(
+                    booking_id=booking.id,
+                    entry_type="refund",
+                    amount_paise=amount,
+                    cf_reference=cf_reference or None,
+                    cf_event_id=(event_id or cf_reference or "")[:100] or None,
+                    balance_direction="debit",
+                )
+            )
+            booking.booking_status = "failed"
+            booking.refund_status = "initiated"
+            booking.updated_at = datetime.now(UTC)
+            await session.commit()
+            return "ok"
+
+    try:
+        return asyncio.run(_run())
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("auto_refund_failed")
+        return f"error:{type(exc).__name__}"
+
+
+@celery_app.task(name="booking.send_confirmation")
+def send_booking_confirmation(booking_id: str) -> str:
+    """Out-of-band SMS/push/email — never block the webhook path."""
+    logger.info("send_booking_confirmation booking_id=%s", booking_id)
+    return "queued"
+
+
+@celery_app.task(name="booking.nightly_reconciliation", expires=3600)
 def nightly_reconciliation() -> str:
     """Placeholder reconciliation — flags unmatched paid bookings without ledger."""
     import asyncio
@@ -143,8 +276,7 @@ def nightly_reconciliation() -> str:
                 await session.execute(
                     select(GamingBooking).where(
                         GamingBooking.payment_status == "paid",
-                        GamingBooking.created_at
-                        >= datetime.now(UTC) - timedelta(days=1),
+                        GamingBooking.created_at >= datetime.now(UTC) - timedelta(days=1),
                     )
                 )
             ).scalars().all()

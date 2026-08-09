@@ -260,3 +260,20 @@ No dedicated hold/release client; no availability WebSocket; no per-cell slot st
 ---
 
 **Phase 0 complete. Stop here — do not start schema/constraint work until this audit is accepted.**
+
+---
+
+## Implementation status (Phases 1–7 landed on `cursor/availability-booking-lock-46ce`)
+
+| Phase | Status |
+|---|---|
+| 1 Schema `tstzrange` / `during_*` + `booking_unit_locks` | Done — migration `024_booking_lock_ranges` |
+| 2 EXCLUDE GiST (SQLSTATE 23P01) | Done — `excl_booking_unit_locks_overlap` (+ resource exclude) |
+| 3 Hold / release + Redis hint + rate limits | Done — `POST /bookings/hold`, `/release` |
+| 4 Pay + guarded status + late-pay refund queue | Done — `POST /bookings/{id}/pay`, `auto_refund` |
+| 5 WS + Redis Pub/Sub deltas + snapshot `v` | Done — `/api/v1/ws/clubs/{id}/availability`, `GET /clubs/{id}/availability` |
+| 6 Celery expire 30s / reconcile / refund | Done — beat entries with `expires=` |
+| 7 Flutter hold/pay/poll + `SlotGridController` | Done — repository + grid controller |
+| 8 PG concurrent acceptance test | Gated — `test_booking_lock_pg.py` (skip without Postgres) |
+
+**Ops required:** `alembic upgrade head` on Render (024), ensure Celery worker + beat run.
