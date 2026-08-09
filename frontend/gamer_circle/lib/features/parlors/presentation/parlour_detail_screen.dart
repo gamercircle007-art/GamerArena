@@ -261,7 +261,7 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
                 BookingBottomCta(
                   price: price,
                   subtitle: 'Time-first booking · 8 min hold',
-                  enabled: !_booking,
+                  enabled: true,
                   label: 'Book Now',
                   onPressed: () =>
                       _openBookFlow(detail.name, detail.displayImage),
