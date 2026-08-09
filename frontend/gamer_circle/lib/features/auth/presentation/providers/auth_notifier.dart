@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gamer_circle/app/di/injection.dart';
+import 'package:gamer_circle/core/network/auth_interceptor.dart';
 import 'package:gamer_circle/core/network/ws_service.dart';
 import 'package:gamer_circle/core/usecases/usecase.dart';
 import 'package:gamer_circle/features/auth/domain/entities/user.dart';
@@ -26,7 +27,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _syncLocationUseCase = syncLocationUseCase,
         _onboardingPrefs = onboardingPrefs,
         super(const AuthInitial()) {
+    // When refresh fails, interceptor clears tokens — mirror that in UI state.
+    getIt<AuthInterceptor>().onUnauthorized = onSessionExpired;
     checkAuthStatus();
+  }
+
+  void onSessionExpired() {
+    WsService.instance.disconnect();
+    if (state is AuthUnauthenticated) return;
+    state = const AuthUnauthenticated();
   }
 
   Future<void> _syncCachedLocation() async {

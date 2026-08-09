@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gamer_circle/app/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -143,9 +144,11 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                         loading: () => const Center(
                           child: CircularProgressIndicator(color: AppColors.dmBlue),
                         ),
-                        error: (e, _) => Center(
-                          child: Text('Failed to load chats: $e',
-                              style: const TextStyle(color: AppColors.dmTextSecondary)),
+                        error: (e, _) => _ChatsError(
+                          error: e,
+                          onRetry: () =>
+                              ref.read(conversationsProvider.notifier).refresh(),
+                          onLogin: () => context.go('/login'),
                         ),
                         data: (convs) {
                           // Apply tab + search filter client-side (real data + demo rules)
@@ -269,6 +272,77 @@ class _GuestMessagingPrompt extends StatelessWidget {
               style: FilledButton.styleFrom(backgroundColor: AppColors.dmBlue),
               child: const Text('Login to continue'),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatsError extends StatelessWidget {
+  const _ChatsError({
+    required this.error,
+    required this.onRetry,
+    required this.onLogin,
+  });
+
+  final Object error;
+  final VoidCallback onRetry;
+  final VoidCallback onLogin;
+
+  bool get _isUnauthorized {
+    if (error is DioException) {
+      return (error as DioException).response?.statusCode == 401;
+    }
+    final text = error.toString().toLowerCase();
+    return text.contains('401') || text.contains('unauthorized');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sessionExpired = _isUnauthorized;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              sessionExpired ? Icons.lock_outline : Icons.wifi_off_rounded,
+              size: 48,
+              color: AppColors.dmTextMuted,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              sessionExpired ? 'Session expired' : 'Couldn’t load chats',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.dmTextPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              sessionExpired
+                  ? 'Please log in again to view your messages.'
+                  : 'Check your connection and try again.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.dmTextSecondary),
+            ),
+            const SizedBox(height: 24),
+            if (sessionExpired)
+              FilledButton(
+                onPressed: onLogin,
+                style: FilledButton.styleFrom(backgroundColor: AppColors.dmBlue),
+                child: const Text('Log in again'),
+              )
+            else
+              FilledButton(
+                onPressed: onRetry,
+                style: FilledButton.styleFrom(backgroundColor: AppColors.dmBlue),
+                child: const Text('Retry'),
+              ),
           ],
         ),
       ),
