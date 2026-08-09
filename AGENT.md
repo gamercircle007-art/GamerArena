@@ -92,10 +92,10 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 7. CURRENT STATE (update this section every session — overwrite, don't append)
 
-- **Last completed:** 2026-08-08 — Fixed club_ops FastAPI 204 import crash; pushed sit for Render redeploy; production Flutter APK (v1.0.1+2) built against `https://gamer-circle-api.onrender.com/api/v1` (release signing + Gradle 8.11 / AGP 8.7).
-- **In progress:** Confirm Render deploy picks up latest `sit` SHA (needs RENDER_API_KEY or Dashboard Manual Deploy if autoDeploy stuck on ad3fc6d).
-- **Next up:** Set CASHFREE_* for real UPI; Twilio for OTP; Flutter Cashfree SDK; admin refund UI polish; rotate Render API key into CI secrets.
-- **Known open issues / blockers:** Live `/ready` still reports `git_sha=ad3fc6d` until new deploy lands; Twilio/Cashfree/AWS unset; RENDER_API_KEY not in this agent env.
+- **Last completed:** 2026-08-09 — Discovery module Phases 0–6 shipped: `gaming_places` read-model migration 023, Celery availability/rating jobs, `GET /api/v1/discovery/centres` (asyncpg+orjson+Redis geohash), Flutter `features/discovery` list UI wired to `/discover`.
+- **In progress:** Phase 7 load/EXPLAIN on Render after migrate deploy
+- **Next up:** Run alembic 023 on Render; hey/p95 gate; seed amenities_mask; Twilio/Cashfree
+- **Known open issues / blockers:** Live DB needs migration 023 before PostGIS GiST path; until then endpoint falls back to bbox SQL
 
 ---
 
@@ -107,6 +107,7 @@ Any RBAC permission | Reflected in both the Angular route guards AND backend end
 
 ## 9. CHANGELOG (append only — newest at top, keep each entry to 1-2 lines)
 
+- 2026-08-09 — Discovery module: migration 023 read-model + Celery denorm + `/discovery/centres` + Flutter discovery list (Phases 0–6).
 - 2026-08-08 — Fixed club_ops FastAPI 204 import (unblocks Render/CI); Flutter prod APK v1.0.1+2 (Gradle 8.11/AGP 8.7, release signing, file_picker^8); sit@bb73749 pushed.
 - 2026-07-28 — Deploy Angular admin free Static Site on Render (`gamer-circle-admin`); fixed onboarding TS build; render.yaml + SPA rewrite; API free web already live.
 - 2026-07-28 — Spec stack: stations/hours/holds/ledger/webhooks + bookings/v2 + availability + Celery holds + Flutter station/duration/Book Now + Angular onboarding; live booking confirmed.

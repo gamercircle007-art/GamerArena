@@ -59,5 +59,28 @@ celery_app.conf.beat_schedule = {
         "task": "club_ops.nightly_rollup_repair",
         "schedule": crontab(hour=2, minute=45),
     },
+    # Discovery denorm — list endpoint must never JOIN slots/reviews
+    "discovery-refresh-availability": {
+        "task": "discovery.refresh_availability",
+        "schedule": crontab(minute="*"),
+        "options": {"expires": 55},
+    },
+    "discovery-refresh-rating-scores": {
+        "task": "discovery.refresh_rating_scores",
+        "schedule": crontab(minute="*/15"),
+    },
 }
 celery_app.conf.timezone = "Asia/Kolkata"
+
+# Ensure discovery tasks module is imported for beat/worker
+celery_app.conf.imports = list(
+    set(
+        list(getattr(celery_app.conf, "imports", None) or [])
+        + [
+            "app.tasks.discovery",
+            "app.tasks.booking_tasks",
+            "app.tasks.recommendation_tasks",
+            "app.tasks.club_ops_tasks",
+        ]
+    )
+)

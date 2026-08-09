@@ -12,6 +12,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.core.config import Settings, get_settings
@@ -57,6 +58,7 @@ from app.domains.search.router import router as search_router
 from app.domains.tournament.router import router as tournament_router
 from app.domains.dms.admin_router import router as admin_dms_router
 from app.domains.dms.router import router as dms_router
+from app.domains.discovery.router import router as discovery_router
 from app.domains.upload.router import router as upload_router
 from app.domains.user.router import router as user_router
 from app.ws.router import router as ws_router
@@ -102,6 +104,13 @@ OPENAPI_TAGS = [
     {"name": "Gaming Parlors", "description": "OYO-style parlor search, detail, slots, and offers."},
     {"name": "GC Points", "description": "Loyalty points earned from gaming parlor bookings."},
     {"name": "Geo", "description": "Nearby parlors and tournaments via PostGIS."},
+    {
+        "name": "Discovery",
+        "description": (
+            "High-performance nearby centres list: distance/rating/available-now "
+            "filters, keyset cursor, Redis geohash cache."
+        ),
+    },
     {"name": "Search", "description": "Search parlors and tournaments."},
     {"name": "Notifications", "description": "In-app user notifications."},
     {"name": "Uploads", "description": "S3 presigned URL uploads (legacy — use DMS)."},
@@ -176,6 +185,12 @@ async def lifespan(app: FastAPI):
         await ws_manager.start_redis_listener(redis_client)
     yield
     await ws_manager.stop()
+    try:
+        from app.domains.discovery.db import close_discovery_pool
+
+        await close_discovery_pool()
+    except Exception:  # noqa: BLE001
+        pass
     if redis_client is not None:
         await redis_client.aclose()
     logger.info("application_shutdown")
@@ -224,6 +239,7 @@ def create_app() -> FastAPI:
     else:
         cors_kwargs["allow_origins"] = origins
     app.add_middleware(CORSMiddleware, **cors_kwargs)
+    app.add_middleware(GZipMiddleware, minimum_size=500)
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next):
@@ -232,7 +248,9 @@ def create_app() -> FastAPI:
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Cache-Control"] = "no-store"
+        # Don't clobber discovery ETag/Cache-Control
+        if "Cache-Control" not in response.headers:
+            response.headers["Cache-Control"] = "no-store"
         if settings.is_production:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
@@ -447,6 +465,7 @@ def create_app() -> FastAPI:
     app.include_router(like_router, prefix=api_prefix)
     app.include_router(follow_router, prefix=api_prefix)
     app.include_router(geo_router, prefix=api_prefix)
+    app.include_router(discovery_router, prefix=api_prefix)
     app.include_router(search_router, prefix=api_prefix)
     app.include_router(notification_router, prefix=api_prefix)
     app.include_router(dms_router, prefix=api_prefix)

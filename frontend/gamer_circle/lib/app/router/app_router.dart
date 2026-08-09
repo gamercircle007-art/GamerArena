@@ -28,6 +28,7 @@ import 'package:gamer_circle/features/parlors/presentation/ratings_reviews_scree
 import 'package:gamer_circle/features/parlors/presentation/search_input_screen.dart';
 import 'package:gamer_circle/features/parlors/presentation/search_results_screen.dart';
 import 'package:gamer_circle/features/map/presentation/discover_screen.dart';
+import 'package:gamer_circle/features/discovery/presentation/discovery_page.dart';
 import 'package:gamer_circle/features/friends/presentation/friend_requests_screen.dart';
 import 'package:gamer_circle/features/messaging/presentation/chat_screen.dart';
 import 'package:gamer_circle/features/messaging/presentation/conversations_screen.dart';
@@ -125,7 +126,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
           GoRoute(path: '/feed', builder: (context, state) => const FeedScreen()),
           GoRoute(path: '/reels', builder: (context, state) => const ReelsScreen()),
-          GoRoute(path: '/discover', builder: (context, state) => const DiscoverScreen()),
+          GoRoute(path: '/discover', builder: (context, state) => const DiscoveryPage()),
+          GoRoute(path: '/discover/map', builder: (context, state) => const DiscoverScreen()),
           GoRoute(
             path: '/notifications',
             builder: (context, state) => const NotificationsScreen(),
