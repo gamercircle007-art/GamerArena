@@ -54,3 +54,14 @@ class RateLimitError(DomainError):
 
     def __init__(self, message: str = "Too many requests") -> None:
         super().__init__(message=message, code="rate_limit_exceeded")
+
+
+class ConflictError(DomainError):
+    """Resource conflict — e.g. slot already held (EXCLUDE / SQLSTATE 23P01)."""
+
+    def __init__(
+        self,
+        message: str = "Slot unavailable",
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message=message, code="conflict", details=details)

@@ -22,6 +22,7 @@ from app.domains.auth.router import router as auth_router
 from app.domains.chat.router import router as chat_router
 from app.domains.common.exceptions import (
     AuthenticationError,
+    ConflictError,
     DomainError,
     ForbiddenError,
     NotFoundError,
@@ -267,6 +268,8 @@ def create_app() -> FastAPI:
             status_code = status.HTTP_403_FORBIDDEN
         elif isinstance(exc, RateLimitError):
             status_code = status.HTTP_429_TOO_MANY_REQUESTS
+        elif isinstance(exc, ConflictError):
+            status_code = status.HTTP_409_CONFLICT
         elif isinstance(exc, ValidationError):
             status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 

@@ -100,13 +100,17 @@ async def get_booking_payment_options(
     return await GamingBookingService(db).get_payment_options(booking_id, current_user.id)
 
 
-@router.post("/bookings/{booking_id}/pay", response_model=CompletePaymentResponse)
+@router.post(
+    "/bookings/{booking_id}/complete-legacy-payment",
+    response_model=CompletePaymentResponse,
+)
 async def complete_booking_payment(
     booking_id: UUID,
     body: CompletePaymentRequest,
     db: DbSessionDep,
     current_user: CurrentUserDep,
 ) -> CompletePaymentResponse:
+    """Legacy Razorpay verify path. Prefer POST /bookings/{id}/pay for held bookings."""
     booking, points = await GamingBookingService(db).complete_payment(
         booking_id, current_user.id, body
     )

@@ -27,6 +27,7 @@ from app.domains.gaming_booking.models import (  # noqa: F401
 from app.domains.gaming_booking.inventory_models import (  # noqa: F401
     BookingAudit,
     BookingHold,
+    BookingUnitLock,
     ParlorClosure,
     ParlorHours,
     ParlorStation,

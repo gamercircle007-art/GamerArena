@@ -84,6 +84,35 @@ class BookingHold(Base, UUIDPrimaryKeyMixin):
     )
 
 
+class BookingUnitLock(Base, UUIDPrimaryKeyMixin):
+    """One capacity unit locked for a booking time range.
+
+    Postgres enforces non-overlap via EXCLUDE USING gist on
+    (parlor_id, station_type, unit_index, during) WHERE is_active.
+    That constraint — not Redis — is what makes double booking impossible.
+    """
+
+    __tablename__ = "booking_unit_locks"
+
+    booking_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("gaming_bookings.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    parlor_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("gaming_places.id", ondelete="CASCADE"), nullable=False
+    )
+    station_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    unit_index: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    resource_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("club_resources.id", ondelete="SET NULL"), nullable=True
+    )
+    during_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    during_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
+    )
+
+
 class PaymentLedger(Base, UUIDPrimaryKeyMixin):
     __tablename__ = "payment_ledger"
 
