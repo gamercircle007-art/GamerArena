@@ -3,17 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/constants/booking_colors.dart';
-import 'package:gamer_circle/core/utils/currency_formatter.dart';
-import 'package:gamer_circle/features/booking/providers/gaming_booking_provider.dart';
 import 'package:gamer_circle/features/parlors/providers/parlor_search_provider.dart';
-import 'package:gamer_circle/shared/models/gaming_booking.dart';
 import 'package:gamer_circle/shared/widgets/booking_bottom_cta.dart';
 import 'package:gamer_circle/shared/widgets/category_rating_bar.dart';
 import 'package:gamer_circle/shared/widgets/offer_card.dart';
 import 'package:gamer_circle/shared/widgets/rating_stars.dart';
-import 'package:intl/intl.dart';
 import 'package:readmore/readmore.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ParlourDetailScreen extends ConsumerStatefulWidget {
@@ -29,12 +24,6 @@ class ParlourDetailScreen extends ConsumerStatefulWidget {
 class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs = TabController(length: 3, vsync: this);
-  DateTime _selectedDate = DateTime.now();
-  GamingSlot? _selectedSlot;
-  String _stationType = 'PC';
-  int _durationHours = 1;
-  int _units = 1;
-  bool _booking = false;
 
   @override
   void initState() {
@@ -48,77 +37,16 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
     super.dispose();
   }
 
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 30)),
+  void _openBookFlow(String parlourName, String? image) {
+    context.push(
+      '/parlour/${widget.parlourId}/book',
+      extra: {'name': parlourName, 'image': image},
     );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        _selectedSlot = null;
-      });
-    }
-  }
-
-  Future<void> _bookNow(String parlourName, String? image) async {
-    if (_selectedSlot == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a time slot')),
-      );
-      return;
-    }
-    // Prefer v2 booking (hold + Cashfree-ready). Fall back to legacy draft flow.
-    setState(() => _booking = true);
-    try {
-      final repo = ref.read(gamingBookingRepositoryProvider);
-      final idem = DateTime.now().microsecondsSinceEpoch.toString();
-      final result = await repo.createBookingV2(
-        parlorId: widget.parlourId,
-        stationType: _stationType,
-        date: _selectedDate,
-        startTime: _selectedSlot!.startTime,
-        durationHours: _durationHours,
-        units: _units,
-        paymentMode: 'pay_at_parlor',
-        idempotencyKey: idem,
-      );
-      final booking = result['booking'] as Map<String, dynamic>?;
-      final id = booking?['id']?.toString();
-      if (id != null && mounted) {
-        context.push(
-          '/booking/status/$id',
-          extra: {'mockMode': result['mock_mode'] == true},
-        );
-        return;
-      }
-    } catch (_) {
-      // Legacy path
-      ref.read(gamingBookingDraftProvider.notifier).state = GamingBookingDraft(
-        parlourId: widget.parlourId,
-        parlourName: parlourName,
-        parlourImage: image,
-        slot: _selectedSlot,
-      );
-      if (mounted) context.push('/booking/confirm');
-    } finally {
-      if (mounted) setState(() => _booking = false);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(parlourDetailProvider(widget.parlourId));
-    final slotsAsync = ref.watch(
-      gamingSlotsProvider(
-        GamingSlotsParams(
-          parlourId: widget.parlourId,
-          date: _selectedDate,
-        ),
-      ),
-    );
 
     return detailAsync.when(
       loading: () => const Scaffold(
@@ -131,8 +59,7 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
         body: Center(child: Text('Error: $e')),
       ),
       data: (detail) {
-        final base = _selectedSlot?.pricePerHour ?? detail.startingPrice ?? 0;
-        final price = base * _durationHours * _units;
+        final price = detail.startingPrice ?? 0;
         return Scaffold(
           body: NestedScrollView(
             headerSliverBuilder: (_, __) => [
@@ -255,107 +182,47 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
                         controller: _tabs,
                         labelColor: BookingColors.oyoRed,
                         tabs: const [
-                          Tab(text: 'Slots'),
+                          Tab(text: 'Overview'),
                           Tab(text: 'Amenities'),
                           Tab(text: 'Contact'),
                         ],
                       ),
                       const SizedBox(height: 12),
                       if (_tabs.index == 0) ...[
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Select date'),
-                          subtitle: Text(
-                            DateFormat('EEE, dd MMM').format(_selectedDate),
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: BookingColors.border),
                           ),
-                          trailing: const Icon(Icons.calendar_today),
-                          onTap: _pickDate,
-                        ),
-                        const SizedBox(height: 8),
-                        Semantics(
-                          label: 'station_type_selector',
-                          child: Wrap(
-                            spacing: 8,
-                            children: ['PC', 'PS5', 'VR', 'XBOX', 'POOL']
-                                .map(
-                                  (t) => ChoiceChip(
-                                    label: Text(t),
-                                    selected: _stationType == t,
-                                    onSelected: (_) => setState(() {
-                                      _stationType = t;
-                                      _selectedSlot = null;
-                                    }),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Text('Duration'),
-                            const Spacer(),
-                            for (final h in [1, 2, 3])
-                              Padding(
-                                padding: const EdgeInsets.only(left: 6),
-                                child: ChoiceChip(
-                                  label: Text('${h}h'),
-                                  selected: _durationHours == h,
-                                  onSelected: (_) =>
-                                      setState(() => _durationHours = h),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Book a session',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const Text('Units'),
-                            const Spacer(),
-                            IconButton(
-                              onPressed: _units > 1
-                                  ? () => setState(() => _units--)
-                                  : null,
-                              icon: const Icon(Icons.remove_circle_outline),
-                            ),
-                            Text('$_units'),
-                            IconButton(
-                              onPressed: _units < 4
-                                  ? () => setState(() => _units++)
-                                  : null,
-                              icon: const Icon(Icons.add_circle_outline),
-                            ),
-                          ],
-                        ),
-                        slotsAsync.when(
-                          loading: () => const _SlotsShimmer(),
-                          error: (_, __) => const Text('No slots available'),
-                          data: (slots) => slots.isEmpty
-                              ? const Text('No slots for this date')
-                              : Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: slots.map((slot) {
-                                    final selected =
-                                        _selectedSlot?.id == slot.id;
-                                    return Semantics(
-                                      button: true,
-                                      label: 'slot_${slot.startTime}',
-                                      child: ChoiceChip(
-                                        label: Text(
-                                          '${slot.startTime} · ${formatInr(slot.pricePerHour)}/hr',
-                                        ),
-                                        selected: selected,
-                                        selectedColor: BookingColors.oyoRed
-                                            .withOpacity(0.15),
-                                        onSelected: slot.isAvailable
-                                            ? (_) => setState(
-                                                  () => _selectedSlot = slot,
-                                                )
-                                            : null,
-                                      ),
-                                    );
-                                  }).toList(),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Choose your time first — we hold the slot for 8 minutes while you pay.',
+                                style: TextStyle(color: BookingColors.textSecondary),
+                              ),
+                              const SizedBox(height: 12),
+                              FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: BookingColors.oyoRed,
                                 ),
+                                onPressed: () =>
+                                    _openBookFlow(detail.name, detail.displayImage),
+                                icon: const Icon(Icons.schedule),
+                                label: const Text('Select time'),
+                              ),
+                            ],
+                          ),
                         ),
                       ] else if (_tabs.index == 1) ...[
                         if (detail.amenities.isNotEmpty)
@@ -393,44 +260,17 @@ class _ParlourDetailScreenState extends ConsumerState<ParlourDetailScreen>
                 ),
                 BookingBottomCta(
                   price: price,
-                  originalPrice: _selectedSlot?.originalPrice,
-                  subtitle: _selectedSlot != null
-                      ? '$_stationType · ${_selectedSlot!.startTime} · ${_durationHours}h · x$_units'
-                      : 'Select a slot',
-                  enabled: _selectedSlot != null && !_booking,
-                  onPressed: () => _bookNow(detail.name, detail.displayImage),
+                  subtitle: 'Time-first booking · 8 min hold',
+                  enabled: !_booking,
+                  label: 'Book Now',
+                  onPressed: () =>
+                      _openBookFlow(detail.name, detail.displayImage),
                 ),
               ],
             ),
           ),
         );
       },
-    );
-  }
-}
-
-class _SlotsShimmer extends StatelessWidget {
-  const _SlotsShimmer();
-
-  @override
-  Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey.shade300,
-      highlightColor: Colors.grey.shade100,
-      child: Wrap(
-        spacing: 8,
-        children: List.generate(
-          4,
-          (_) => Container(
-            width: 120,
-            height: 36,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

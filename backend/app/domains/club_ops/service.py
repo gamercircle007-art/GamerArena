@@ -20,6 +20,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.club_ops.enums import (
@@ -38,9 +39,10 @@ from app.domains.club_ops.models import (
 )
 from app.domains.club_ops.pricing import PriceResolver, resource_type_for, station_type_for
 from app.domains.club_ops.promotions import PromotionService
-from app.domains.common.exceptions import NotFoundError, ValidationError
+from app.domains.common.exceptions import ConflictError, NotFoundError, ValidationError
 from app.domains.gaming_booking.booking_ref import generate_booking_ref
-from app.domains.gaming_booking.inventory_models import BookingAudit
+from app.domains.gaming_booking.inventory_models import BookingAudit, BookingUnitLock
+from app.domains.gaming_booking.lock_service import _is_exclusion_violation, build_during
 from app.domains.gaming_booking.models import GamingBooking
 from app.domains.user.models import User
 
@@ -612,6 +614,10 @@ class OwnerBookingService:
 
         now = datetime.now(UTC)
         checked_in = data.check_in_now
+        during_start, during_end = build_during(
+            booking_date, start_time, data.duration_hours
+        )
+        st = station_type_for(resource_type)
         booking = GamingBooking(
             booking_ref=await generate_booking_ref(self.session),
             # Walk-ins have no app account. `user_id` is NOT NULL on this legacy table,
@@ -635,7 +641,7 @@ class OwnerBookingService:
             payment_status="paid" if data.payment_mode == "cash" else "pending",
             booking_status=BOOKING_STATUS_CHECKED_IN if checked_in else "confirmed",
             contact_phone=data.contact_phone,
-            station_type=station_type_for(resource_type),
+            station_type=st,
             duration_hours=data.duration_hours,
             units=data.units,
             amount_paise=total_paise,
@@ -646,10 +652,37 @@ class OwnerBookingService:
             club_discount_paise=discount,
             is_walk_in=True,
             checked_in_at=now if checked_in else None,
+            during_start=during_start,
+            during_end=during_end,
             updated_at=now,
         )
-        self.session.add(booking)
-        await self.session.flush()
+        try:
+            self.session.add(booking)
+            await self.session.flush()
+
+            # EXCLUDE is the correctness layer — same as customer holds (Step 8 / 38).
+            for i in range(data.units):
+                self.session.add(
+                    BookingUnitLock(
+                        booking_id=booking.id,
+                        parlor_id=parlor_id,
+                        station_type=st,
+                        unit_index=i if resource is None else i,
+                        resource_id=resource.id if resource is not None and i == 0 else None,
+                        during_start=during_start,
+                        during_end=during_end,
+                        is_active=True,
+                    )
+                )
+            await self.session.flush()
+        except IntegrityError as exc:
+            await self.session.rollback()
+            if _is_exclusion_violation(exc):
+                raise ConflictError(
+                    "That seat was just taken — pick another",
+                    details={"reason": "exclude_violation"},
+                ) from exc
+            raise
 
         if promo.valid and promo.promotion_id is not None:
             await self.promotions.consume(
