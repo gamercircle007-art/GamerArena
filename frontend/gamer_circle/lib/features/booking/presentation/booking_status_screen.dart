@@ -60,7 +60,8 @@ class _BookingStatusScreenState extends ConsumerState<BookingStatusScreen> {
       if (_status == 'confirmed' ||
           _status == 'failed' ||
           _status == 'expired' ||
-          _status == 'cancelled') {
+          _status == 'cancelled' ||
+          _status == 'refund_pending') {
         _timer?.cancel();
       }
     } catch (e) {
@@ -72,10 +73,13 @@ class _BookingStatusScreenState extends ConsumerState<BookingStatusScreen> {
   @override
   Widget build(BuildContext context) {
     final ok = _status == 'confirmed';
-    final pending = _status == 'payment_pending' || _status == 'initiated';
+    final pending = _status == 'payment_pending' ||
+        _status == 'initiated' ||
+        _status == 'held';
+    final refund = _status == 'refund_pending';
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Booking status'),
+        title: const Text('3 · Confirmation'),
         backgroundColor: BookingColors.oyoRed,
         foregroundColor: Colors.white,
       ),
@@ -89,9 +93,17 @@ class _BookingStatusScreenState extends ConsumerState<BookingStatusScreen> {
                 const CircularProgressIndicator(color: BookingColors.oyoRed)
               else
                 Icon(
-                  ok ? Icons.check_circle : Icons.error_outline,
+                  ok
+                      ? Icons.check_circle
+                      : refund
+                          ? Icons.replay_circle_filled
+                          : Icons.error_outline,
                   size: 72,
-                  color: ok ? Colors.green : Colors.red,
+                  color: ok
+                      ? Colors.green
+                      : refund
+                          ? Colors.orange
+                          : Colors.red,
                 ),
               const SizedBox(height: 16),
               Text(
@@ -99,7 +111,9 @@ class _BookingStatusScreenState extends ConsumerState<BookingStatusScreen> {
                     ? 'Booking confirmed!'
                     : pending
                         ? 'Confirming payment…'
-                        : 'Status: $_status',
+                        : refund
+                            ? 'Payment received after expiry — refund queued'
+                            : 'Status: $_status',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -113,7 +127,7 @@ class _BookingStatusScreenState extends ConsumerState<BookingStatusScreen> {
               if (widget.mockMode && pending) ...[
                 const SizedBox(height: 12),
                 const Text(
-                  'Cashfree sandbox not configured — booking held; use pay at parlor or set CASHFREE_* keys.',
+                  'Cashfree sandbox not configured — booking held; pay at parlor or set CASHFREE_* keys.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13, color: Colors.orange),
                 ),
@@ -127,12 +141,12 @@ class _BookingStatusScreenState extends ConsumerState<BookingStatusScreen> {
                 style: FilledButton.styleFrom(
                   backgroundColor: BookingColors.oyoRed,
                 ),
-                onPressed: () => context.go('/bookings'),
+                onPressed: () => context.go('/gaming-bookings'),
                 child: const Text('My Bookings'),
               ),
               TextButton(
-                onPressed: () => context.go('/home'),
-                child: const Text('Home'),
+                onPressed: () => context.go('/discover'),
+                child: const Text('Back to Discover'),
               ),
             ],
           ),

@@ -13,6 +13,8 @@ import 'package:gamer_circle/features/comments/presentation/comments_screen.dart
 import 'package:gamer_circle/features/communities/presentation/communities_screen.dart';
 import 'package:gamer_circle/features/events/presentation/events_screen.dart';
 import 'package:gamer_circle/features/feed/presentation/feed_screen.dart';
+import 'package:gamer_circle/features/booking/presentation/book_time_screen.dart';
+import 'package:gamer_circle/features/booking/presentation/booking_checkout_screen.dart';
 import 'package:gamer_circle/features/booking/presentation/booking_cancelled_screen.dart';
 import 'package:gamer_circle/features/booking/presentation/booking_confirmed_screen.dart';
 import 'package:gamer_circle/features/booking/presentation/booking_details_view_screen.dart';
@@ -163,17 +165,42 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/profile/legacy', builder: (context, state) => const ProfilePage()),
       GoRoute(path: '/my-bookings', builder: (context, state) => const MyBookingsScreen()),
       GoRoute(
-        path: '/parlour/:id/detail',
+        path: '/parlour/:id',
         builder: (context, state) => ParlourDetailScreen(
           parlourId: state.pathParameters['id']!,
         ),
-      ),
-      GoRoute(
-        path: '/parlour/:id/gallery',
-        builder: (context, state) {
-          final images = state.extra as List<String>? ?? [];
-          return PhotoGalleryScreen(images: images);
-        },
+        routes: [
+          GoRoute(
+            path: 'detail',
+            builder: (context, state) => ParlourDetailScreen(
+              parlourId: state.pathParameters['id']!,
+            ),
+          ),
+          GoRoute(
+            path: 'book',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>? ?? {};
+              return BookTimeScreen(
+                parlorId: state.pathParameters['id']!,
+                parlorName: extra['name'] as String?,
+                parlorImage: extra['image'] as String?,
+              );
+            },
+          ),
+          GoRoute(
+            path: 'checkout',
+            builder: (context, state) => BookingCheckoutScreen(
+              parlorId: state.pathParameters['id']!,
+            ),
+          ),
+          GoRoute(
+            path: 'gallery',
+            builder: (context, state) {
+              final images = state.extra as List<String>? ?? [];
+              return PhotoGalleryScreen(images: images);
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: '/booking/confirm',
