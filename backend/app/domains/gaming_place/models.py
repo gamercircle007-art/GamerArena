@@ -37,6 +37,14 @@ class GamingPlace(Base):
     photo_name: Mapped[str | None] = mapped_column(String(500), nullable=True)
     photos: Mapped[list | None] = mapped_column(PortableJSON, nullable=True)
     raw_data: Mapped[dict | None] = mapped_column(PortableJSON, nullable=True)
+    # Discovery read-model (023) — denormalized for single-query list
+    available_now: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    rating_score: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    amenities_mask: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    price_paise: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    thumb_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    search_doc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    review_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
 

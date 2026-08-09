@@ -96,7 +96,7 @@ class AppTheme {
           selectionColor: Color(0x334F46E5),
           selectionHandleColor: AppColors.primary,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: AppColors.surfaceLight,
           elevation: 1,
           shape: RoundedRectangleBorder(
@@ -179,7 +179,7 @@ class AppTheme {
             borderSide: const BorderSide(color: AppColors.error),
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: AppColors.surfaceDark,
           elevation: 0,
           shape: RoundedRectangleBorder(
