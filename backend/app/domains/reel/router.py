@@ -3,6 +3,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Query
+from sqlalchemy.exc import ProgrammingError, OperationalError
 
 from app.core.dependencies import CurrentUserDep, DbSessionDep, OptionalCurrentUserDep, RedisDep
 from app.domains.like.schemas import LikeToggleResponse
@@ -34,10 +35,16 @@ async def reel_feed(
     sort: str = Query(default="trending"),
     current_user: OptionalCurrentUserDep = None,
 ) -> ReelFeedResponse:
+    """Public reel feed. Empty page if reels schema is not migrated yet."""
     viewer_id = current_user.id if current_user else None
-    return await ReelService(db).feed(
-        viewer_id=viewer_id, page=page, limit=limit, sort=sort
-    )
+    try:
+        return await ReelService(db).feed(
+            viewer_id=viewer_id, page=page, limit=limit, sort=sort
+        )
+    except (ProgrammingError, OperationalError):
+        # Prod may lag migrations (missing reels / user_follows).
+        return ReelFeedResponse(items=[], page=page, limit=limit, has_more=False)
+
 
 
 @router.get("/search", response_model=ReelFeedResponse)
