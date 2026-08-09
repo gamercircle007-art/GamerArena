@@ -147,6 +147,9 @@ class GamingBooking(Base, UUIDPrimaryKeyMixin):
     payment_session_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
     idempotency_key: Mapped[str | None] = mapped_column(String(100), nullable=True)
     hold_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Lock-range bounds (migration 024). Postgres also keeps generated `during` tstzrange.
+    during_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    during_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Club Management owner-ops lifecycle (migration 022). Additive only — the existing
     # customer booking flow ignores these and behaves exactly as before.

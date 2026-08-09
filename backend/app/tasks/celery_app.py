@@ -43,11 +43,18 @@ celery_app.conf.beat_schedule = {
     },
     "sweep-expired-booking-holds": {
         "task": "booking.sweep_expired_holds",
+        "schedule": 30.0,  # every 30s — turns walked-away holds into available again
+        "options": {"expires": 25},
+    },
+    "reconcile-pending-payments": {
+        "task": "booking.reconcile_payments",
         "schedule": crontab(minute="*/5"),
+        "options": {"expires": 240},
     },
     "nightly-booking-reconciliation": {
         "task": "booking.nightly_reconciliation",
         "schedule": crontab(hour=2, minute=15),
+        "options": {"expires": 3600},
     },
     # Club Management occupancy analytics read these rollups exclusively — if these
     # stop running, the heatmap/utilization screens go stale rather than slow.
