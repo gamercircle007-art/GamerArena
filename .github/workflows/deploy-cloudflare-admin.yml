@@ -1,0 +1,68 @@
+# Deploy Angular admin to Cloudflare Pages on push to sit (or manual).
+#
+# Required GitHub secrets (do NOT use a Global API Key / cfk_…):
+#   CLOUDFLARE_API_TOKEN   — User/Account token (cfut_/cfat_) with
+#                            Account → Cloudflare Pages → Edit
+#   CLOUDFLARE_ACCOUNT_ID  — Workers & Pages → Overview → Account ID
+#
+# Optional:
+#   CLOUDFLARE_PAGES_PROJECT — default gamer-circle-admin
+
+name: Deploy Cloudflare Admin
+
+on:
+  push:
+    branches: [sit]
+    paths:
+      - "admin-microservice-complete/frontend/**"
+      - ".github/workflows/deploy-cloudflare-admin.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cloudflare-admin-sit
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-microservice-complete/frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: admin-microservice-complete/frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Production build
+        run: npm run build -- --configuration production
+
+      - name: Require Cloudflare secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "::error::Set GitHub secrets CLOUDFLARE_API_TOKEN (scoped cfut_/cfat_, not Global cfk_) and CLOUDFLARE_ACCOUNT_ID."
+            exit 1
+          fi
+          case "$CLOUDFLARE_API_TOKEN" in
+            cfk_*)
+              echo "::error::CLOUDFLARE_API_TOKEN looks like a Global API Key (cfk_). Create a scoped API Token instead."
+              exit 1
+              ;;
+          esac
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: admin-microservice-complete/frontend
+          command: pages deploy dist/gameconnect-admin/browser --project-name=gamer-circle-admin
