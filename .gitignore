@@ -59,6 +59,9 @@ frontend/gamer_circle/.dart_tool/
 frontend/gamer_circle/build/
 frontend/gamer_circle/.flutter-plugins
 frontend/gamer_circle/.flutter-plugins-dependencies
-# Local release artifacts
-releases/
+# Local release artifacts (keep published prod APK downloadable on GitHub)
+releases/*
+!releases/GamerCircle-*-prod-release.apk
+!releases/README.md
 *.apk
+!releases/GamerCircle-*-prod-release.apk
