@@ -73,7 +73,29 @@ class InteractionRepository {
   }
 
   Future<Map<String, dynamic>> smartSearch(String q, {int limit = 20}) async {
-    final res = await _dio.get('/search/smart', queryParameters: {'q': q, 'limit': limit});
-    return res.data as Map<String, dynamic>;
+    try {
+      final res = await _dio.get(
+        '/search/smart',
+        queryParameters: {'q': q, 'limit': limit},
+      );
+      final data = res.data;
+      if (data is Map<String, dynamic>) return data;
+      if (data is List) {
+        return {'q': q, 'results': data, 'count': data.length};
+      }
+      return {'q': q, 'results': <dynamic>[], 'count': 0};
+    } on DioException catch (e) {
+      // Older API builds only expose GET /search (list).
+      if (e.response?.statusCode == 404) {
+        final res = await _dio.get(
+          '/search',
+          queryParameters: {'q': q, 'limit': limit},
+        );
+        final data = res.data;
+        final list = data is List ? data : <dynamic>[];
+        return {'q': q, 'results': list, 'count': list.length};
+      }
+      rethrow;
+    }
   }
 }

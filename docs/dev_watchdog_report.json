@@ -1,0 +1,126 @@
+{
+  "probed_at": "2026-08-09 18:48 UTC",
+  "base": "https://gamer-circle-api.onrender.com",
+  "results": [
+    {
+      "status": "OK",
+      "kind": "public",
+      "method": "GET",
+      "path": "/health",
+      "code": 200,
+      "message": "1.0.0"
+    },
+    {
+      "status": "OK",
+      "kind": "public",
+      "method": "GET",
+      "path": "/api/v1/home",
+      "code": 200,
+      "message": "{\"nearby_count\":0,\"featured\":[],\"quick_picks\":[],\"nearby_parlors\":[],\"city\":null,\"cities\":[{\"name\":\"Delhi\",\"parlour_count\":75,\"image_url\":\"https://images.unspla"
+    },
+    {
+      "status": "OK",
+      "kind": "public",
+      "method": "GET",
+      "path": "/api/v1/feed/ranked",
+      "code": 200,
+      "message": "['items', 'page', 'feed_type', 'personalized']"
+    },
+    {
+      "status": "FAIL",
+      "kind": "public",
+      "method": "GET",
+      "path": "/api/v1/reels/feed?page=1&limit=1",
+      "code": 500,
+      "message": "An unexpected error occurred"
+    },
+    {
+      "status": "OK",
+      "kind": "public",
+      "method": "GET",
+      "path": "/api/v1/geo/nearby-parlors?lat=28.6139&lng=77.209&radius_km=30",
+      "code": 200,
+      "message": "[{\"id\":\"316a4e1c-2882-4ee1-87f6-e007e042798d\",\"name\":\"The Hidden Hour Delhi (Connaught Place) - Mystery Escape Rooms\",\"description\":null,\"logo_url\":\"https://lh3"
+    },
+    {
+      "status": "OK",
+      "kind": "public",
+      "method": "GET",
+      "path": "/api/v1/search?q=vr&limit=5",
+      "code": 200,
+      "message": "[{\"type\":\"parlor\",\"data\":{\"id\":\"29ae3932-e79c-49f5-8f7f-ac6bcef22901\",\"name\":\"Masti Zone | Radisson Dwarka | Trampoline | VR Games | Arcades | Kids Play| Partie"
+    },
+    {
+      "status": "FAIL",
+      "kind": "public",
+      "method": "GET",
+      "path": "/api/v1/search/smart?q=vr&limit=5",
+      "code": 404,
+      "message": "Not Found"
+    },
+    {
+      "status": "FAIL",
+      "kind": "public",
+      "method": "GET",
+      "path": "/api/v1/discovery/centres?lat=28.6139&lng=77.209&radius_km=20",
+      "code": 404,
+      "message": "Not Found"
+    },
+    {
+      "status": "OK",
+      "kind": "public",
+      "method": "GET",
+      "path": "/api/v1/parlors/316a4e1c-2882-4ee1-87f6-e007e042798d/availability?date=2026-08-10&station_type=PC",
+      "code": 200,
+      "message": "{\"parlor_id\":\"316a4e1c-2882-4ee1-87f6-e007e042798d\",\"date\":\"2026-08-10\",\"station_type\":\"PC\",\"slots\":[{\"start_time\":\"10:00:00\",\"available_units\":4,\"price_paise\":"
+    },
+    {
+      "status": "FAIL",
+      "kind": "public",
+      "method": "GET",
+      "path": "/api/v1/clubs/316a4e1c-2882-4ee1-87f6-e007e042798d/availability?date=2026-08-10&station_type=PC",
+      "code": 404,
+      "message": "Not Found"
+    },
+    {
+      "status": "FAIL",
+      "kind": "auth",
+      "method": "POST",
+      "path": "/api/v1/bookings/hold",
+      "code": 405,
+      "message": "Method Not Allowed"
+    },
+    {
+      "status": "AUTH_OK",
+      "kind": "auth",
+      "method": "POST",
+      "path": "/api/v1/bookings/v2",
+      "code": 401,
+      "message": "Not authenticated"
+    },
+    {
+      "status": "AUTH_OK",
+      "kind": "auth",
+      "method": "GET",
+      "path": "/api/v1/conversations",
+      "code": 401,
+      "message": "Not authenticated"
+    },
+    {
+      "status": "AUTH_OK",
+      "kind": "auth",
+      "method": "GET",
+      "path": "/api/v1/feed",
+      "code": 401,
+      "message": "Not authenticated"
+    },
+    {
+      "status": "AUTH_OK",
+      "kind": "auth",
+      "method": "POST",
+      "path": "/api/v1/posts",
+      "code": 401,
+      "message": "Not authenticated"
+    }
+  ]
+}

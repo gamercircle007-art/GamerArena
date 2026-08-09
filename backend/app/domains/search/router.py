@@ -66,3 +66,18 @@ async def search(
             )
 
     return results[:limit]
+
+
+@router.get("/smart")
+async def smart_search(
+    db: DbSessionDep,
+    q: str = Query(..., min_length=1, max_length=100),
+    limit: int = Query(default=20, ge=1, le=50),
+) -> dict:
+    """Flutter smartSearch expects a map — wrap the standard search list."""
+    items = await search(db=db, q=q, type="all", limit=limit)
+    return {
+        "q": q,
+        "results": [item.model_dump(mode="json") for item in items],
+        "count": len(items),
+    }
