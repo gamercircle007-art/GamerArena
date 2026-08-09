@@ -68,7 +68,7 @@ class AvailabilityParams {
       );
 }
 
-/// Live capacity grid from GET /clubs/{id}/availability (includes version `v`).
+/// Live capacity grid from GET /parlors/{id}/availability (includes version `v`).
 final availabilitySnapshotProvider =
     FutureProvider.family<Map<String, dynamic>, AvailabilityParams>(
   (ref, params) async {
