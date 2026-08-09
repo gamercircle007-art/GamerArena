@@ -112,14 +112,15 @@ class GamingBookingRepository {
     return GamingBooking.fromJson(response.data ?? {});
   }
 
-  /// Spec availability: virtual hourly inventory with capacity (+ version `v`).
+  /// Live availability grid (canonical path is /parlors/{id}/availability).
+  /// Spec alias /clubs/{id}/availability is rewritten by [ApiCompatInterceptor].
   Future<Map<String, dynamic>> fetchAvailabilitySnapshot({
     required String parlorId,
     required DateTime date,
     String stationType = 'PC',
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
-      '/clubs/$parlorId/availability',
+      '/parlors/$parlorId/availability',
       queryParameters: {
         'date': date.toIso8601String().split('T').first,
         'station_type': stationType,

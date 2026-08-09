@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:gamer_circle/app/config/app_config.dart';
 import 'package:gamer_circle/core/constants/app_constants.dart';
+import 'package:gamer_circle/core/network/api_compat_interceptor.dart';
 import 'package:gamer_circle/core/network/auth_interceptor.dart';
 
 class DioClient {
@@ -19,7 +20,10 @@ class DioClient {
       ),
     );
 
-    final interceptors = <Interceptor>[];
+    // Path rewrite FIRST so auth + logs see the final route.
+    final interceptors = <Interceptor>[
+      ApiCompatInterceptor(),
+    ];
     if (AppConfig.instance.enableHttpLogs) {
       interceptors.add(
         LogInterceptor(
