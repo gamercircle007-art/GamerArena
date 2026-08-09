@@ -1,0 +1,5 @@
+# Cloudflare Pages — Angular admin (production API on Render)
+# Deploy: npx wrangler pages deploy dist/gameconnect-admin/browser --project-name=gamer-circle-admin
+name = "gamer-circle-admin"
+compatibility_date = "2026-04-01"
+pages_build_output_dir = "dist/gameconnect-admin/browser"
