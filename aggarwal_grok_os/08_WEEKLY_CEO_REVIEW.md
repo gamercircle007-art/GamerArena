@@ -1,0 +1,43 @@
+# AGGARWAL WEEKLY CEO REVIEW
+
+Run this once every week.
+
+## WINS
+
+## FAILURES
+
+## CUSTOMER SIGNALS
+
+## VENUE SIGNALS
+
+## PRODUCT METRICS
+
+## GROWTH METRICS
+
+## REVENUE
+
+## EXPERIMENTS
+
+## LEARNINGS
+
+## MAJOR RISKS
+
+## IMPORTANT DECISIONS
+
+## BIGGEST UNKNOWN
+
+## BIGGEST OPPORTUNITY
+
+## BIGGEST MISTAKE TO AVOID
+
+## NEXT 3 PRIORITIES
+
+## WHAT TO STOP
+
+## CEO VERDICT
+
+What matters most next week?
+
+## MEMORY ACTIONS
+
+What should be permanently recorded?
