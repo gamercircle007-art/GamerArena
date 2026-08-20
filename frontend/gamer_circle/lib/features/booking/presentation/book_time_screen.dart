@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gamer_circle/core/constants/booking_colors.dart';
+import 'package:gamer_circle/core/utils/api_error_utils.dart';
 import 'package:gamer_circle/core/utils/currency_formatter.dart';
 import 'package:gamer_circle/features/booking/providers/booking_flow_provider.dart';
 import 'package:intl/intl.dart';
@@ -178,10 +180,15 @@ class _BookTimeScreenState extends ConsumerState<BookTimeScreen> {
                 const SizedBox(height: 8),
                 snapAsync.when(
                   loading: () => const _GridShimmer(),
-                  error: (e, _) => Text(
-                    'Could not load times.\n$e',
-                    style: const TextStyle(color: Colors.red),
-                  ),
+                  error: (e, _) {
+                    final msg = e is DioException
+                        ? messageFromDioException(e, 'Could not load times')
+                        : e.toString();
+                    return Text(
+                      'Could not load times.\n$msg',
+                      style: const TextStyle(color: Colors.red),
+                    );
+                  },
                   data: (snap) {
                     final slots = (snap['slots'] as List<dynamic>? ?? [])
                         .map((e) => Map<String, dynamic>.from(e as Map))

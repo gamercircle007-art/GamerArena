@@ -34,10 +34,15 @@ async def reel_feed(
     sort: str = Query(default="trending"),
     current_user: OptionalCurrentUserDep = None,
 ) -> ReelFeedResponse:
+    """Public reel feed. Empty page if reels schema/data is broken in prod."""
     viewer_id = current_user.id if current_user else None
-    return await ReelService(db).feed(
-        viewer_id=viewer_id, page=page, limit=limit, sort=sort
-    )
+    try:
+        return await ReelService(db).feed(
+            viewer_id=viewer_id, page=page, limit=limit, sort=sort
+        )
+    except Exception:  # noqa: BLE001 — never 500 the Reels tab in prod
+        return ReelFeedResponse(items=[], page=page, limit=limit, has_more=False)
+
 
 
 @router.get("/search", response_model=ReelFeedResponse)

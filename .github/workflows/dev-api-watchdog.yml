@@ -1,0 +1,63 @@
+# Dev API watchdog — every 25 minutes
+#
+# Probes live Render API, refreshes docs/DEV_ERROR_BACKLOG.md, and fails the
+# job when public routes are broken so the Actions tab shows red until fixed.
+#
+# Manual: Actions → Dev API Watchdog → Run workflow
+
+name: Dev API Watchdog
+
+on:
+  schedule:
+    # Every 25 minutes
+    - cron: "*/25 * * * *"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why are you probing now?"
+        required: false
+        default: "manual"
+
+concurrency:
+  group: dev-api-watchdog
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: sit
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Probe live API + refresh backlog
+        id: probe
+        run: |
+          set +e
+          python scripts/dev_api_watchdog.py --base https://gamer-circle-api.onrender.com
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Commit backlog if changed
+        run: |
+          if git diff --quiet -- docs/DEV_ERROR_BACKLOG.md docs/dev_watchdog_report.json; then
+            echo "No backlog changes"
+            exit 0
+          fi
+          git config user.name "gamer-circle-watchdog"
+          git config user.email "watchdog@users.noreply.github.com"
+          git add docs/DEV_ERROR_BACKLOG.md docs/dev_watchdog_report.json
+          git commit -m "chore(watchdog): refresh DEV_ERROR_BACKLOG ($(date -u +%Y-%m-%dT%H:%MZ))"
+          git push origin HEAD:sit || echo "Push skipped (permissions)"
+
+      - name: Fail job when public probes FAIL
+        run: |
+          FAILS=$(python3 -c "import json;d=json.load(open('docs/dev_watchdog_report.json'));print(sum(1 for r in d['results'] if r['status']=='FAIL'))")
+          echo "FAIL count=$FAILS"
+          test "$FAILS" = "0"
