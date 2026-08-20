@@ -1,6 +1,6 @@
 # Dev error backlog (auto-refreshed)
 
-Last probe: **2026-08-20 16:13 UTC**  
+Last probe: **2026-08-20 16:55 UTC**  
 Target: `https://gamer-circle-api.onrender.com`  
 Health version field: ``  
 Summary: **15 FAIL** · 0 OK · 0 auth-gated
