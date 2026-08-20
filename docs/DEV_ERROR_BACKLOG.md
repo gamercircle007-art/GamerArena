@@ -1,24 +1,29 @@
 # Dev error backlog (auto-refreshed)
 
-Last probe: **2026-08-20 15:38 UTC**  
+Last probe: **2026-08-20 16:13 UTC**  
 Target: `https://gamer-circle-api.onrender.com`  
-Health version field: `The read operation timed out`  
-Summary: **10 FAIL** · 1 OK · 4 auth-gated
+Health version field: ``  
+Summary: **15 FAIL** · 0 OK · 0 auth-gated
 
 ## Open failures (fix these)
 
 | # | Code | Method | Path | Message | Likely fix |
 |---|------|--------|------|---------|------------|
-| 1 | 0 | `GET` | `/health` | The read operation timed out | Network / cold start — retry |
-| 2 | 0 | `GET` | `/api/v1/home` | The read operation timed out | Network / cold start — retry |
-| 3 | 500 | `GET` | `/api/v1/reels/feed?page=1&limit=1` | An unexpected error occurred | Deploy soft-fail feed; run alembic for reels tables |
-| 4 | 500 | `GET` | `/api/v1/geo/nearby-parlors?lat=28.6139&lng=77.209&radius_km=30` | An unexpected error occurred | Investigate response + recent sit deploy |
-| 5 | 500 | `GET` | `/api/v1/search?q=vr&limit=5` | An unexpected error occurred | Investigate response + recent sit deploy |
-| 6 | 404 | `GET` | `/api/v1/search/smart?q=vr&limit=5` | Not Found | Deploy /search/smart alias; app falls back to /search |
-| 7 | 404 | `GET` | `/api/v1/discovery/centres?lat=28.6139&lng=77.209&radius_km=20` | Not Found | Redeploy sit (discovery router missing on live) |
-| 8 | 500 | `GET` | `/api/v1/parlors/316a4e1c-2882-4ee1-87f6-e007e042798d/availability?date=2026-08-10&station_type=PC` | An unexpected error occurred | Investigate response + recent sit deploy |
-| 9 | 404 | `GET` | `/api/v1/clubs/316a4e1c-2882-4ee1-87f6-e007e042798d/availability?date=2026-08-10&station_type=PC` | Not Found | Redeploy sit OR client uses /parlors (compat interceptor) |
-| 10 | 405 | `POST` | `/api/v1/bookings/hold` | Method Not Allowed | Redeploy sit — hold route not mounted; shadowed by GET /bookings/{id} |
+| 1 | 503 | `GET` | `/health` |  | Investigate response + recent sit deploy |
+| 2 | 503 | `GET` | `/api/v1/home` |  | Investigate response + recent sit deploy |
+| 3 | 503 | `GET` | `/api/v1/feed/ranked` |  | Investigate response + recent sit deploy |
+| 4 | 429 | `GET` | `/api/v1/reels/feed?page=1&limit=1` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 5 | 429 | `GET` | `/api/v1/geo/nearby-parlors?lat=28.6139&lng=77.209&radius_km=30` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 6 | 429 | `GET` | `/api/v1/search?q=vr&limit=5` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 7 | 429 | `GET` | `/api/v1/search/smart?q=vr&limit=5` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 8 | 429 | `GET` | `/api/v1/discovery/centres?lat=28.6139&lng=77.209&radius_km=20` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 9 | 429 | `GET` | `/api/v1/parlors/316a4e1c-2882-4ee1-87f6-e007e042798d/availability?date=2026-08-10&station_type=PC` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 10 | 429 | `GET` | `/api/v1/clubs/316a4e1c-2882-4ee1-87f6-e007e042798d/availability?date=2026-08-10&station_type=PC` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 11 | 429 | `POST` | `/api/v1/bookings/hold` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 12 | 429 | `POST` | `/api/v1/bookings/v2` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 13 | 429 | `GET` | `/api/v1/conversations` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 14 | 429 | `GET` | `/api/v1/feed` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
+| 15 | 429 | `POST` | `/api/v1/posts` | <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta htt | Investigate response + recent sit deploy |
 
 ## Known root causes (checklist)
 
@@ -31,12 +36,7 @@ Summary: **10 FAIL** · 1 OK · 4 auth-gated
 
 ## Auth-gated (OK without token)
 
-- `401` `POST` `/api/v1/bookings/v2`
-- `401` `GET` `/api/v1/conversations`
-- `401` `GET` `/api/v1/feed`
-- `401` `POST` `/api/v1/posts`
 
 ## Passing public probes
 
-- `200` `GET` `/api/v1/feed/ranked`
 
