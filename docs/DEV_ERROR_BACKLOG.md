@@ -1,6 +1,6 @@
 # Dev error backlog (auto-refreshed)
 
-Last probe: **2026-08-25 10:57 UTC**  
+Last probe: **2026-08-25 11:26 UTC**  
 Target: `https://gamer-circle-api.onrender.com`  
 Health version field: `The read operation timed out`  
 Summary: **11 FAIL** · 0 OK · 4 auth-gated
