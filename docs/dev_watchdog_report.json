@@ -1,5 +1,5 @@
 {
-  "probed_at": "2026-09-02 13:53 UTC",
+  "probed_at": "2026-09-02 17:32 UTC",
   "base": "https://gamer-circle-api.onrender.com",
   "results": [
     {
@@ -19,12 +19,12 @@
       "message": "The read operation timed out"
     },
     {
-      "status": "FAIL",
+      "status": "OK",
       "kind": "public",
       "method": "GET",
       "path": "/api/v1/feed/ranked",
-      "code": 0,
-      "message": "The read operation timed out"
+      "code": 200,
+      "message": "['items', 'page', 'feed_type', 'personalized']"
     },
     {
       "status": "FAIL",
