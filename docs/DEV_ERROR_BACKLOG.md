@@ -1,15 +1,15 @@
 # Dev error backlog (auto-refreshed)
 
-Last probe: **2026-10-13 08:30 UTC**  
+Last probe: **2026-10-13 16:28 UTC**  
 Target: `https://gamer-circle-api.onrender.com`  
-Health version field: `The read operation timed out`  
+Health version field: ``  
 Summary: **11 FAIL** · 0 OK · 4 auth-gated
 
 ## Open failures (fix these)
 
 | # | Code | Method | Path | Message | Likely fix |
 |---|------|--------|------|---------|------------|
-| 1 | 0 | `GET` | `/health` | The read operation timed out | Network / cold start — retry |
+| 1 | 503 | `GET` | `/health` |  | Investigate response + recent sit deploy |
 | 2 | 0 | `GET` | `/api/v1/home` | The read operation timed out | Network / cold start — retry |
 | 3 | 0 | `GET` | `/api/v1/feed/ranked` | The read operation timed out | Network / cold start — retry |
 | 4 | 500 | `GET` | `/api/v1/reels/feed?page=1&limit=1` | An unexpected error occurred | Deploy soft-fail feed; run alembic for reels tables |
