@@ -1,6 +1,6 @@
 # Dev error backlog (auto-refreshed)
 
-Last probe: **2026-10-23 22:39 UTC**  
+Last probe: **2026-10-24 01:09 UTC**  
 Target: `https://gamer-circle-api.onrender.com`  
 Health version field: `The read operation timed out`  
 Summary: **11 FAIL** · 0 OK · 4 auth-gated
@@ -12,7 +12,7 @@ Summary: **11 FAIL** · 0 OK · 4 auth-gated
 | 1 | 0 | `GET` | `/health` | The read operation timed out | Network / cold start — retry |
 | 2 | 0 | `GET` | `/api/v1/home` | The read operation timed out | Network / cold start — retry |
 | 3 | 0 | `GET` | `/api/v1/feed/ranked` | The read operation timed out | Network / cold start — retry |
-| 4 | 0 | `GET` | `/api/v1/reels/feed?page=1&limit=1` | The read operation timed out | Network / cold start — retry |
+| 4 | 500 | `GET` | `/api/v1/reels/feed?page=1&limit=1` | An unexpected error occurred | Deploy soft-fail feed; run alembic for reels tables |
 | 5 | 500 | `GET` | `/api/v1/geo/nearby-parlors?lat=28.6139&lng=77.209&radius_km=30` | An unexpected error occurred | Investigate response + recent sit deploy |
 | 6 | 500 | `GET` | `/api/v1/search?q=vr&limit=5` | An unexpected error occurred | Investigate response + recent sit deploy |
 | 7 | 404 | `GET` | `/api/v1/search/smart?q=vr&limit=5` | Not Found | Deploy /search/smart alias; app falls back to /search |
